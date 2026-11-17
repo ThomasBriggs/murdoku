@@ -270,6 +270,28 @@ describe('render', () => {
     ).toBe('Charles was beside a plant and beside a television.');
   });
 
+  it('puts negative atoms last, joined with ", but"', () => {
+    expect(
+      text([
+        { kind: 'notInRoom', room: 0 },
+        { kind: 'row', index: 7 },
+      ]),
+    ).toBe('Charles was in row 8, but not in the Study.');
+    expect(
+      text([
+        { kind: 'notInRoom', room: 0 },
+        { kind: 'notBeside', furniture: 'table' },
+      ]),
+    ).toBe('Charles was not in the Study and not beside any table.');
+    expect(
+      text([
+        { kind: 'on', furniture: 'chair' },
+        { kind: 'inRoom', room: 1 },
+        { kind: 'notBeside', furniture: 'plant' },
+      ]),
+    ).toBe('Charles was sitting on a chair in the Library, but not beside any plant.');
+  });
+
   it('combines three atoms with commas and "and"', () => {
     expect(text([{ kind: 'inRoom', room: 1 }, { kind: 'alone' }, { kind: 'col', index: 0 }])).toBe(
       'Charles was in the Library, in column A and with no one else in the room.',
