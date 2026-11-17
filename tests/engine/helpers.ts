@@ -14,3 +14,33 @@ export function build(seed: string) {
   const furniture = decorate(rng.fork('decorate'), plan, solution);
   return { plan, people, solution, furniture };
 }
+
+import { GENERATOR_VERSION } from '../../src/engine/constants';
+import { deriveFacts } from '../../src/engine/clues/facts';
+import type { Clue } from '../../src/engine/clues/types';
+import type { Puzzle } from '../../src/engine/types';
+
+/** A puzzle whose clues are `n` random true atoms per person (not necessarily unique). */
+export function randomCluePuzzle(seed: string, n = 2) {
+  const b = build(seed);
+  const rng = createRng(`${seed}-clues`);
+  const facts = deriveFacts(
+    { roomOf: b.plan.roomOf, rooms: b.plan.rooms, furniture: b.furniture },
+    b.solution,
+  );
+  const clues: Clue[] = b.people.map((p) => ({
+    person: p.id,
+    atoms: rng.shuffle(facts[p.id]!).slice(0, n),
+  }));
+  const puzzle: Puzzle = {
+    version: GENERATOR_VERSION,
+    seed,
+    difficulty: 'easy',
+    roomOf: b.plan.roomOf,
+    rooms: b.plan.rooms,
+    furniture: b.furniture,
+    people: b.people,
+    clues,
+  };
+  return { ...b, facts, puzzle };
+}

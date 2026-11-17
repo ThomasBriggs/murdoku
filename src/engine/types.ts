@@ -1,4 +1,5 @@
 import { ADJACENCY, GRID_SIZE } from './constants';
+import type { Clue } from './clues/types';
 
 export type Cell = { r: number; c: number }; // 0..8
 export type RoomId = number;
@@ -107,4 +108,20 @@ export function neighbours(r: number, c: number): Cell[] {
     if (inBounds(r + dr, c + dc)) out.push({ r: r + dr, c: c + dc });
   }
   return out;
+}
+
+/** Everything the UI may see (SPEC §9 PuzzleView without the solution hash). */
+export interface Puzzle {
+  version: number;
+  seed: string;
+  difficulty: Difficulty;
+  roomOf: RoomId[][];
+  rooms: Room[];
+  furniture: FurnitureGrid;
+  people: Person[];
+  clues: Clue[];
+}
+
+export interface PuzzleView extends Puzzle {
+  solutionHash: string;
 }
