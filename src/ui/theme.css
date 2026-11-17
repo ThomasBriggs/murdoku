@@ -6,21 +6,69 @@
   --text-muted: #6b665e;
   --border: #d8d2c7;
   --accent: #8b2e2e;
+  --wall: #2b2823;
+  --cell-line: rgb(0 0 0 / 0.16);
+  --icon: #4a443b;
+  --icon-fill: rgb(0 0 0 / 0.1);
+  --danger: #c0262d;
+  --focus: #1d5fd6;
+  --selected: #1d5fd6;
+  --selected-bg: #e8f0fd;
+  --hl-fill: rgb(255 210 60 / 0.45);
+  --hl-ring: #d19a00;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --bg: #1b1a18;
     --surface: #26241f;
     --text: #ece7de;
     --text-muted: #a39d92;
     --border: #3b382f;
     --accent: #d86a6a;
+    --wall: #e9e3d6;
+    --cell-line: rgb(255 255 255 / 0.14);
+    --icon: #d6cfc0;
+    --icon-fill: rgb(255 255 255 / 0.12);
+    --danger: #ff6b70;
+    --focus: #7aa7ff;
+    --selected: #7aa7ff;
+    --selected-bg: #1f2a40;
+    --hl-fill: rgb(255 210 60 / 0.3);
+    --hl-ring: #ffd23c;
   }
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #1b1a18;
+  --surface: #26241f;
+  --text: #ece7de;
+  --text-muted: #a39d92;
+  --border: #3b382f;
+  --accent: #d86a6a;
+  --wall: #e9e3d6;
+  --cell-line: rgb(255 255 255 / 0.14);
+  --icon: #d6cfc0;
+  --icon-fill: rgb(255 255 255 / 0.12);
+  --danger: #ff6b70;
+  --focus: #7aa7ff;
+  --selected: #7aa7ff;
+  --selected-bg: #1f2a40;
+  --hl-fill: rgb(255 210 60 / 0.3);
+  --hl-ring: #ffd23c;
 }
 
 * {
   box-sizing: border-box;
+}
+
+html {
+  background: var(--bg);
 }
 
 body {
@@ -35,18 +83,38 @@ body {
     sans-serif;
 }
 
-.app-header {
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--border);
+button {
+  font: inherit;
+  color: var(--text);
   background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+button:hover:not(:disabled) {
+  border-color: var(--text-muted);
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+button:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
 }
 
-.app-header h1 {
-  margin: 0;
-  font-size: 1.5rem;
-  color: var(--accent);
-}
-
-.app-main {
-  padding: 1rem;
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }

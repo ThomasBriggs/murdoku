@@ -1,0 +1,86 @@
+.panel {
+  min-width: 0;
+}
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.card {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+  cursor: pointer;
+}
+.card:hover {
+  border-color: var(--text-muted);
+}
+.selected,
+.selected:hover {
+  border-color: var(--selected);
+  box-shadow: 0 0 0 2px var(--selected);
+  background: var(--selected-bg);
+}
+.head {
+  all: unset;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 2.25rem 1fr auto;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  cursor: pointer;
+}
+.head:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+.tokenBox {
+  width: 2.25rem;
+}
+.name {
+  font-weight: 700;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.victimTag {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: #222;
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.05rem 0.5rem;
+}
+.status {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.clue {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+.roomWord,
+.furnWord {
+  border-bottom: 2px dotted var(--accent);
+  cursor: help;
+  font-weight: 600;
+}
+.furnWord {
+  border-bottom-style: dashed;
+  border-bottom-color: var(--text-muted);
+}
+.roomWord:hover,
+.furnWord:hover,
+.roomWord:focus-visible,
+.furnWord:focus-visible {
+  background: var(--hl-fill);
+  outline: none;
+}

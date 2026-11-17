@@ -1,0 +1,45 @@
+.frame {
+  --gutter: 1.4rem;
+  display: grid;
+  grid-template-columns: var(--gutter) minmax(0, 1fr);
+  grid-template-rows: var(--gutter) minmax(0, 1fr);
+  width: 100%;
+  max-width: min(100%, calc(100dvh - 11rem));
+  margin-inline: auto;
+  container-type: inline-size;
+}
+.corner {
+  grid-area: 1 / 1;
+}
+.colLabels,
+.rowLabels {
+  display: grid;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  place-items: center;
+}
+.colLabels {
+  grid-area: 1 / 2;
+  grid-template-columns: repeat(9, 1fr);
+}
+.rowLabels {
+  grid-area: 2 / 1;
+  grid-template-rows: repeat(9, 1fr);
+}
+.grid {
+  grid-area: 2 / 2;
+  display: grid;
+  grid-template-rows: repeat(9, minmax(0, 1fr));
+  aspect-ratio: 1;
+  width: 100%;
+  background: var(--surface);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 1px 6px rgb(0 0 0 / 0.18);
+}
+.row {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  min-height: 0;
+}

@@ -1,0 +1,48 @@
+.layout {
+  display: grid;
+  gap: 0.75rem 1.5rem;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'board'
+    'panel'
+    'toolbar';
+  padding: 0.75rem 16px 0;
+  max-width: 1200px;
+  margin-inline: auto;
+}
+.boardArea {
+  grid-area: board;
+  min-width: 0;
+}
+.panelArea {
+  grid-area: panel;
+  min-width: 0;
+  padding-bottom: 0.75rem;
+}
+.toolbarArea {
+  grid-area: toolbar;
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  margin-inline: -16px;
+  padding: 0.5rem 16px;
+}
+@media (min-width: 900px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) 24rem;
+    grid-template-areas:
+      'toolbar panel'
+      'board panel';
+    align-items: start;
+    padding-top: 1rem;
+  }
+  .toolbarArea {
+    position: static;
+    background: none;
+    border: 0;
+    margin: 0;
+    padding: 0;
+  }
+}
