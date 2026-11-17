@@ -6,6 +6,8 @@ import { ConfirmDialog } from './ConfirmDialog';
 import { useGame, useStoreApi } from './context';
 import styles from './Game.module.css';
 import { PeoplePanel } from './PeoplePanel';
+import { RoomLegend } from './RoomLegend';
+import { assignRoomColors } from './roomColors';
 import { Toolbar } from './Toolbar';
 import { conflictsByPerson, type Highlight } from './types';
 
@@ -31,6 +33,11 @@ export function Game() {
   const conflicts = useMemo(
     () => conflictsByPerson(selectConflicts({ puzzle, placements })),
     [puzzle, placements],
+  );
+
+  const roomColors = useMemo(
+    () => (puzzle ? assignRoomColors(puzzle.rooms, puzzle.roomOf) : new Map()),
+    [puzzle],
   );
 
   const onActivate = useCallback(
@@ -108,6 +115,7 @@ export function Game() {
       <div className={styles.boardArea}>
         <Board
           puzzle={puzzle}
+          roomColors={roomColors}
           placements={placements}
           selectedPerson={selected}
           cursor={cursor}
@@ -120,6 +128,7 @@ export function Game() {
           onActivate={onActivate}
           onSelectPerson={(id) => actions.selectPerson(id)}
         />
+        <RoomLegend rooms={puzzle.rooms} colors={roomColors} onHighlight={setHighlight} />
       </div>
       <div className={styles.panelArea}>
         <PeoplePanel

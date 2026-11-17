@@ -1,0 +1,29 @@
+.legend {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.9rem;
+  font-size: 0.8rem;
+}
+.item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: default;
+  border-radius: 4px;
+  padding: 0.1rem 0.25rem;
+}
+.item:hover,
+.item:focus-visible {
+  background: var(--hl-fill);
+  outline: none;
+}
+.swatch {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 3px;
+  background: light-dark(var(--room-l), var(--room-d));
+  border: 1px solid var(--wall);
+}

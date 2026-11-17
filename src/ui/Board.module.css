@@ -4,7 +4,7 @@
   grid-template-columns: var(--gutter) minmax(0, 1fr);
   grid-template-rows: var(--gutter) minmax(0, 1fr);
   width: 100%;
-  max-width: min(100%, calc(100dvh - 11rem));
+  max-width: min(100%, 760px, calc(100dvh - 9.5rem));
   margin-inline: auto;
   container-type: inline-size;
 }

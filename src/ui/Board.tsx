@@ -3,11 +3,13 @@ import { GRID_SIZE } from '../engine/constants';
 import { cellKey, type PersonId, type PuzzleView } from '../engine/types';
 import styles from './Board.module.css';
 import { Cell } from './Cell';
+import type { RoomColor } from './roomColors';
 import { COLUMN_LETTERS, panelOrder, type Highlight } from './types';
 import { computeWalls, firstCellOfRooms } from './walls';
 
 export interface BoardProps {
   puzzle: PuzzleView;
+  roomColors: Map<number, RoomColor>;
   placements: Record<PersonId, number | null>;
   selectedPerson: PersonId | null;
   cursor: { r: number; c: number };
@@ -121,6 +123,7 @@ export function Board(p: BoardProps) {
                   r={r}
                   c={c}
                   room={puzzle.rooms[roomId]!}
+                  color={p.roomColors.get(roomId)!}
                   furniture={puzzle.furniture[r]![c] ?? null}
                   walls={walls[r]![c]!}
                   roomLabel={first?.[0] === r && first[1] === c}

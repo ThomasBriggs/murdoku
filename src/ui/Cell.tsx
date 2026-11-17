@@ -1,9 +1,9 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { FURNITURE, isOccupiable } from '../engine/furniture';
-import { ROOM_TYPES } from '../engine/rooms';
 import type { FurnitureType, Person, Room } from '../engine/types';
 import styles from './Cell.module.css';
 import { FurnitureIcon } from './icons/FurnitureIcon';
+import type { RoomColor } from './roomColors';
 import { Token } from './Token';
 import { COLUMN_LETTERS } from './types';
 import type { Walls } from './walls';
@@ -12,6 +12,7 @@ export interface CellProps {
   r: number;
   c: number;
   room: Room;
+  color: RoomColor;
   furniture: FurnitureType | null;
   walls: Walls;
   /** Show the room name label (first cell of the room). */
@@ -70,7 +71,7 @@ export function Cell(p: CellProps) {
     <div
       role="gridcell"
       className={cls}
-      style={{ '--room-l': room.color, '--room-d': roomDark(room) } as CSSProperties}
+      style={{ '--room-l': p.color.light, '--room-d': p.color.dark } as CSSProperties}
       tabIndex={p.cursor ? 0 : -1}
       aria-label={cellLabel(r, c, room.name, furniture, person)}
       aria-describedby={hasConflict ? descId : undefined}
@@ -125,9 +126,4 @@ export function Cell(p: CellProps) {
       )}
     </div>
   );
-}
-
-/** Dark-theme room fill, derived from the room's type. */
-function roomDark(room: Room): string {
-  return ROOM_TYPES[room.type].color.dark;
 }

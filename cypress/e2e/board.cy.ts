@@ -108,6 +108,13 @@ describe('board', () => {
     });
   });
 
+  it('shows a room legend that highlights cells on hover', () => {
+    loadBoard();
+    cy.get('[data-testid="room-legend"] li').should('have.length.greaterThan', 2);
+    cy.get('[data-testid^="legend-room-"]').first().trigger('mouseover').trigger('mouseenter');
+    cy.get('[data-highlight="true"]').should('have.length.greaterThan', 0);
+  });
+
   it('highlights cells when hovering a clue room word', () => {
     loadBoard();
     cy.get('[data-testid^="clue-room-"]').first().trigger('mouseover').trigger('mouseenter');
