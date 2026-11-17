@@ -14,3 +14,7 @@ export * from './clues/board';
 export * from './clues/facts';
 export * from './clues/evaluate';
 export * from './clues/render';
+export * from './secure';
+export * from './solver/bruteforce';
+export * from './solver/logical';
+export * from './generator';
