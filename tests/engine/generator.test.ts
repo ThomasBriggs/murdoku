@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generatePuzzle } from '../../src/engine/generator';
+import { generatePuzzle, ROW_COL_CAP } from '../../src/engine/generator';
 import { checkPlacement } from '../../src/engine/clues/evaluate';
 import { countSolutions } from '../../src/engine/solver/bruteforce';
 import { solveLogically } from '../../src/engine/solver/logical';
@@ -38,6 +38,7 @@ describe('generatePuzzle', () => {
   for (const [difficulty, n] of runs) {
     it(`${difficulty}: valid, unique, fair and graded as requested over ${n} seeds`, () => {
       let missed = 0;
+      let rowCol = 0;
       for (let i = 0; i < n; i++) {
         const { puzzle, solution, graded } = generatePuzzle(`gen-${difficulty}-${i}`, difficulty);
         if (graded !== difficulty) missed++;
@@ -55,6 +56,11 @@ describe('generatePuzzle', () => {
         expect(inVictimRoom.map((p) => p.id)).toEqual([solution.murdererId]);
 
         expect(puzzle.clues).toHaveLength(9);
+        const rc = puzzle.clues
+          .flatMap((c) => c.atoms)
+          .filter((a) => a.kind === 'row' || a.kind === 'col').length;
+        expect(rc).toBeLessThanOrEqual(ROW_COL_CAP[difficulty]);
+        rowCol += rc;
         for (const clue of puzzle.clues) {
           expect(clue.atoms.length).toBeGreaterThanOrEqual(1);
           expect(clue.atoms.length).toBeLessThanOrEqual(3);
@@ -68,7 +74,9 @@ describe('generatePuzzle', () => {
           }
         }
       }
-      console.log(`${difficulty}: ${missed}/${n} fell back to the closest grade`);
+      console.log(
+        `${difficulty}: ${missed}/${n} fell back to the closest grade; avg row/col atoms ${(rowCol / n).toFixed(2)}`,
+      );
       expect(missed / n).toBeLessThan(0.1);
     }, 120000);
   }

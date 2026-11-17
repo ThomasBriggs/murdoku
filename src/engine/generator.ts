@@ -79,6 +79,13 @@ const KIND_WEIGHT: Record<Difficulty, Record<Atom['kind'], number>> = {
     roomEdge: 2,
   },
 };
+/** Hard cap on row + column atoms per puzzle (they are rare outside Easy, §5.4). */
+export const ROW_COL_CAP: Record<Difficulty, number> = { easy: 4, medium: 2, hard: 1 };
+
+const isRowCol = (a: Atom) => a.kind === 'row' || a.kind === 'col';
+const rowColCount = (chosen: Atom[][], except = -1) =>
+  chosen.reduce((n, atoms, p) => (p === except ? n : n + atoms.filter(isRowCol).length), 0);
+
 /** How strongly the most-cutting facts are preferred when growing clues. */
 const CUT_EXPONENT: Record<Difficulty, number> = { easy: 2, medium: 2, hard: 1.2 };
 
@@ -146,7 +153,7 @@ function cutOf(layout: Layout, cand: CellSet, atom: Atom): number {
 }
 
 /** Greedy set of up to MAX_ATOMS facts that together leave the fewest cells. */
-function strongestAtoms(layout: Layout, facts: Atom[], rng: Rng): Atom[] {
+function strongestAtoms(layout: Layout, facts: Atom[], rng: Rng, rowColBudget: number): Atom[] {
   const board = getBoard({
     roomOf: layout.plan.roomOf,
     rooms: layout.plan.rooms,
@@ -155,11 +162,12 @@ function strongestAtoms(layout: Layout, facts: Atom[], rng: Rng): Atom[] {
   let cand = board.free;
   const out: Atom[] = [];
   const pool = rng.shuffle(facts);
+  let budget = rowColBudget;
   while (out.length < MAX_ATOMS) {
     let best: Atom | null = null;
     let bestCut = 0;
     for (const a of pool) {
-      if (out.includes(a)) continue;
+      if (out.includes(a) || (isRowCol(a) && budget <= 0)) continue;
       const cut = cutOf(layout, cand, a);
       if (cut > bestCut) {
         best = a;
@@ -168,10 +176,11 @@ function strongestAtoms(layout: Layout, facts: Atom[], rng: Rng): Atom[] {
     }
     if (!best) break;
     out.push(best);
+    if (isRowCol(best)) budget--;
     const cells = atomCells(board, best);
     if (cells) cand = setIntersect(cand, cells);
   }
-  return out.length > 0 ? out : [pool[0]!];
+  return out.length > 0 ? out : [pool.find((a) => !isRowCol(a)) ?? pool[0]!];
 }
 
 function attempt(
@@ -182,7 +191,12 @@ function attempt(
 ): { puzzle: Puzzle; grade: Difficulty } | null {
   const ceiling = TECHNIQUE_CEILING[difficulty];
   const facts = fairFacts(layout);
-  const chosen: Atom[][] = facts.map((list) => [pickInitial(rng, list, difficulty)]);
+  const cap = ROW_COL_CAP[difficulty];
+  const chosen: Atom[][] = [];
+  for (const list of facts) {
+    const allowed = rowColCount(chosen) < cap ? list : list.filter((a) => !isRowCol(a));
+    chosen.push([pickInitial(rng, allowed, difficulty)]);
+  }
   const mk = () => makePuzzle(seed, difficulty, layout, chosen);
   const solves = () => solveLogically(mk(), ceiling, { explain: false });
 
@@ -205,13 +219,19 @@ function attempt(
       if (!wide) return null;
       rebuilt.add(wide.p);
       stuck.delete(wide.p);
-      chosen[wide.p] = strongestAtoms(layout, facts[wide.p]!, rng);
+      chosen[wide.p] = strongestAtoms(
+        layout,
+        facts[wide.p]!,
+        rng,
+        cap - rowColCount(chosen, wide.p),
+      );
       result = solves();
       continue;
     }
     const { p, atoms } = rng.weighted(open, (x) => x.n);
     const have = new Set(atoms.map(atomKey));
-    const options = facts[p]!.filter((a) => !have.has(atomKey(a)))
+    const rcFull = rowColCount(chosen) >= cap;
+    const options = facts[p]!.filter((a) => !have.has(atomKey(a)) && !(rcFull && isRowCol(a)))
       .map((a) => ({ a, cut: cutOf(layout, result.candidates[p]!, a) }))
       .filter((o) => o.cut > 0);
     if (options.length === 0) {
