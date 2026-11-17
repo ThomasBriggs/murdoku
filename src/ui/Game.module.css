@@ -35,6 +35,7 @@
     grid-template-areas:
       'toolbar panel'
       'board panel';
+    grid-template-rows: auto minmax(0, 1fr);
     align-items: start;
     padding-top: 1rem;
   }

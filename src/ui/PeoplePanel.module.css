@@ -53,8 +53,8 @@
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  background: #222;
-  color: #fff;
+  background: var(--text);
+  color: var(--bg);
   border-radius: 999px;
   padding: 0.05rem 0.5rem;
 }
