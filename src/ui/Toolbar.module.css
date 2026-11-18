@@ -16,7 +16,9 @@
 }
 .popover {
   position: absolute;
-  right: 0;
+  /* Left-anchored: the button can wrap onto its own row, so a right anchor could leave the screen. */
+  left: 0;
+  max-width: calc(100vw - 2rem);
   bottom: calc(100% + 0.4rem);
   z-index: 50;
   display: grid;
@@ -36,7 +38,6 @@
   }
 }
 .popoverLeft {
-  right: auto;
   left: 0;
 }
 .popover hr {
