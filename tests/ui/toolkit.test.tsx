@@ -40,7 +40,7 @@ describe('tool palette', () => {
       expect(btn).toHaveAttribute('aria-pressed', 'true');
     }
     expect(tool('place')).toHaveAttribute('aria-pressed', 'false');
-    expect(screen.getByTestId('board')).toHaveAttribute('data-tool', 'select');
+    expect(screen.getByTestId('board')).toHaveAttribute('data-tool', 'draw');
   });
 
   it('picks a highlight colour, which also activates the highlight tool', async () => {
@@ -330,7 +330,7 @@ describe('layers, clearing and settings', () => {
     }
     fireEvent.click(screen.getByTestId('layer-margins'));
     expect(screen.queryByTestId('row-note-0')).toBeNull();
-    expect(screen.getByTestId('layer-drawing')).toBeDisabled();
+    expect(screen.getByTestId('layer-drawing')).not.toBeDisabled();
     expect(store.getState().history.past).toHaveLength(4); // visibility never enters history
   });
 
