@@ -71,6 +71,7 @@ describe('solving toolkit: logic grid, pen, scratchpad, what-if, helpers, print'
     tid('undo').click();
     cy.get('[data-testid="drawing-layer"] path[data-testid^="stroke-"]').should('have.length', 1);
     // picking a colour while drawing keeps the draw tool and colours the pen
+    tid('pen-pen').click();
     tid('color-red').click();
     tid('tool-draw').should('have.attr', 'aria-pressed', 'true');
     gesture([
