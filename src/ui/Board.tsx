@@ -32,7 +32,7 @@ export interface BoardProps {
   onContextMenu(r: number, c: number): void;
   onSelectPerson(id: PersonId | null): void;
   /** Number key in notes mode: toggle that person's candidate (or eliminate). */
-  onCandidateKey(person: PersonId, eliminate: boolean): void;
+  onCandidateKey(person: PersonId, eliminate: boolean, cell: { r: number; c: number }): void;
   /** Drag produced a multi-selection of these cells. */
   onDragSelect(cells: number[], additive: boolean): void;
   /** Row number / column letter / room label picked a group of cells. */
@@ -104,7 +104,9 @@ export function Board(p: BoardProps) {
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
-    const { r, c } = p.cursor;
+    // The focused cell is the truth for key presses; fall back to the tracked cursor.
+    const el = (e.target as HTMLElement).closest<HTMLElement>('[data-r]');
+    const { r, c } = el ? { r: Number(el.dataset.r), c: Number(el.dataset.c) } : p.cursor;
     const arrow = ARROWS[e.key];
     if (arrow) {
       e.preventDefault();
@@ -121,7 +123,7 @@ export function Board(p: BoardProps) {
       const person = digit ? order[digit - 1] : undefined;
       if (!person) return;
       if (p.tool === 'notes' || p.tool === 'eliminate')
-        p.onCandidateKey(person.id, e.shiftKey || p.tool === 'eliminate');
+        p.onCandidateKey(person.id, e.shiftKey || p.tool === 'eliminate', { r, c });
       else p.onSelectPerson(person.id);
     }
   };

@@ -58,12 +58,14 @@ export function Game() {
   const selectionSet = useMemo(() => new Set(selection), [selection]);
 
   /** Cells a mark/key acts on: the multi-selection when there is one, else the cursor cell. */
-  const targets = useCallback(() => {
-    const s = store.getState();
-    return s.selection.length > 0
-      ? s.selection
-      : [cellKey(cursorRef.current.r, cursorRef.current.c)];
-  }, [store]);
+  const targets = useCallback(
+    (at?: { r: number; c: number }) => {
+      const s = store.getState();
+      const cell = at ?? cursorRef.current;
+      return s.selection.length > 0 ? s.selection : [cellKey(cell.r, cell.c)];
+    },
+    [store],
+  );
 
   const onTool = useCallback(
     (t: Tool) => {
@@ -163,9 +165,13 @@ export function Game() {
         // Toolkit shortcuts (SPEC §6.6). Marks act on the selection, or on the
         // cursor cell when the board has focus.
         const act = s.selection.length > 0 || inGrid;
+        const cellEl = t?.closest?.('[data-r]') as HTMLElement | null | undefined;
+        const at = cellEl
+          ? { r: Number(cellEl.dataset.r), c: Number(cellEl.dataset.c) }
+          : undefined;
         const toolKey = (tool: Tool) => {
           s.setTool(tool);
-          if (act) s.applyTool(targets());
+          if (act) s.applyTool(targets(at));
         };
         if (k === 'x') toolKey('cross');
         else if (e.key === '.') toolKey('dot');
@@ -178,10 +184,10 @@ export function Game() {
         else if (k === 'c') {
           if (s.tool === 'highlight') s.cycleColor();
           else s.setTool('highlight');
-          if (act) s.applyTool(targets());
+          if (act) s.applyTool(targets(at));
         } else if ((e.key === 'Delete' || e.key === 'Backspace') && act) {
           e.preventDefault();
-          s.clearCellAnnotations(targets());
+          s.clearCellAnnotations(targets(at));
         }
       }
     };
@@ -242,8 +248,8 @@ export function Game() {
           onActivate={onActivate}
           onContextMenu={onContextMenu}
           onSelectPerson={(id) => actions.selectPerson(id)}
-          onCandidateKey={(person, eliminate) => {
-            actions.applyCandidate(targets(), person, eliminate);
+          onCandidateKey={(person, eliminate, at) => {
+            actions.applyCandidate(targets(at), person, eliminate);
           }}
           onDragSelect={(cells) => actions.selectCells(cells, 'replace')}
           onQuickSelect={(cells, additive) =>
