@@ -32,6 +32,10 @@ export interface CellProps {
   dimmed?: boolean;
   /** Possible for the selected person according to the player's logic grid. */
   possible?: boolean;
+  /** Hint highlight: the cell the deduction decides, or one the reasoning is about. */
+  hint?: 'target' | 'involved';
+  /** The placed person here was flagged wrong by a check or hint. */
+  wrong?: boolean;
   onActivate(r: number, c: number, mods?: ActivateMods): void;
   onFocusCell(r: number, c: number): void;
   onContextMenu?(r: number, c: number): void;
@@ -96,6 +100,8 @@ export function Cell(p: CellProps) {
     p.shaking && styles.shake,
     p.dimmed && styles.dim,
     p.possible && styles.possible,
+    p.hint === 'target' && styles.hintTarget,
+    p.hint === 'involved' && styles.hintInvolved,
   ]
     .filter(Boolean)
     .join(' ');
@@ -122,6 +128,7 @@ export function Cell(p: CellProps) {
       data-hl-color={p.ann?.color || undefined}
       data-dim={p.dimmed ? 'true' : undefined}
       data-possible={p.possible ? 'true' : undefined}
+      data-hint={p.hint}
       data-sel={p.ann?.inSelection ? 'true' : undefined}
       data-candidates={p.ann?.candidates.length ? p.ann.candidates.join(',') : undefined}
       data-eliminated={p.ann?.eliminated.length ? p.ann.eliminated.join(',') : undefined}
@@ -172,6 +179,7 @@ export function Cell(p: CellProps) {
           <Token
             person={person}
             conflict={hasConflict}
+            wrong={p.wrong}
             describedBy={hasConflict ? descId : undefined}
           />
         </span>

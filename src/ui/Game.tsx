@@ -6,7 +6,21 @@ import { cellKey } from '../engine/types';
 import { furnitureCells, roomCells } from '../state/selection';
 import { slotOf, type ColorId } from '../state/annotations';
 import { logicPossibleCells } from '../state/logicGrid';
-import { selectConflicts, WHATIF_MAX_DEPTH, type Tool } from '../state/store';
+import {
+  allPlaced,
+  selectConflicts,
+  type GameStore,
+  WHATIF_MAX_DEPTH,
+  type Tool,
+} from '../state/store';
+import type { HintDeduction as Deduction } from '../worker/protocol';
+import type { PersonId } from '../engine/types';
+import { AccuseDialog } from './dialogs/AccuseDialog';
+import { WinDialog } from './dialogs/WinDialog';
+import { CheckSummary, HintPanel, hintHighlights, type HintView } from './Feedback';
+import feedback from './Feedback.module.css';
+import { withShortcut } from './shortcuts';
+import { placementMatchesHash } from './verifyWin';
 import { Board } from './Board';
 import type { ActivateMods } from './Cell';
 import { ConfirmDialog } from './ConfirmDialog';
@@ -30,6 +44,19 @@ import { conflictsByPerson, type Highlight } from './types';
 
 const SHAKE_MS = 400;
 
+/** Feedback tied to the board it was computed for; it stops showing once the board changes. */
+interface Stamped<T> {
+  value: T;
+  p: unknown;
+  t: unknown;
+  a: unknown;
+}
+const boardStamp = (s: GameStore) => ({
+  p: s.placements,
+  t: s.tentativePlacements,
+  a: s.annotations,
+});
+
 /** Subscribe to a CSS media query (false where matchMedia does not exist, e.g. jsdom). */
 function useMediaQuery(query: string): boolean {
   return useSyncExternalStore(
@@ -43,8 +70,8 @@ function useMediaQuery(query: string): boolean {
   );
 }
 
-/** The playable screen: header, board, toolbar and people panel. */
-export function Game() {
+/** The playable screen: board, toolbar, people panel and the game-flow dialogs. */
+export function Game({ onNewGame }: { onNewGame(): void }) {
   const store = useStoreApi();
   const puzzle = useGame((g) => g.puzzle);
   const placements = useGame((g) => g.placements);
@@ -62,6 +89,21 @@ export function Game() {
   const pen = useGame((g) => g.pen);
   const penSize = useGame((g) => g.penSize);
   const drawLocked = useGame((g) => g.drawLocked);
+  const status = useGame((g) => g.status);
+  const complete = useGame((g) => allPlaced(g));
+  const solved = status === 'won';
+  const elapsedMs = useGame((g) => g.elapsedMs);
+  const hintsUsed = useGame((g) => g.hintsUsed);
+  const checksUsed = useGame((g) => g.checksUsed);
+  const assistsUsed = useGame((g) => g.assistsUsed);
+  const [hintStamped, setHint] = useState<Stamped<HintView> | null>(null);
+  const [checkStamped, setCheck] = useState<Stamped<{
+    correct: PersonId[];
+    wrong: PersonId[];
+  }> | null>(null);
+  const [showWrong, setShowWrong] = useState(false);
+  const [accuseOpen, setAccuseOpen] = useState(false);
+  const [winOpen, setWinOpen] = useState(false);
 
   const [cursor, setCursor] = useState({ r: 0, c: 0 });
   const [highlight, setHighlight] = useState<Highlight | null>(null);
@@ -80,6 +122,83 @@ export function Game() {
     cursorRef.current = cursor;
   }, [cursor]);
   const shakeTimer = useRef<number | undefined>(undefined);
+
+  // Feedback is about the board as it was when asked for: any later change hides it.
+  const stillValid = <T,>(x: Stamped<T> | null): T | null =>
+    x && x.p === placements && x.t === tentative && x.a === annotations ? x.value : null;
+  const hint = stillValid(hintStamped);
+  const check = stillValid(checkStamped);
+
+  const requestHint = useCallback(
+    async (revealOne?: boolean) => {
+      const r = await store.getState().hint(revealOne);
+      if (!r) return;
+      setCheck(null);
+      const at = boardStamp(store.getState());
+      if (r.type === 'deduction')
+        setHint({ ...at, value: { kind: 'deduction', deduction: r.deduction } });
+      else if (r.type === 'wrong')
+        setHint({
+          ...at,
+          value: {
+            kind: 'wrong',
+            count: r.count,
+            ...(r.person !== undefined ? { person: r.person } : {}),
+          },
+        });
+      else setHint({ ...at, value: { kind: 'none', complete: allPlaced(store.getState()) } });
+    },
+    [store],
+  );
+
+  const runCheck = useCallback(async () => {
+    const r = await store.getState().check();
+    if (!r) return;
+    setHint(null);
+    setCheck({ ...boardStamp(store.getState()), value: r });
+  }, [store]);
+
+  const applyHint = useCallback(
+    (d: Deduction) => {
+      const s = store.getState();
+      if (d.kind === 'place' && d.person !== undefined && d.cells[0]) {
+        s.place(d.person, cellKey(d.cells[0].r, d.cells[0].c));
+      } else {
+        const keys = [...new Set(d.cells.map((c) => cellKey(c.r, c.c)))];
+        // applyMark toggles, so skip cells that are already crossed out.
+        s.applyMark(
+          keys.filter((k) => s.annotations.cellMarks[k] !== 'cross'),
+          'cross',
+        );
+      }
+      setHint(null);
+    },
+    [store],
+  );
+
+  const accuse = useCallback(
+    async (id: PersonId) => {
+      const r = await store.getState().accuse(id);
+      if (!r) return 'error' as const;
+      if (!r.won) return r.placementCorrect ? ('suspect' as const) : ('placement' as const);
+      const s = store.getState();
+      // Sanity check (SPEC §7.4): the board must hash to the puzzle's solution hash.
+      if (s.puzzle && !(await placementMatchesHash(s.puzzle, s.placements)))
+        console.warn('Win reported by the worker does not match the local solution hash.');
+      setAccuseOpen(false);
+      setWinOpen(true);
+      return 'won' as const;
+    },
+    [store],
+  );
+
+  const wrongPeople = useMemo(() => {
+    const out = new Set<PersonId>();
+    if (check && showWrong) for (const id of check.wrong) out.add(id);
+    if (hint?.kind === 'wrong' && hint.person !== undefined) out.add(hint.person);
+    return out;
+  }, [check, showWrong, hint]);
+  const hintCells = useMemo(() => hintHighlights(hint), [hint]);
 
   const conflicts = useMemo(
     () => conflictsByPerson(selectConflicts({ puzzle, placements })),
@@ -135,6 +254,7 @@ export function Game() {
     (r: number, c: number, mods: ActivateMods = {}) => {
       setCursor({ r, c });
       const s = store.getState();
+      if (s.status !== 'playing') return; // solved: view only
       const key = cellKey(r, c);
       const sel = s.selectedPerson;
       // The draw tool only owns the pointer through the overlay; taps that reach a cell place.
@@ -199,7 +319,9 @@ export function Game() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (confirmReset || clearChoice || whatIfEnd || printOpen) return;
+      if (confirmReset || clearChoice || whatIfEnd || printOpen || accuseOpen || winOpen) return;
+      if (document.querySelector('[aria-modal="true"]')) return; // header dialogs
+
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
       const mod = e.ctrlKey || e.metaKey;
@@ -236,6 +358,7 @@ export function Game() {
         else if (k === 'p') s.setTool(s.tool === 'pencil' ? 'place' : 'pencil');
         else if (k === 'e') s.setTool(s.tool === 'eliminate' ? 'place' : 'eliminate');
         else if (k === 'd') s.setTool(s.tool === 'draw' ? 'place' : 'draw');
+        else if (k === 'h') void requestHint();
         else if (k === 'g') setLogicOpen((o) => !o);
         else if (k === 'w') {
           // W starts a what-if, or (inside one) asks how to end it; Shift+W nests another.
@@ -255,7 +378,17 @@ export function Game() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [store, confirmReset, clearChoice, whatIfEnd, printOpen, targets]);
+  }, [
+    store,
+    confirmReset,
+    clearChoice,
+    whatIfEnd,
+    printOpen,
+    accuseOpen,
+    winOpen,
+    targets,
+    requestHint,
+  ]);
 
   if (!puzzle) return null;
   const actions = store.getState();
@@ -293,6 +426,50 @@ export function Game() {
       onReset={() => setConfirmReset(true)}
       onSettings={(patch) => actions.updateSettings(patch)}
     >
+      <button
+        type="button"
+        data-testid="hint-button"
+        disabled={status !== 'playing'}
+        aria-keyshortcuts="h"
+        title={withShortcut('Hint: explain the next step you can deduce', 'hint')}
+        onClick={() => {
+          void requestHint();
+          closeMore();
+        }}
+      >
+        <span aria-hidden="true">✦</span>
+        <span>Hint</span>
+      </button>
+      <button
+        type="button"
+        data-testid="check-button"
+        disabled={status !== 'playing' || !anyPlaced}
+        title="Check: how many placements are right or wrong"
+        onClick={() => {
+          void runCheck();
+          closeMore();
+        }}
+      >
+        <span aria-hidden="true">✓</span>
+        <span>Check</span>
+      </button>
+      <button
+        type="button"
+        data-testid="accuse-button"
+        disabled={status !== 'playing' || !complete}
+        title={
+          complete
+            ? 'Accuse a suspect of the murder'
+            : 'Place all 9 people on the board before you can accuse'
+        }
+        onClick={() => {
+          setAccuseOpen(true);
+          closeMore();
+        }}
+      >
+        <span aria-hidden="true">⚑</span>
+        <span>Accuse</span>
+      </button>
       <LayersMenu
         visibility={annotations.layerVisibility}
         onToggle={(l, v) => actions.setLayerVisible(l, v)}
@@ -447,7 +624,41 @@ export function Game() {
             onNest={() => actions.startWhatIf()}
           />
         )}
+        {solved && (
+          <div className={feedback.solved} data-testid="solved-banner" role="status">
+            <span>Solved</span>
+            <span>
+              <button type="button" data-testid="solved-results" onClick={() => setWinOpen(true)}>
+                Results
+              </button>{' '}
+              <button type="button" data-testid="solved-new" onClick={onNewGame}>
+                New game
+              </button>
+            </span>
+          </div>
+        )}
+        {hint && (
+          <HintPanel
+            view={hint}
+            personName={(id) => puzzle.people.find((x) => x.id === id)?.name ?? 'Someone'}
+            onShowOne={() => void requestHint(true)}
+            onApply={applyHint}
+            onDismiss={() => setHint(null)}
+          />
+        )}
+        {check && (
+          <CheckSummary
+            correct={check.correct.length}
+            wrong={check.wrong.length}
+            showWrong={showWrong}
+            onToggleWrong={setShowWrong}
+            onDismiss={() => setCheck(null)}
+          />
+        )}
         <Board
+          solved={solved}
+          hintCells={hintCells}
+          wrongPeople={wrongPeople}
           puzzle={puzzle}
           roomColors={roomColors}
           placements={placements}
@@ -543,6 +754,28 @@ export function Game() {
         annotations={annotations}
         includeMarks={printMarks}
       />
+      {accuseOpen && (
+        <AccuseDialog
+          suspects={puzzle.people.filter((x) => !x.isVictim)}
+          onAccuse={accuse}
+          onClose={() => setAccuseOpen(false)}
+        />
+      )}
+      {winOpen && (
+        <WinDialog
+          elapsedMs={elapsedMs}
+          difficulty={puzzle.difficulty}
+          seed={puzzle.seed}
+          hints={hintsUsed}
+          checks={checksUsed}
+          assists={assistsUsed}
+          onClose={() => setWinOpen(false)}
+          onNewGame={() => {
+            setWinOpen(false);
+            onNewGame();
+          }}
+        />
+      )}
       {whatIfEnd && (
         <WhatIfEndDialog
           mode={whatIfEnd}

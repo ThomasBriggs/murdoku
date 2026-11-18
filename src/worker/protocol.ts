@@ -15,6 +15,9 @@ export type EngineRequest =
   | (Base & { type: 'hint'; placements: Placements; revealOne?: boolean })
   | (Base & { type: 'accuse'; placements: Placements; suspectId: PersonId });
 
+/** A solver deduction as delivered to the UI (the UI may not import the solver itself). */
+export type HintDeduction = Deduction;
+
 export type RequestType = EngineRequest['type'];
 
 export type HintResult =

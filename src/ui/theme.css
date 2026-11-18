@@ -22,6 +22,9 @@
   --hc-blue: #2f6fdb;
   --hc-purple: #8a4fd0;
   --hc-orange: #e0701a;
+  --hint: #0b7a75;
+  --hint-fill: rgb(11 122 117 / 0.22);
+  --ok: #2f7d3a;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -42,6 +45,9 @@
     --selected-bg: #1f2a40;
     --hl-fill: rgb(255 210 60 / 0.3);
     --hl-ring: #ffd23c;
+    --hint: #4fd1c5;
+    --hint-fill: rgb(79 209 197 / 0.25);
+    --ok: #6fcf7f;
   }
 }
 
@@ -67,6 +73,9 @@
   --selected-bg: #1f2a40;
   --hl-fill: rgb(255 210 60 / 0.3);
   --hl-ring: #ffd23c;
+  --hint: #4fd1c5;
+  --hint-fill: rgb(79 209 197 / 0.25);
+  --ok: #6fcf7f;
 }
 
 * {

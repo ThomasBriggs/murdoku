@@ -32,3 +32,8 @@
   border-color: var(--danger);
   color: #fff;
 }
+.wide {
+  max-width: 34rem;
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+}

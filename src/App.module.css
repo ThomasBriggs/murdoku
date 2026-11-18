@@ -34,3 +34,14 @@
 .error {
   color: var(--danger);
 }
+.timer {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--text);
+}
+.grow {
+  flex: 1;
+}
+.header > button {
+  align-self: center;
+}

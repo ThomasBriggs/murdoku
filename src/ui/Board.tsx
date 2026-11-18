@@ -31,6 +31,12 @@ export interface BoardProps {
   /** Cells the selected person's clue rules out (assist) and cells their logic-grid ticks allow. */
   dimmed?: ReadonlySet<number>;
   possible?: ReadonlySet<number>;
+  /** Hint highlights (cleared by the parent when dismissed). */
+  hintCells?: { target: ReadonlySet<number>; involved: ReadonlySet<number> };
+  /** People whose token is flagged wrong (check / hint). */
+  wrongPeople?: ReadonlySet<PersonId>;
+  /** The puzzle is solved: the board is view-only. */
+  solved?: boolean;
   /** Open what-if depth (0 = none); tints the board. */
   whatIfLevel?: number;
   draw: Omit<DrawingProps, 'strokes' | 'visible'>;
@@ -221,6 +227,7 @@ export function Board(p: BoardProps) {
       className={`${styles.frame} ${vis.margins ? '' : styles.noMargins}`}
       data-testid="board"
       data-tool={p.tool}
+      data-solved={p.solved ? 'true' : undefined}
       data-whatif={p.whatIfLevel ? p.whatIfLevel : undefined}
     >
       <div className={styles.colNotes} data-testid="col-notes">
@@ -274,6 +281,7 @@ export function Board(p: BoardProps) {
         aria-label="Murdoku board"
         aria-rowcount={GRID_SIZE}
         aria-colcount={GRID_SIZE}
+        aria-readonly={p.solved ? true : undefined}
         onKeyDown={onKeyDown}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -316,6 +324,14 @@ export function Board(p: BoardProps) {
                   shaking={p.shakeCell === key}
                   dimmed={p.dimmed?.has(key)}
                   possible={p.possible?.has(key)}
+                  hint={
+                    p.hintCells?.target.has(key)
+                      ? 'target'
+                      : p.hintCells?.involved.has(key)
+                        ? 'involved'
+                        : undefined
+                  }
+                  wrong={occ !== undefined && p.wrongPeople?.has(occ)}
                   ann={ann}
                   annotations={
                     <CellMarks

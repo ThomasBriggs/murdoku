@@ -1,30 +1,35 @@
-import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from 'react';
 import styles from './ConfirmDialog.module.css';
 
-export interface ConfirmDialogProps {
+export interface ModalProps {
   title: string;
   children: ReactNode;
-  confirmLabel: string;
-  cancelLabel?: string;
-  onConfirm(): void;
+  /** Escape / backdrop-less close handler. */
   onCancel(): void;
   testId?: string;
-  /** Test ids of the two buttons (default: the reset dialog's). */
-  confirmTestId?: string;
-  cancelTestId?: string;
-  /** Plain (not red) confirm button, for actions that are not destructive. */
-  neutral?: boolean;
+  /** Buttons row (right aligned). */
+  actions?: ReactNode;
+  /** Wider dialog for forms and reference text. */
+  wide?: boolean;
+  /** Where focus starts: the first focusable element (default) or the first action button. */
+  initialFocus?: 'first' | 'actions';
 }
 
+const FOCUSABLE = 'button:not(:disabled), input:not(:disabled), a[href], textarea:not(:disabled)';
+
 /** Accessible modal: labelled, focus moves in and is trapped, Escape cancels, focus returns. */
-export function ConfirmDialog(p: ConfirmDialogProps) {
+export function Modal(p: ModalProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const cancelRef = useRef<HTMLButtonElement>(null);
+  const actionsRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
-    cancelRef.current?.focus();
+    const scope = p.initialFocus === 'actions' ? actionsRef.current : ref.current;
+    scope?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
     return () => previous?.focus?.();
+    // Only on mount: the dialog's content may re-render while open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -32,7 +37,7 @@ export function ConfirmDialog(p: ConfirmDialogProps) {
       e.stopPropagation();
       p.onCancel();
     } else if (e.key === 'Tab') {
-      const items = ref.current?.querySelectorAll<HTMLElement>('button');
+      const items = ref.current?.querySelectorAll<HTMLElement>(FOCUSABLE);
       if (!items || items.length === 0) return;
       const first = items[0]!;
       const last = items[items.length - 1]!;
@@ -50,23 +55,51 @@ export function ConfirmDialog(p: ConfirmDialogProps) {
     <div className={styles.backdrop} onKeyDown={onKeyDown} data-testid={p.testId}>
       <div
         ref={ref}
-        className={styles.dialog}
+        className={`${styles.dialog} ${p.wide ? styles.wide : ''}`}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="confirm-title"
-        aria-describedby="confirm-body"
+        aria-labelledby={titleId}
       >
-        <h2 id="confirm-title" className={styles.title}>
+        <h2 id={titleId} className={styles.title}>
           {p.title}
         </h2>
-        <div id="confirm-body">{p.children}</div>
-        <div className={styles.actions}>
-          <button
-            type="button"
-            ref={cancelRef}
-            data-testid={p.cancelTestId ?? 'cancel-reset'}
-            onClick={p.onCancel}
-          >
+        <div>{p.children}</div>
+        {p.actions && (
+          <div ref={actionsRef} className={styles.actions}>
+            {p.actions}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export interface ConfirmDialogProps {
+  title: string;
+  children: ReactNode;
+  confirmLabel: string;
+  cancelLabel?: string;
+  onConfirm(): void;
+  onCancel(): void;
+  testId?: string;
+  /** Test ids of the two buttons (default: the reset dialog's). */
+  confirmTestId?: string;
+  cancelTestId?: string;
+  /** Plain (not red) confirm button, for actions that are not destructive. */
+  neutral?: boolean;
+}
+
+/** Two-button confirmation; focus starts on Cancel. */
+export function ConfirmDialog(p: ConfirmDialogProps) {
+  return (
+    <Modal
+      title={p.title}
+      testId={p.testId}
+      onCancel={p.onCancel}
+      initialFocus="actions"
+      actions={
+        <>
+          <button type="button" data-testid={p.cancelTestId ?? 'cancel-reset'} onClick={p.onCancel}>
             {p.cancelLabel ?? 'Cancel'}
           </button>
           <button
@@ -77,8 +110,10 @@ export function ConfirmDialog(p: ConfirmDialogProps) {
           >
             {p.confirmLabel}
           </button>
-        </div>
-      </div>
-    </div>
+        </>
+      }
+    >
+      {p.children}
+    </Modal>
   );
 }
