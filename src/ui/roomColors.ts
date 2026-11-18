@@ -19,7 +19,7 @@ function hueWheel(count: number): number[] {
 
 const toColor = (h: number): RoomColor => ({
   light: `hsl(${h} 70% 80%)`,
-  dark: `hsl(${h} 45% 30%)`,
+  dark: `hsl(${h} 45% 26%)`,
 });
 
 const dist = (a: number, b: number) => {

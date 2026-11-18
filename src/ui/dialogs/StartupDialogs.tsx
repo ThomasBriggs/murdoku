@@ -23,6 +23,7 @@ export function ChooseGameDialog(p: {
           <button
             type="button"
             className={styles.primary}
+            data-autofocus
             data-testid="startup-continue"
             onClick={p.onContinue}
           >

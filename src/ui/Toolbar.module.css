@@ -70,3 +70,48 @@
     gap: 0.25rem;
   }
 }
+
+.sep {
+  width: 1px;
+  align-self: stretch;
+  margin-inline: 0.15rem;
+  background: var(--border);
+}
+.flat {
+  display: contents;
+}
+.overflowWrap {
+  margin-left: auto;
+}
+.overflow {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.4rem);
+  z-index: 50;
+  display: grid;
+  gap: 0.2rem;
+  min-width: 14rem;
+  padding: 0.4rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.3);
+}
+.overflow button {
+  justify-content: flex-start;
+  width: 100%;
+  border-color: transparent;
+}
+.overflow .settingsWrap {
+  position: static;
+}
+/* Inside the menu the layers/clear/settings popovers expand in place. */
+.overflow .popover {
+  position: static;
+  max-width: none;
+  box-shadow: none;
+  margin: 0.2rem 0;
+}
+.overflow .popover button {
+  border-color: var(--border);
+}

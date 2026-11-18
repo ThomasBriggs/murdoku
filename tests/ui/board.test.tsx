@@ -5,6 +5,7 @@ import { createGameStore, type GameStore } from '../../src/state/store';
 import { createEngineClient } from '../../src/worker/client';
 import { createInProcessWorker } from '../../src/worker/inprocess';
 import type { StoreApi } from 'zustand/vanilla';
+import { clickMore } from './more';
 
 afterEach(() => {
   cleanup();
@@ -128,12 +129,12 @@ describe('Board UI', () => {
     fireEvent.keyDown(window, { key: 'y', ctrlKey: true });
     expect(store.getState().placements[2]).toBe(r * 9 + c);
 
-    fireEvent.click(screen.getByTestId('reset'));
+    clickMore('reset');
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('cancel-reset'));
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(store.getState().placements[2]).not.toBeNull();
-    fireEvent.click(screen.getByTestId('reset'));
+    clickMore('reset');
     fireEvent.click(screen.getByTestId('confirm-reset'));
     expect(store.getState().placements[2]).toBeNull();
   });
@@ -170,7 +171,7 @@ describe('Board UI', () => {
     expect(cell(r, c)).not.toHaveAttribute('data-autocross');
     const other = (c + 1) % 9;
     expect(cell(r, other)).toHaveAttribute('data-autocross', 'true');
-    fireEvent.click(screen.getByTestId('settings-button'));
+    clickMore('settings-button');
     fireEvent.click(screen.getByTestId('setting-autocross'));
     expect(crossed()).toHaveLength(0);
     expect(store.getState().settings.autoCross).toBe(false);
@@ -194,7 +195,7 @@ describe('Board UI', () => {
     expect(screen.getByTestId('conflict-badge-1')).toBeInTheDocument();
     const desc = cell(r1, c1).getAttribute('aria-describedby')!;
     expect(document.getElementById(desc)!.textContent).not.toBe('');
-    fireEvent.click(screen.getByTestId('settings-button'));
+    clickMore('settings-button');
     fireEvent.click(screen.getByTestId('setting-conflicts'));
     expect(screen.queryByTestId('conflict-badge-0')).toBeNull();
   });
@@ -230,7 +231,7 @@ describe('Board UI', () => {
     store = await setup();
     const victim = store.getState().puzzle!.people.find((p) => p.isVictim)!;
     expect(screen.getByTestId(`card-victim-badge-${victim.id}`)).toBeInTheDocument();
-    fireEvent.click(screen.getByTestId('settings-button'));
+    clickMore('settings-button');
     fireEvent.click(screen.getByTestId('theme-dark'));
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
     fireEvent.click(screen.getByTestId('theme-system'));

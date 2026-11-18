@@ -227,7 +227,7 @@
   margin: 0;
   padding: 0;
   font-size: 0.85rem;
-  color: var(--text-muted);
+  color: var(--text);
 }
 .crumbs li + li::before {
   content: '›';

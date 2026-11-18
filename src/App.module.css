@@ -45,3 +45,53 @@
 .header > button {
   align-self: center;
 }
+
+.seed {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.meta {
+  min-width: 0;
+}
+
+/* Phones: two tidy rows. Title, New game and Rules on top; puzzle info with Share and Stats below. */
+@media (max-width: 600px) {
+  .header {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'title new . . rules'
+      'meta meta meta share stats';
+    align-items: center;
+    gap: 0.35rem 0.5rem;
+    padding-block: 0.5rem;
+  }
+  .grow {
+    display: none;
+  }
+  .hTitle {
+    grid-area: title;
+  }
+  .hNew {
+    grid-area: new;
+  }
+  .hRules {
+    grid-area: rules;
+  }
+  .meta {
+    grid-area: meta;
+    gap: 0.5rem;
+  }
+  .hShare {
+    grid-area: share;
+  }
+  .hStats {
+    grid-area: stats;
+  }
+  .header > button {
+    padding: 0.3rem 0.55rem;
+    font-size: 0.9rem;
+  }
+}

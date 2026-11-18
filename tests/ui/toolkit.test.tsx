@@ -8,6 +8,7 @@ import { clueSelection, splitByHighlights } from '../../src/ui/PeoplePanel';
 import { TOOLS } from '../../src/ui/ToolPalette';
 import { createEngineClient } from '../../src/worker/client';
 import { createInProcessWorker } from '../../src/worker/inprocess';
+import { clickMore } from './more';
 
 afterEach(() => {
   cleanup();
@@ -43,8 +44,9 @@ describe('tool palette', () => {
     expect(screen.getByTestId('board')).toHaveAttribute('data-tool', 'draw');
   });
 
-  it('picks a highlight colour, which also activates the highlight tool', async () => {
+  it('picks a highlight colour while the highlight tool is active', async () => {
     const store = await setup();
+    fireEvent.click(tool('highlight'));
     fireEvent.click(screen.getByTestId('color-green'));
     expect(store.getState().color).toBe('green');
     expect(store.getState().tool).toBe('highlight');
@@ -95,6 +97,7 @@ describe('cell tools by click', () => {
 
   it('highlight tool fills with the chosen colour (data-hl-color)', async () => {
     await setup();
+    fireEvent.click(tool('highlight'));
     fireEvent.click(screen.getByTestId('color-blue'));
     fireEvent.click(cell(3, 3));
     expect(cell(3, 3)).toHaveAttribute('data-hl-color', 'blue');
@@ -315,7 +318,7 @@ describe('layers, clearing and settings', () => {
     const free = document.querySelector<HTMLElement>('[data-blocked="false"]')!;
     const fk = cellKey(Number(free.dataset.r), Number(free.dataset.c));
     store.getState().placeTentative(0, fk);
-    fireEvent.click(screen.getByTestId('layers-button'));
+    clickMore('layers-button');
     for (const [layer, gone] of [
       ['crosses', () => cell(0, 0).getAttribute('data-mark')],
       ['candidates', () => cell(0, 1).getAttribute('data-candidates')],
@@ -338,16 +341,16 @@ describe('layers, clearing and settings', () => {
     const store = await setup();
     store.getState().applyMark([cellKey(0, 0)], 'cross');
     store.getState().applyHighlight([cellKey(0, 2)], 'red');
-    fireEvent.click(screen.getByTestId('clear-button'));
+    clickMore('clear-button');
     fireEvent.click(screen.getByTestId('clear-layer-highlights'));
     fireEvent.click(screen.getByTestId('cancel-reset'));
     expect(store.getState().annotations.highlights).not.toEqual({});
-    fireEvent.click(screen.getByTestId('clear-button'));
+    clickMore('clear-button');
     fireEvent.click(screen.getByTestId('clear-layer-highlights'));
     fireEvent.click(screen.getByTestId('confirm-reset'));
     expect(store.getState().annotations.highlights).toEqual({});
     expect(cell(0, 0)).toHaveAttribute('data-mark', 'cross');
-    fireEvent.click(screen.getByTestId('clear-button'));
+    clickMore('clear-button');
     fireEvent.click(screen.getByTestId('clear-annotations'));
     fireEvent.click(screen.getByTestId('confirm-reset'));
     expect(cell(0, 0)).not.toHaveAttribute('data-mark');
@@ -357,7 +360,7 @@ describe('layers, clearing and settings', () => {
 
   it('exposes the auto-clear-candidates setting', async () => {
     const store = await setup();
-    fireEvent.click(screen.getByTestId('settings-button'));
+    clickMore('settings-button');
     expect(screen.getByTestId('setting-autoclear')).toBeChecked();
     fireEvent.click(screen.getByTestId('setting-autoclear'));
     expect(store.getState().settings.autoClearCandidates).toBe(false);

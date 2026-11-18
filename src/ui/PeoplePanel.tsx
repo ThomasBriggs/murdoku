@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { PencilIcon, StrikeIcon } from './icons/glyphs';
 import { renderClue, type ClueToken } from '../engine/clues/render';
 import type { FurnitureType, PersonId, PuzzleView, RoomId } from '../engine/types';
 import { parseCellKey } from '../engine/types';
@@ -270,7 +271,7 @@ export function PeoplePanel({
                     title={struck ? 'Remove the strike-through' : 'Strike through this clue'}
                     onClick={() => actions().toggleClueStruck(person.id)}
                   >
-                    <s>ab</s>
+                    <StrikeIcon style={{ width: '1em', height: '1em' }} />
                   </button>
                   <button
                     type="button"
@@ -282,7 +283,7 @@ export function PeoplePanel({
                     data-has-note={note ? 'true' : undefined}
                     onClick={() => setEditing(person.id, true)}
                   >
-                    ✎
+                    <PencilIcon style={{ width: '1em', height: '1em' }} />
                   </button>
                 </span>
               </div>

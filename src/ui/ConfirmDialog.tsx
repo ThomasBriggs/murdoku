@@ -11,7 +11,7 @@ export interface ModalProps {
   actions?: ReactNode;
   /** Wider dialog for forms and reference text. */
   wide?: boolean;
-  /** Where focus starts: the first focusable element (default), the first action button, or the dialog itself (long reading content: stays scrolled to the top). */
+  /** Where focus starts (an element marked `data-autofocus` always wins): the first focusable element (default), the first action button, or the dialog itself (long reading content: stays scrolled to the top). */
   initialFocus?: 'first' | 'actions' | 'dialog';
 }
 
@@ -25,7 +25,9 @@ export function Modal(p: ModalProps) {
 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
-    if (p.initialFocus === 'dialog') ref.current?.focus();
+    const preferred = ref.current?.querySelector<HTMLElement>('[data-autofocus]');
+    if (preferred) preferred.focus();
+    else if (p.initialFocus === 'dialog') ref.current?.focus();
     else {
       const scope = p.initialFocus === 'actions' ? actionsRef.current : ref.current;
       scope?.querySelector<HTMLElement>(FOCUSABLE)?.focus();

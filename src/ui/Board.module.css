@@ -6,7 +6,7 @@
   grid-template-columns: var(--gutter) minmax(0, 1fr) var(--note-w);
   grid-template-rows: var(--note-h) var(--gutter) minmax(0, 1fr);
   width: 100%;
-  max-width: min(100%, 800px, calc(100dvh - 9.5rem));
+  max-width: min(100%, 800px, calc(100dvh - var(--board-reserve, 9.5rem)));
   margin-inline: auto;
   container-type: inline-size;
 }
@@ -42,8 +42,8 @@
   font-size: 0.65rem;
   font-weight: 600;
   color: var(--accent);
-  background: color-mix(in srgb, var(--text) 6%, transparent);
-  border: 1px solid var(--border);
+  background: transparent;
+  border: 1px dashed transparent;
   border-radius: 999px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -52,10 +52,14 @@
 }
 .note[data-filled] {
   background: color-mix(in srgb, var(--accent) 14%, transparent);
-  border-color: var(--accent);
+  border: 1px solid var(--accent);
+}
+/* Empty slots are nearly invisible; a faint dashed outline appears when the board is hovered. */
+.frame:hover .note:not([data-filled]) {
+  border-color: color-mix(in srgb, var(--border) 70%, transparent);
 }
 .note:hover {
-  border-color: var(--text-muted);
+  border-color: var(--text-muted) !important;
 }
 .note:focus {
   outline: 2px solid var(--focus);

@@ -1,4 +1,4 @@
-import { gesture, playToWin, sel, tid } from '../support/helpers';
+import { gesture, moreClick, playToWin, sel, tid } from '../support/helpers';
 
 const A = '/?seed=cy-persist-a&d=easy';
 const B = '/?seed=cy-persist-b&d=medium';
@@ -102,13 +102,13 @@ describe('persistence', () => {
 
   it('keeps settings across a reload', () => {
     load();
-    tid('settings-button').click();
+    moreClick('settings-button');
     tid('theme-dark').check();
     tid('setting-autocross').uncheck();
     cy.reload();
     cy.get(sel('board')).should('be.visible');
     cy.get('html').should('have.attr', 'data-theme', 'dark');
-    tid('settings-button').click();
+    moreClick('settings-button');
     tid('theme-dark').should('be.checked');
     tid('setting-autocross').should('not.be.checked');
   });
@@ -185,7 +185,8 @@ describe('persistence', () => {
   it('shares a progress-free puzzle link from the header', () => {
     load();
     cy.window().then((win) => {
-      const stub = cy.stub().resolves().as('copy');
+      const stub = cy.stub().as('copy');
+      stub.resolves();
       Object.defineProperty(win.navigator, 'clipboard', {
         configurable: true,
         value: { writeText: stub },

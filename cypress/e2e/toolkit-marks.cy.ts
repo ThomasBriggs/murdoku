@@ -1,3 +1,5 @@
+import { moreClick } from '../support/helpers';
+
 const URL = '/?seed=cy-marks&d=easy';
 const cell = (r: number, c: number) => cy.get(`[data-testid="cell-${r}-${c}"]`);
 const tool = (t: string) => cy.get(`[data-testid="tool-${t}"]`);
@@ -101,6 +103,7 @@ describe('solving toolkit: marks, notes, highlights', () => {
 
   it('highlights with a colour and gives it a pattern marker', () => {
     load();
+    tool('highlight').click();
     cy.get('[data-testid="color-red"]').click();
     cell(3, 3).click().should('have.attr', 'data-hl-color', 'red');
     cy.get('[data-testid="hl-3-3"]').should('exist');
@@ -131,6 +134,7 @@ describe('solving toolkit: marks, notes, highlights', () => {
     // Shift-click multi-select, then a highlight for all
     cell(5, 5).click({ shiftKey: true });
     cell(6, 6).click({ shiftKey: true });
+    tool('highlight').click();
     cy.get('[data-testid="color-green"]').click();
     cell(5, 5).should('have.attr', 'data-hl-color', 'green');
     cell(6, 6).should('have.attr', 'data-hl-color', 'green');
@@ -243,22 +247,22 @@ describe('solving toolkit: marks, notes, highlights', () => {
       cell(7, 7).click().should('have.attr', 'data-mark', 'cross');
 
       // layers: hiding candidates removes them from view, showing restores
-      cy.get('[data-testid="layers-button"]').click();
+      moreClick('layers-button');
       cy.get('[data-testid="layer-candidates"]').uncheck();
       cell(8, 8).should('not.have.attr', 'data-candidates');
       cy.get('[data-testid^="cand-8-8"]').should('not.exist');
       cell(7, 7).should('have.attr', 'data-mark', 'cross');
       cy.get('[data-testid="layer-candidates"]').check();
       cell(8, 8).should('have.attr', 'data-candidates', '2');
-      cy.get('[data-testid="layers-button"]').click();
+      moreClick('layers-button');
 
       // clear all annotations, keep the placement
-      cy.get('[data-testid="clear-button"]').click();
+      moreClick('clear-button');
       cy.get('[data-testid="clear-annotations"]').click();
       cy.get('[role="dialog"]').should('be.visible');
       cy.get('[data-testid="cancel-reset"]').click();
       cell(7, 7).should('have.attr', 'data-mark', 'cross');
-      cy.get('[data-testid="clear-button"]').click();
+      moreClick('clear-button');
       cy.get('[data-testid="clear-annotations"]').click();
       cy.get('[data-testid="confirm-reset"]').click();
       cell(7, 7).should('not.have.attr', 'data-mark');

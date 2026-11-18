@@ -4,3 +4,5 @@ describe('smoke', () => {
     cy.get('[data-testid="app-title"]').should('contain.text', 'Murdoku');
   });
 });
+
+export {};

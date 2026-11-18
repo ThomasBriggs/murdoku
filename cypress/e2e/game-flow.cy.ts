@@ -76,7 +76,8 @@ describe('game flow', () => {
 
     // share: copies a link with seed + difficulty
     cy.window().then((win) => {
-      const stub = cy.stub().resolves().as('copy');
+      const stub = cy.stub().as('copy');
+      stub.resolves();
       Object.defineProperty(win.navigator, 'clipboard', {
         configurable: true,
         value: { writeText: stub },

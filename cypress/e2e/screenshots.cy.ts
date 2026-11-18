@@ -309,3 +309,4 @@ suite('game flow screenshots', () => {
     cy.screenshot('stats-desktop-light', { capture: 'viewport' });
   });
 });
+export {};

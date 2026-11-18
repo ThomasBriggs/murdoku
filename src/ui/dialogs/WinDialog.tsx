@@ -39,6 +39,7 @@ export function WinDialog(p: WinDialogProps) {
           <button
             type="button"
             className={styles.primary}
+            data-autofocus
             data-testid="win-new-game"
             onClick={p.onNewGame}
           >

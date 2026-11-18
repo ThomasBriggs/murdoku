@@ -1,4 +1,5 @@
 import { useState, type CSSProperties } from 'react';
+import { PencilIcon } from './icons/glyphs';
 import type { Room } from '../engine/types';
 import { NoteInput } from './NoteInput';
 import styles from './RoomLegend.module.css';
@@ -68,7 +69,11 @@ export function RoomLegend({
                   title={note ? `${room.name}: ${note}` : `Add a note for ${room.name}`}
                   onClick={() => setEditing(editing === room.id ? null : room.id)}
                 >
-                  {note ? <span data-testid={`room-note-${room.id}`}>{note}</span> : '✎'}
+                  {note ? (
+                    <span data-testid={`room-note-${room.id}`}>{note}</span>
+                  ) : (
+                    <PencilIcon style={{ width: '1em', height: '1em' }} />
+                  )}
                 </button>
               )}
             </li>

@@ -23,3 +23,5 @@ describe('engine worker', () => {
       .should('match', /seed: \w+/);
   });
 });
+
+export {};

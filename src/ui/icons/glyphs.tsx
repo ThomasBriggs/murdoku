@@ -48,3 +48,78 @@ export const WrongIcon = (p: P) => (
     <path d="M6 6l12 12M18 6L6 18" />
   </svg>
 );
+
+/* Tool palette icons (24x24, stroke = currentColor). */
+export const PlaceIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <circle cx="12" cy="8" r="4" />
+    <path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" />
+  </svg>
+);
+export const PencilIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M4 20l1-5L16 4l4 4L9 19zM14 6l4 4" strokeDasharray="0" />
+  </svg>
+);
+export const CrossIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M6 6l12 12M18 6L6 18" strokeWidth={2.6} />
+  </svg>
+);
+export const DotIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <circle cx="12" cy="12" r="3.2" fill="currentColor" />
+  </svg>
+);
+export const QuestionIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M9 9a3 3 0 1 1 4.6 2.5c-1 .7-1.6 1.2-1.6 2.5M12 18v.5" strokeWidth={2.4} />
+  </svg>
+);
+export const NotesIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <rect x="4" y="4" width="16" height="16" rx="2" />
+    <path d="M9.3 4v16M14.7 4v16M4 9.3h16M4 14.7h16" strokeWidth={1.4} />
+  </svg>
+);
+export const EliminateIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <circle cx="12" cy="12" r="8" />
+    <path d="M6.3 17.7L17.7 6.3" />
+  </svg>
+);
+export const HighlightIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M14 4l6 6-8 8H8l-4-4v-3zM12 6l6 6M4 21h8" />
+  </svg>
+);
+export const SelectIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <rect x="4" y="4" width="16" height="16" rx="1.5" strokeDasharray="3 3" />
+  </svg>
+);
+export const DrawIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M3 17c3-8 5 2 8-4s3-6 5-4M14 21l7-7-3-3-7 7v3z" />
+  </svg>
+);
+export const HintIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z" />
+  </svg>
+);
+export const CheckIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M4 12.5l5 5L20 6.5" />
+  </svg>
+);
+export const FlagIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M5 21V4M5 4h11l-2 4 2 4H5" />
+  </svg>
+);
+export const StrikeIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M4 7h10M4 17h14M3 12h18" />
+  </svg>
+);

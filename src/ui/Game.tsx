@@ -33,13 +33,13 @@ import { FurnitureLegend } from './FurnitureLegend';
 import { ClearMenu, describeClear, LayersMenu, type ClearChoice } from './ToolkitMenus';
 import { ColorPicker, PRIMARY_TOOLS, ToolPalette } from './ToolPalette';
 import palette from './ToolPalette.module.css';
-import { UndoIcon } from './icons/glyphs';
+import { CheckIcon, FlagIcon, HintIcon, ResetIcon, UndoIcon } from './icons/glyphs';
 import { useGame, useStoreApi } from './context';
 import styles from './Game.module.css';
 import { PeoplePanel } from './PeoplePanel';
 import { RoomLegend } from './RoomLegend';
 import { assignRoomColors } from './roomColors';
-import { Toolbar } from './Toolbar';
+import { SettingsMenu, Toolbar } from './Toolbar';
 import { conflictsByPerson, type Highlight } from './types';
 
 const SHAKE_MS = 400;
@@ -112,6 +112,16 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
   const [confirmReset, setConfirmReset] = useState(false);
   const mobile = useMediaQuery('(max-width: 600px)');
   const [moreOpen, setMoreOpen] = useState(false);
+  const moreButton = useRef<HTMLButtonElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const wasMoreOpen = useRef(false);
+  useEffect(() => {
+    // The More sheet behaves like a dialog: focus moves in, and returns to its button on close.
+    if (moreOpen) sheetRef.current?.querySelector<HTMLElement>('button')?.focus();
+    else if (wasMoreOpen.current && document.activeElement === document.body)
+      moreButton.current?.focus();
+    wasMoreOpen.current = moreOpen;
+  }, [moreOpen]);
   const [clearChoice, setClearChoice] = useState<ClearChoice | null>(null);
   const [logicOpen, setLogicOpen] = useState(false);
   const [scratchOpen, setScratchOpen] = useState(false);
@@ -420,12 +430,72 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
       compact={compact}
       canUndo={canUndo}
       canRedo={canRedo}
-      canReset={anyPlaced}
-      settings={settings}
       onUndo={() => actions.undo()}
       onRedo={() => actions.redo()}
-      onReset={() => setConfirmReset(true)}
-      onSettings={(patch) => actions.updateSettings(patch)}
+      secondary={
+        <>
+          <button
+            type="button"
+            data-testid="reset"
+            disabled={!anyPlaced}
+            onClick={() => setConfirmReset(true)}
+            title="Reset board"
+          >
+            <ResetIcon className={palette.menuIcon} />
+            <span>Reset</span>
+          </button>
+          <LayersMenu
+            visibility={annotations.layerVisibility}
+            onToggle={(l, v) => actions.setLayerVisible(l, v)}
+          />
+          <ClearMenu onChoose={setClearChoice} />
+          <button
+            type="button"
+            data-testid="whatif-start"
+            disabled={whatIfLevel >= WHATIF_MAX_DEPTH}
+            aria-keyshortcuts="w"
+            title="Start what-if (W): try a hypothesis in pencil, then keep or abandon it"
+            onClick={() => {
+              actions.startWhatIf();
+              closeMore();
+            }}
+          >
+            <span aria-hidden="true">⑂</span>
+            <span>Start what-if</span>
+          </button>
+          <button
+            type="button"
+            data-testid="logic-toggle"
+            aria-pressed={logicOpen}
+            aria-keyshortcuts="g"
+            title="Logic grid (G)"
+            onClick={() => {
+              setLogicOpen((o) => !o);
+              closeMore();
+            }}
+          >
+            <span aria-hidden="true">▦</span>
+            <span>Logic grid</span>
+          </button>
+          <button
+            type="button"
+            data-testid="print-button"
+            title="Print or save as PDF"
+            onClick={() => {
+              setPrintOpen(true);
+              closeMore();
+            }}
+          >
+            <span aria-hidden="true">⎙</span>
+            <span>Print</span>
+          </button>
+          <SettingsMenu
+            compact={compact}
+            settings={settings}
+            onSettings={(patch) => actions.updateSettings(patch)}
+          />
+        </>
+      }
     >
       <button
         type="button"
@@ -438,7 +508,7 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
           closeMore();
         }}
       >
-        <span aria-hidden="true">✦</span>
+        <HintIcon className={palette.menuIcon} />
         <span>Hint</span>
       </button>
       <button
@@ -451,7 +521,7 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
           closeMore();
         }}
       >
-        <span aria-hidden="true">✓</span>
+        <CheckIcon className={palette.menuIcon} />
         <span>Check</span>
       </button>
       <button
@@ -468,53 +538,8 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
           closeMore();
         }}
       >
-        <span aria-hidden="true">⚑</span>
+        <FlagIcon className={palette.menuIcon} />
         <span>Accuse</span>
-      </button>
-      <LayersMenu
-        visibility={annotations.layerVisibility}
-        onToggle={(l, v) => actions.setLayerVisible(l, v)}
-      />
-      <ClearMenu onChoose={setClearChoice} />
-      <button
-        type="button"
-        data-testid="whatif-start"
-        disabled={whatIfLevel >= WHATIF_MAX_DEPTH}
-        aria-keyshortcuts="w"
-        title="Start what-if (W): try a hypothesis in pencil, then keep or abandon it"
-        onClick={() => {
-          actions.startWhatIf();
-          closeMore();
-        }}
-      >
-        <span aria-hidden="true">⑂</span>
-        <span>Start what-if</span>
-      </button>
-      <button
-        type="button"
-        data-testid="logic-toggle"
-        aria-pressed={logicOpen}
-        aria-keyshortcuts="g"
-        title="Logic grid (G)"
-        onClick={() => {
-          setLogicOpen((o) => !o);
-          closeMore();
-        }}
-      >
-        <span aria-hidden="true">▦</span>
-        <span>Logic grid</span>
-      </button>
-      <button
-        type="button"
-        data-testid="print-button"
-        title="Print or save as PDF"
-        onClick={() => {
-          setPrintOpen(true);
-          closeMore();
-        }}
-      >
-        <span aria-hidden="true">⎙</span>
-        <span>Print</span>
       </button>
     </Toolbar>
   );
@@ -553,6 +578,7 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
               <button
                 type="button"
                 className={palette.barBtn}
+                ref={moreButton}
                 data-testid="more-button"
                 aria-expanded={moreOpen}
                 aria-label="More tools"
@@ -574,8 +600,25 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
                   role="dialog"
                   aria-label="More tools"
                   data-testid="more-sheet"
+                  aria-modal="true"
+                  ref={sheetRef}
                   onKeyDown={(e) => {
                     if (e.key === 'Escape') setMoreOpen(false);
+                    else if (e.key === 'Tab') {
+                      const items = sheetRef.current?.querySelectorAll<HTMLElement>(
+                        'button:not(:disabled), input:not(:disabled)',
+                      );
+                      if (!items?.length) return;
+                      const first = items[0]!;
+                      const last = items[items.length - 1]!;
+                      if (e.shiftKey && document.activeElement === first) {
+                        e.preventDefault();
+                        last.focus();
+                      } else if (!e.shiftKey && document.activeElement === last) {
+                        e.preventDefault();
+                        first.focus();
+                      }
+                    }
                   }}
                 >
                   <div className={palette.sheetHead}>
@@ -610,9 +653,25 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
           </>
         ) : (
           <>
-            <ToolPalette tool={tool} color={color} onTool={onTool} onColor={onColor} />
-            {tool === 'draw' && drawControls}
-            {toolbar(false)}
+            <div className={styles.toolsArea}>
+              <ToolPalette
+                strip
+                showColors={false}
+                tool={tool}
+                color={color}
+                onTool={onTool}
+                onColor={onColor}
+              />
+            </div>
+            <div className={styles.actionsArea}>
+              {(tool === 'highlight' || tool === 'draw') && (
+                <div className={styles.context} data-testid="color-row">
+                  {tool === 'draw' && drawControls}
+                  <ColorPicker color={color} onColor={onColor} />
+                </div>
+              )}
+              {toolbar(false)}
+            </div>
           </>
         )}
       </div>

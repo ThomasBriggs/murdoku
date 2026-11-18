@@ -1,12 +1,25 @@
+import { Fragment, type ReactNode } from 'react';
 import { COLOR_IDS, type ColorId } from '../state/annotations';
 import type { Tool } from '../state/store';
+import {
+  CrossIcon,
+  DotIcon,
+  DrawIcon,
+  EliminateIcon,
+  HighlightIcon,
+  NotesIcon,
+  PencilIcon,
+  PlaceIcon,
+  QuestionIcon,
+  SelectIcon,
+} from './icons/glyphs';
 import { COLOR_INFO } from './colors';
 import styles from './ToolPalette.module.css';
 
 export interface ToolDef {
   id: Tool;
   label: string;
-  glyph: string;
+  Icon: (p: { className?: string }) => ReactNode;
   /** Keyboard shortcut shown in the tooltip; `key` is the matching KeyboardEvent.key (lower-case). */
   shortcut: string;
   key: string;
@@ -17,7 +30,7 @@ export const TOOLS: readonly ToolDef[] = [
   {
     id: 'place',
     label: 'Place',
-    glyph: '☻',
+    Icon: PlaceIcon,
     shortcut: 'V',
     key: 'v',
     help: 'Pick a person, then click a cell to place them',
@@ -25,7 +38,7 @@ export const TOOLS: readonly ToolDef[] = [
   {
     id: 'pencil',
     label: 'Pencil',
-    glyph: '✎',
+    Icon: PencilIcon,
     shortcut: 'P',
     key: 'p',
     help: 'Tentative placement: a dashed guess that does not count',
@@ -33,16 +46,23 @@ export const TOOLS: readonly ToolDef[] = [
   {
     id: 'cross',
     label: 'Cross',
-    glyph: '✗',
+    Icon: CrossIcon,
     shortcut: 'X',
     key: 'x',
     help: 'Nobody is here (also right-click)',
   },
-  { id: 'dot', label: 'Dot', glyph: '•', shortcut: '.', key: '.', help: 'Someone could be here' },
+  {
+    id: 'dot',
+    label: 'Dot',
+    Icon: DotIcon,
+    shortcut: '.',
+    key: '.',
+    help: 'Someone could be here',
+  },
   {
     id: 'unsure',
     label: 'Unsure',
-    glyph: '?',
+    Icon: QuestionIcon,
     shortcut: '?',
     key: '?',
     help: 'Mark a cell to come back to',
@@ -50,7 +70,7 @@ export const TOOLS: readonly ToolDef[] = [
   {
     id: 'notes',
     label: 'Notes',
-    glyph: '▦',
+    Icon: NotesIcon,
     shortcut: 'N',
     key: 'n',
     help: 'Candidate initials: pick a person (or press 1-9) and click cells. Hold Shift to eliminate',
@@ -58,7 +78,7 @@ export const TOOLS: readonly ToolDef[] = [
   {
     id: 'eliminate',
     label: 'Eliminate',
-    glyph: '⊘',
+    Icon: EliminateIcon,
     shortcut: 'E',
     key: 'e',
     help: 'Slash a person’s initial: they are not in this cell (same as Shift in Notes)',
@@ -66,7 +86,7 @@ export const TOOLS: readonly ToolDef[] = [
   {
     id: 'highlight',
     label: 'Highlight',
-    glyph: '▨',
+    Icon: HighlightIcon,
     shortcut: 'C cycles colour',
     key: 'c',
     help: 'Fill cells with the chosen colour',
@@ -74,7 +94,7 @@ export const TOOLS: readonly ToolDef[] = [
   {
     id: 'select',
     label: 'Select',
-    glyph: '⬚',
+    Icon: SelectIcon,
     shortcut: 'S',
     key: 's',
     help: 'Drag or Shift-click to select many cells, then apply a mark, colour or candidate to all',
@@ -82,7 +102,7 @@ export const TOOLS: readonly ToolDef[] = [
   {
     id: 'draw',
     label: 'Draw',
-    glyph: '✍',
+    Icon: DrawIcon,
     shortcut: 'D',
     key: 'd',
     help: 'Freehand pen, highlighter and eraser over the board (Esc to stop)',
@@ -91,6 +111,9 @@ export const TOOLS: readonly ToolDef[] = [
 
 /** Tools on the compact mobile bar; the rest live in its "More" sheet. */
 export const PRIMARY_TOOLS: readonly Tool[] = ['place', 'pencil', 'cross', 'notes', 'highlight'];
+
+/** Tools that start a new visual group in the strip. */
+const GROUP_START = new Set<Tool>(['cross', 'notes', 'highlight']);
 
 export interface ToolPaletteProps {
   /** Only these tools (default: all). */
@@ -101,6 +124,8 @@ export interface ToolPaletteProps {
   /** Wrap onto several lines instead of scrolling sideways (used in the mobile sheet). */
   wrap?: boolean;
   testId?: string;
+  /** Compact icon-only strip (desktop): grouped, labels hidden, shortcut shown as a badge. */
+  strip?: boolean;
   tool: Tool;
   color: ColorId;
   onTool(tool: Tool): void;
@@ -113,29 +138,38 @@ export function ToolPalette(p: ToolPaletteProps) {
   );
   return (
     <div
-      className={`${styles.palette} ${p.wrap ? styles.wrapAll : ''}`}
+      className={`${styles.palette} ${p.wrap ? styles.wrapAll : ''} ${p.strip ? styles.strip : ''}`}
       role="toolbar"
       aria-label="Tools"
       data-testid={p.testId ?? 'tool-palette'}
     >
       <div className={styles.tools}>
-        {shown.map((t) => (
-          <button
-            type="button"
-            key={t.id}
-            className={styles.tool}
-            data-testid={`tool-${t.id}`}
-            aria-pressed={p.tool === t.id}
-            aria-keyshortcuts={t.key}
-            aria-label={t.label}
-            title={`${t.label} (${t.shortcut}): ${t.help}`}
-            onClick={() => p.onTool(t.id)}
-          >
-            <span className={styles.glyph} aria-hidden="true">
-              {t.glyph}
-            </span>
-            <span className={styles.label}>{t.label}</span>
-          </button>
+        {shown.map((t, i) => (
+          <Fragment key={t.id}>
+            {p.strip && i > 0 && GROUP_START.has(t.id) && (
+              <span className={styles.groupSep} aria-hidden="true" />
+            )}
+            <button
+              type="button"
+              className={styles.tool}
+              data-testid={`tool-${t.id}`}
+              aria-pressed={p.tool === t.id}
+              aria-keyshortcuts={t.key}
+              aria-label={t.label}
+              title={`${t.label} (${t.shortcut}): ${t.help}`}
+              onClick={() => p.onTool(t.id)}
+            >
+              <span className={styles.glyph} aria-hidden="true">
+                <t.Icon />
+              </span>
+              <span className={styles.label}>{t.label}</span>
+              {p.strip && (
+                <span className={styles.kbd} aria-hidden="true">
+                  {t.key === 'c' ? 'C' : t.shortcut}
+                </span>
+              )}
+            </button>
+          </Fragment>
         ))}
       </div>
       {p.showColors !== false && <ColorPicker color={p.color} onColor={p.onColor} />}

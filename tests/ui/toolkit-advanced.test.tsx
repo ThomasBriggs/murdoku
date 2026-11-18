@@ -6,6 +6,7 @@ import { createGameStore, type GameStore } from '../../src/state/store';
 import { abbreviateRoom } from '../../src/ui/LogicGrid';
 import { createEngineClient } from '../../src/worker/client';
 import { createInProcessWorker } from '../../src/worker/inprocess';
+import { clickMore } from './more';
 
 afterEach(() => {
   cleanup();
@@ -163,7 +164,7 @@ describe('clue-allows dimming and print', () => {
     });
     expect(screen.getByTestId('print-sheet')).toHaveAttribute('data-marks', 'false');
     expect(document.querySelectorAll('.ps-mark')).toHaveLength(0);
-    fireEvent.click(screen.getByTestId('print-button'));
+    clickMore('print-button');
     fireEvent.click(screen.getByTestId('print-include-marks'));
     expect(screen.getByTestId('print-sheet')).toHaveAttribute('data-marks', 'true');
     expect(document.querySelectorAll('.ps-mark')).toHaveLength(1);

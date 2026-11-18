@@ -1,4 +1,4 @@
-import { gesture } from '../support/helpers';
+import { gesture, moreClick, openMore } from '../support/helpers';
 
 const URL = '/?seed=cy-adv&d=easy';
 const cell = (r: number, c: number) => cy.get(`[data-testid="cell-${r}-${c}"]`);
@@ -39,7 +39,7 @@ describe('solving toolkit: logic grid, pen, scratchpad, what-if, helpers, print'
     tid('logic-rows-0-3').click().should('have.attr', 'data-state', '0');
     tid('logic-close').click();
     tid('logic-grid').should('not.exist');
-    tid('logic-toggle').click();
+    moreClick('logic-toggle');
     tid('logic-grid').should('be.visible');
   });
 
@@ -87,13 +87,13 @@ describe('solving toolkit: logic grid, pen, scratchpad, what-if, helpers, print'
     load();
     cy.get('body').type('d');
     gesture(SCRIBBLE);
-    tid('layers-button').click();
+    moreClick('layers-button');
     tid('layer-drawing').should('not.be.disabled').uncheck();
     cy.get('[data-testid="drawing-layer"] path').should('not.exist');
     tid('drawing-layer').should('have.attr', 'data-active', 'false');
     tid('layer-drawing').check();
     cy.get('[data-testid="drawing-layer"] path').should('have.length', 1);
-    tid('layers-button').click();
+    moreClick('layers-button');
 
     tid('draw-lock').click().should('have.attr', 'aria-pressed', 'true');
     tid('drawing-layer').should('have.attr', 'data-active', 'false');
@@ -144,7 +144,7 @@ describe('solving toolkit: logic grid, pen, scratchpad, what-if, helpers, print'
       tid('scratchpad-toggle').click();
 
       // start, place, keep
-      tid('whatif-start').click();
+      moreClick('whatif-start');
       tid('person-card-1').click();
       cell(r, c).click().should('have.attr', 'data-occupant', '1');
       tid('whatif-keep').click();
@@ -153,13 +153,14 @@ describe('solving toolkit: logic grid, pen, scratchpad, what-if, helpers, print'
       cell(r, c).should('have.attr', 'data-occupant', '1');
 
       // nesting
-      tid('whatif-start').click();
+      moreClick('whatif-start');
       tid('whatif-nest').click();
       tid('whatif-level').should('have.text', 'What-if (level 2)');
       tid('whatif-breadcrumbs').should('contain.text', 'What-if 2');
       tid('whatif-nest').click(); // level 3
       tid('whatif-level').should('contain.text', 'level 3');
       tid('whatif-nest').should('be.disabled');
+      openMore();
       tid('whatif-start').should('be.disabled');
       // undo walks back out through the starts
       tid('undo').click();
@@ -172,9 +173,9 @@ describe('solving toolkit: logic grid, pen, scratchpad, what-if, helpers, print'
 
   it('"show where this clue allows" dims cells for the selected person', () => {
     load();
-    tid('settings-button').click();
+    moreClick('settings-button');
     tid('setting-clueallows').should('not.be.checked').check();
-    tid('settings-button').click();
+    moreClick('settings-button');
     cy.get('[data-dim="true"]').should('not.exist');
     tid('person-card-2').click();
     cy.get('[data-dim="true"]').should('exist');
@@ -192,7 +193,7 @@ describe('solving toolkit: logic grid, pen, scratchpad, what-if, helpers, print'
     cy.window().then((win) => cy.stub(win, 'print').as('print'));
     tid('tool-cross').click();
     cell(0, 0).click();
-    tid('print-button').click();
+    moreClick('print-button');
     tid('print-dialog').should('be.visible');
     tid('print-include-marks').check();
     tid('print-confirm').click();

@@ -44,6 +44,7 @@ export function StatsDialog({ onClose }: { onClose(): void }) {
           <button
             type="button"
             className={styles.primary}
+            data-autofocus
             data-testid="stats-close"
             onClick={onClose}
           >

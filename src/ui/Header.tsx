@@ -30,8 +30,15 @@ export function Header({
   };
   return (
     <header className={`${styles.header} print-hide`}>
-      <h1 data-testid="app-title">Murdoku</h1>
-      <button type="button" data-testid="new-game-button" onClick={onNewGame}>
+      <h1 data-testid="app-title" className={styles.hTitle}>
+        Murdoku
+      </h1>
+      <button
+        type="button"
+        className={styles.hNew}
+        data-testid="new-game-button"
+        onClick={onNewGame}
+      >
         New game
       </button>
       {puzzle && (
@@ -60,6 +67,7 @@ export function Header({
       </span>
       <button
         type="button"
+        className={styles.hShare}
         data-testid="share-button"
         disabled={!puzzle}
         title="Copy a link to this puzzle (no progress included)"
@@ -67,11 +75,18 @@ export function Header({
       >
         {shared === 'ok' ? 'Link copied' : shared === 'fail' ? 'Copy failed' : 'Share'}
       </button>
-      <button type="button" data-testid="stats-button" title="Statistics" onClick={onStats}>
+      <button
+        type="button"
+        className={styles.hStats}
+        data-testid="stats-button"
+        title="Statistics"
+        onClick={onStats}
+      >
         Stats
       </button>
       <button
         type="button"
+        className={styles.hRules}
         data-testid="rules-button"
         aria-label="Rules"
         title="Rules and shortcuts"

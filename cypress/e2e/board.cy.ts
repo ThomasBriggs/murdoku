@@ -1,3 +1,5 @@
+import { moreClick } from '../support/helpers';
+
 const URL = '/?seed=cy-board&d=easy';
 
 /** Row-major list of [r, c] for cells matching a blocked flag. */
@@ -83,11 +85,11 @@ describe('board', () => {
     cellsWhere('false').then((free) => {
       cy.get('[data-testid="person-card-0"]').click();
       cell(...free[0]!).click();
-      cy.get('[data-testid="reset"]').click();
+      moreClick('reset');
       cy.get('[role="dialog"]').should('be.visible');
       cy.get('[data-testid="cancel-reset"]').click();
       cy.get('[data-testid="board"] [data-testid="token-0"]').should('exist');
-      cy.get('[data-testid="reset"]').click();
+      moreClick('reset');
       cy.get('[data-testid="confirm-reset"]').click();
       cy.get('[role="dialog"]').should('not.exist');
       cy.get('[data-testid="board"] [data-testid="token-0"]').should('not.exist');
