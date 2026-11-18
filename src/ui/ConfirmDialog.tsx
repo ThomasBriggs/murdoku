@@ -26,11 +26,11 @@ export function Modal(p: ModalProps) {
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     const preferred = ref.current?.querySelector<HTMLElement>('[data-autofocus]');
-    if (preferred) preferred.focus();
+    if (preferred) preferred.focus({ preventScroll: true });
     else if (p.initialFocus === 'dialog') ref.current?.focus();
     else {
       const scope = p.initialFocus === 'actions' ? actionsRef.current : ref.current;
-      scope?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+      scope?.querySelector<HTMLElement>(FOCUSABLE)?.focus({ preventScroll: true });
     }
     return () => previous?.focus?.();
     // Only on mount: the dialog's content may re-render while open.

@@ -18,7 +18,7 @@ export function RulesDialog({ onClose }: { onClose(): void }) {
       wide
       initialFocus="dialog"
       actions={
-        <button type="button" data-testid="rules-close" onClick={onClose}>
+        <button type="button" data-autofocus data-testid="rules-close" onClick={onClose}>
           Close
         </button>
       }
