@@ -1,12 +1,9 @@
-import type { FurnitureType, Person, PersonId, RoomId } from '../engine/types';
+import type { FurnitureType, PersonId, RoomId } from '../engine/types';
 
 /** What a hovered clue word asks the board to light up. */
 export type Highlight = { kind: 'room'; id: RoomId } | { kind: 'furniture'; id: FurnitureType };
 
-/** Panel order: the victim first, then suspects in id order. */
-export function panelOrder(people: readonly Person[]): Person[] {
-  return [...people].sort((a, b) => Number(b.isVictim) - Number(a.isVictim) || a.id - b.id);
-}
+export { panelOrder } from '../state/annotations';
 
 export const COLUMN_LETTERS = 'ABCDEFGHI';
 

@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { FURNITURE, isOccupiable } from '../engine/furniture';
 import type { FurnitureType, Person, Room } from '../engine/types';
+import type { ColorId, MarkKind } from '../state/annotations';
 import styles from './Cell.module.css';
 import { FurnitureIcon } from './icons/FurnitureIcon';
 import type { RoomColor } from './roomColors';
@@ -27,10 +28,33 @@ export interface CellProps {
   /** Roving-tabindex cursor is on this cell. */
   cursor: boolean;
   shaking: boolean;
-  onActivate(r: number, c: number): void;
+  onActivate(r: number, c: number, mods?: ActivateMods): void;
   onFocusCell(r: number, c: number): void;
-  /** Seam for the annotation toolkit (crosses, candidates, notes, ...). */
+  onContextMenu?(r: number, c: number): void;
+  /** Double-click on the room label selects the whole room. */
+  onRoomLabelDouble?(room: number): void;
+  /** Player's note for this room (shown as a badge on the label). */
+  roomNote?: string;
+  /** Toolkit state, exposed as data attributes for tests and styling. */
+  ann?: CellAnn;
+  /** Visuals of the annotation toolkit (marks, candidates, highlight, tentative tokens). */
   annotations?: ReactNode;
+}
+
+export interface ActivateMods {
+  shift?: boolean;
+  keyboard?: boolean;
+}
+
+export interface CellAnn {
+  mark?: MarkKind;
+  color?: ColorId;
+  /** Part of the multi-selection. */
+  inSelection: boolean;
+  /** Person ids with a candidate / eliminated initial, and tentative placements. */
+  candidates: number[];
+  eliminated: number[];
+  tentative: number[];
 }
 
 export function cellLabel(
@@ -63,6 +87,7 @@ export function Cell(p: CellProps) {
     blocked && styles.blocked,
     p.highlighted && styles.highlight,
     p.selected && styles.selected,
+    p.ann?.inSelection && styles.inSel,
     p.shaking && styles.shake,
   ]
     .filter(Boolean)
@@ -86,12 +111,35 @@ export function Cell(p: CellProps) {
       data-occupant={person ? person.id : ''}
       data-autocross={p.autoCross ? 'true' : undefined}
       data-highlight={p.highlighted ? 'true' : undefined}
-      onClick={() => p.onActivate(r, c)}
+      data-mark={p.ann?.mark || undefined}
+      data-hl-color={p.ann?.color || undefined}
+      data-sel={p.ann?.inSelection ? 'true' : undefined}
+      data-candidates={p.ann?.candidates.length ? p.ann.candidates.join(',') : undefined}
+      data-eliminated={p.ann?.eliminated.length ? p.ann.eliminated.join(',') : undefined}
+      data-tentative={p.ann?.tentative.length ? p.ann.tentative.join(',') : undefined}
+      onClick={(e) => p.onActivate(r, c, { shift: e.shiftKey })}
+      onContextMenu={
+        p.onContextMenu
+          ? (e) => {
+              e.preventDefault();
+              p.onContextMenu?.(r, c);
+            }
+          : undefined
+      }
       onFocus={() => p.onFocusCell(r, c)}
     >
       {p.roomLabel && (
-        <span className={styles.roomLabel} aria-hidden="true">
+        <span
+          className={styles.roomLabel}
+          aria-hidden="true"
+          data-testid={`room-label-${room.id}`}
+          data-note={p.roomNote ? 'true' : undefined}
+          title={p.roomNote ? `${room.name}: ${p.roomNote}` : 'Double-click to select the room'}
+          onClick={(e) => e.stopPropagation()}
+          onDoubleClick={() => p.onRoomLabelDouble?.(room.id)}
+        >
           {room.name}
+          {p.roomNote && <span className={styles.noteBadge}> ✎</span>}
         </span>
       )}
       {furniture && (

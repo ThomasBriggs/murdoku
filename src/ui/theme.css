@@ -16,6 +16,12 @@
   --selected-bg: #e8f0fd;
   --hl-fill: rgb(255 210 60 / 0.45);
   --hl-ring: #d19a00;
+  --hc-amber: #d19a00;
+  --hc-red: #d13b3b;
+  --hc-green: #2f9e4f;
+  --hc-blue: #2f6fdb;
+  --hc-purple: #8a4fd0;
+  --hc-orange: #e0701a;
 }
 
 @media (prefers-color-scheme: dark) {

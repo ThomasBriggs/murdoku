@@ -95,6 +95,15 @@ export function Toolbar(p: ToolbarProps) {
               />
               Highlight conflicts
             </label>
+            <label>
+              <input
+                type="checkbox"
+                data-testid="setting-autoclear"
+                checked={p.settings.autoClearCandidates}
+                onChange={(e) => p.onSettings({ autoClearCandidates: e.target.checked })}
+              />
+              Clear a person’s candidate initials once placed
+            </label>
             <fieldset className={styles.theme}>
               <legend>Theme</legend>
               {THEMES.map((t) => (

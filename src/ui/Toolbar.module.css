@@ -35,6 +35,16 @@
     top: calc(100% + 0.4rem);
   }
 }
+.popoverLeft {
+  right: auto;
+  left: 0;
+}
+.popover hr {
+  width: 100%;
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 0.1rem 0;
+}
 .popover label {
   display: flex;
   gap: 0.5rem;

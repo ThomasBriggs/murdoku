@@ -1,15 +1,76 @@
 .frame {
   --gutter: 1.4rem;
+  --note-w: 2.6rem;
+  --note-h: 1.15rem;
   display: grid;
-  grid-template-columns: var(--gutter) minmax(0, 1fr);
-  grid-template-rows: var(--gutter) minmax(0, 1fr);
+  grid-template-columns: var(--gutter) minmax(0, 1fr) var(--note-w);
+  grid-template-rows: var(--note-h) var(--gutter) minmax(0, 1fr);
   width: 100%;
-  max-width: min(100%, 760px, calc(100dvh - 9.5rem));
+  max-width: min(100%, 800px, calc(100dvh - 9.5rem));
   margin-inline: auto;
   container-type: inline-size;
 }
+.noMargins {
+  --note-w: 0rem;
+  --note-h: 0rem;
+}
 .corner {
-  grid-area: 1 / 1;
+  grid-area: 2 / 1;
+}
+.colNotes,
+.rowNotes {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+}
+.colNotes {
+  grid-area: 1 / 2;
+  grid-template-columns: repeat(9, 1fr);
+}
+.rowNotes {
+  grid-area: 3 / 3;
+  grid-template-rows: repeat(9, 1fr);
+}
+.note {
+  all: unset;
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--accent);
+  border-bottom: 1px dotted var(--border);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 1px;
+}
+.note:hover {
+  border-bottom-color: var(--text-muted);
+}
+.note:focus {
+  outline: 2px solid var(--focus);
+  background: var(--surface);
+  text-overflow: clip;
+}
+.edgeLabel {
+  all: unset;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.edgeLabel:hover {
+  background: var(--hl-fill);
+  color: var(--text);
+}
+.edgeLabel:focus-visible {
+  outline: 2px solid var(--focus);
 }
 .colLabels,
 .rowLabels {
@@ -20,15 +81,15 @@
   place-items: center;
 }
 .colLabels {
-  grid-area: 1 / 2;
+  grid-area: 2 / 2;
   grid-template-columns: repeat(9, 1fr);
 }
 .rowLabels {
-  grid-area: 2 / 1;
+  grid-area: 3 / 1;
   grid-template-rows: repeat(9, 1fr);
 }
 .grid {
-  grid-area: 2 / 2;
+  grid-area: 3 / 2;
   display: grid;
   grid-template-rows: repeat(9, minmax(0, 1fr));
   aspect-ratio: 1;
@@ -42,4 +103,20 @@
   display: grid;
   grid-template-columns: repeat(9, minmax(0, 1fr));
   min-height: 0;
+}
+
+.selecting {
+  touch-action: none;
+}
+@media (max-width: 480px) {
+  .frame {
+    --note-w: 2rem;
+    --gutter: 1.2rem;
+  }
+  .noMargins {
+    --note-w: 0rem;
+  }
+  .note {
+    font-size: 0.6rem;
+  }
 }
