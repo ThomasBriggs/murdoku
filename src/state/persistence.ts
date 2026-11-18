@@ -188,7 +188,7 @@ function placementsOf(v: unknown): Placements | null {
   const out: Placements = {};
   for (let i = 0; i < PEOPLE; i++) {
     const c = v[i];
-    if (c !== null && c !== undefined && typeof c !== 'string') return null;
+    if (c !== null && c !== undefined && typeof c !== 'number') return null;
     out[i] = (c ?? null) as CellKey | null;
   }
   return out;
