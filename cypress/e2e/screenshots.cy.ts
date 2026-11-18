@@ -284,4 +284,28 @@ suite('game flow screenshots', () => {
     cy.get(t('rules-dialog')).should('be.visible');
     cy.screenshot('rules-mobile-light', { capture: 'viewport' });
   });
+
+  it('stats dialog desktop light', () => {
+    cy.viewport(1280, 900);
+    cy.visit('/?seed=cy-flow&d=easy', {
+      onBeforeLoad(win) {
+        win.localStorage.setItem(
+          'murdoku:v1:stats',
+          JSON.stringify({
+            played: 7,
+            won: 5,
+            streak: 3,
+            bestStreak: 4,
+            winHints: 6,
+            bestTimeMs: { easy: 214000, medium: 487000, hard: null },
+          }),
+        );
+      },
+    });
+    cy.get(t('board')).should('be.visible');
+    setTheme(1280, 'light');
+    cy.get(t('stats-button')).click();
+    cy.get(t('stats-dialog')).should('be.visible');
+    cy.screenshot('stats-desktop-light', { capture: 'viewport' });
+  });
 });

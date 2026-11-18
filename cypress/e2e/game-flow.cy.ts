@@ -1,47 +1,11 @@
+import { accuseUntilWon, cell, solveByHints, sel as tid } from '../support/helpers';
+
 const SEED = 'cy-flow';
 const URL = `/?seed=${SEED}&d=easy`;
-const tid = (id: string) => `[data-testid="${id}"]`;
-const cell = (r: number, c: number) => cy.get(tid(`cell-${r}-${c}`));
 
 function load(url = URL) {
   cy.visit(url);
   cy.get(tid('board')).should('be.visible');
-}
-
-/**
- * Solve with the Hint button alone: each round asks for a hint and applies it the way a
- * player would (select the person, click the cell). Counts the hints asked on `used`.
- */
-function solveByHints(used: { n: number }, guard = 20) {
-  cy.get(tid('accuse-button')).then(($accuse) => {
-    if (!$accuse.prop('disabled')) return; // all nine are placed
-    expect(guard, 'hint rounds left').to.be.greaterThan(0);
-    cy.get(tid('hint-button')).click();
-    used.n++;
-    cy.get(tid('hint-panel')).then(($panel) => {
-      if ($panel.attr('data-hint-kind') === 'place') {
-        const id = $panel.attr('data-hint-person');
-        cy.get(tid(`person-card-${id}`)).click();
-        cell(Number($panel.attr('data-hint-row')), Number($panel.attr('data-hint-col'))).click();
-      } else {
-        cy.get(tid('hint-apply')).click(); // eliminate-only step: cross the cells out
-      }
-      solveByHints(used, guard - 1);
-    });
-  });
-}
-
-/** Accuse suspects one by one until the win dialog shows; wrong ones must say "not the murderer". */
-function accuseUntilWon(ids: string[], i = 0) {
-  expect(i, 'suspects left to try').to.be.lessThan(ids.length);
-  cy.get(tid(`accuse-suspect-${ids[i]}`)).check();
-  cy.get(tid('accuse-confirm')).click();
-  cy.get(`${tid('win-dialog')}, ${tid('accuse-result')}`).then(($el) => {
-    if ($el.attr('data-testid') === 'win-dialog') return;
-    expect($el.attr('data-verdict')).to.eq('suspect');
-    expect($el.text()).to.contain("that's not the murderer");
-    accuseUntilWon(ids, i + 1);
-  });
 }
 
 describe('game flow', () => {

@@ -1,3 +1,5 @@
+import { gesture } from '../support/helpers';
+
 const URL = '/?seed=cy-adv&d=easy';
 const cell = (r: number, c: number) => cy.get(`[data-testid="cell-${r}-${c}"]`);
 const tid = (id: string) => cy.get(`[data-testid="${id}"]`);
@@ -13,23 +15,6 @@ function firstFree(): Cypress.Chainable<[number, number]> {
     .get('[data-testid="board-grid"] [data-blocked="false"]')
     .first()
     .then(($c) => [Number($c[0]!.dataset.r), Number($c[0]!.dataset.c)] as [number, number]);
-}
-
-/** Pointer gesture over the drawing layer; points are fractions (0..1) of the layer's box. */
-function gesture(points: [number, number][]) {
-  cy.get('[data-testid="drawing-layer"]').then(($l) => {
-    const rect = $l[0]!.getBoundingClientRect();
-    const at = ([x, y]: [number, number]) => ({
-      clientX: rect.left + rect.width * x,
-      clientY: rect.top + rect.height * y,
-      pointerId: 1,
-      button: 0,
-      force: true,
-    });
-    cy.wrap($l).trigger('pointerdown', at(points[0]!));
-    for (const p of points.slice(1)) cy.wrap($l).trigger('pointermove', at(p));
-    cy.wrap($l).trigger('pointerup', at(points[points.length - 1]!));
-  });
 }
 
 const SCRIBBLE: [number, number][] = [
