@@ -225,6 +225,7 @@ suite('advanced toolkit screenshots', () => {
     inMore(375, () => cy.get('[data-testid="logic-toggle"]').click());
     cy.get('[data-testid="logic-grid"]').should('be.visible');
     logicMarks();
+    cy.get('[data-testid="logic-grid"]').scrollTo('top');
     cy.screenshot('logic-grid-mobile-light', { capture: 'viewport' });
   });
 });

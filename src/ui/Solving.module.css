@@ -165,11 +165,17 @@
   .logicTable {
     flex-basis: 100%;
   }
+  /* Initials only on narrow screens; the name stays for screen readers. */
   .personName {
-    max-width: 4.5rem;
+    position: absolute;
+    width: 1px;
+    height: 1px;
     overflow: hidden;
-    text-overflow: ellipsis;
-    display: inline-block;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .personDot {
+    margin-right: 0;
   }
 }
 
