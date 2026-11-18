@@ -448,9 +448,8 @@ export function serialiseAnnotations(a: Annotations): string {
   return JSON.stringify(a);
 }
 
-/** Parse saved annotations, filling any missing field with its default. */
-export function deserialiseAnnotations(json: string): Annotations {
-  const raw = JSON.parse(json) as Partial<Annotations>;
+/** Fill any missing field of saved annotations with its default. */
+export function hydrateAnnotations(raw: Partial<Annotations>): Annotations {
   const base = emptyAnnotations();
   return {
     ...base,
@@ -458,4 +457,9 @@ export function deserialiseAnnotations(json: string): Annotations {
     layerVisibility: { ...base.layerVisibility, ...raw.layerVisibility },
     logicGrid: { ...base.logicGrid, ...raw.logicGrid },
   };
+}
+
+/** Parse saved annotations, filling any missing field with its default. */
+export function deserialiseAnnotations(json: string): Annotations {
+  return hydrateAnnotations(JSON.parse(json) as Partial<Annotations>);
 }

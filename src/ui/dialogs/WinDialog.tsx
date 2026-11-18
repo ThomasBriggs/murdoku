@@ -12,6 +12,8 @@ export interface WinDialogProps {
   hints: number;
   checks: number;
   assists: number;
+  /** This win set a new best time for its difficulty. */
+  newBest?: boolean;
   onNewGame(): void;
   onClose(): void;
 }
@@ -46,6 +48,13 @@ export function WinDialog(p: WinDialogProps) {
       }
     >
       <p>Everyone is in the right place and you named the murderer.</p>
+      {p.newBest && (
+        <p>
+          <span data-testid="win-new-best" className={styles.badge}>
+            New best time!
+          </span>
+        </p>
+      )}
       <dl className={styles.stats}>
         <dt>Time</dt>
         <dd data-testid="win-time">{formatTime(p.elapsedMs)}</dd>

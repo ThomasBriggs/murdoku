@@ -93,6 +93,7 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
   const complete = useGame((g) => allPlaced(g));
   const solved = status === 'won';
   const elapsedMs = useGame((g) => g.elapsedMs);
+  const newBest = useGame((g) => g.newBest);
   const hintsUsed = useGame((g) => g.hintsUsed);
   const checksUsed = useGame((g) => g.checksUsed);
   const assistsUsed = useGame((g) => g.assistsUsed);
@@ -769,6 +770,7 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
           hints={hintsUsed}
           checks={checksUsed}
           assists={assistsUsed}
+          newBest={newBest}
           onClose={() => setWinOpen(false)}
           onNewGame={() => {
             setWinOpen(false);

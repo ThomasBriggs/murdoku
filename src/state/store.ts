@@ -49,6 +49,8 @@ import {
 import { mergeSelection, type SelectMode } from './selection';
 import { createEngineClient, type EngineClient } from '../worker/client';
 import type { HintResult } from '../worker/protocol';
+import { emptyStats, recordAbandon, recordWin, type Stats } from './stats';
+import type { SavedGame } from './persistence';
 import { emptyHistory, popRedo, popUndo, pushHistory, type History } from './history';
 
 export type GameStatus = 'idle' | 'generating' | 'playing' | 'won';
@@ -151,10 +153,22 @@ export interface GameState {
   penSize: 0 | 1 | 2;
   drawLocked: boolean;
   settings: Settings;
+  /** Epoch ms when the game was started (saved). */
+  startedAt: number;
+  /** Lifetime statistics (see stats.ts for the rules). */
+  stats: Stats;
+  /** The game just won set a new best time (not saved; shown in the win dialog). */
+  newBest: boolean;
 }
 
 export interface GameActions {
   newGame(seed: string | undefined, difficulty: Difficulty): Promise<void>;
+  /** Regenerate the saved game's puzzle from its seed and restore the saved progress. */
+  resumeGame(save: SavedGame): Promise<void>;
+  setStats(stats: Stats): void;
+  /** Record that the game in `save` was abandoned (counts only when it had a placement). */
+  abandonSaved(save: Pick<SavedGame, 'placements' | 'status'>): void;
+  resetStats(): void;
   selectPerson(person: PersonId | null): void;
   /**
    * Place `person` on `cell`. Rules: refused on blocking cells (and unless
@@ -362,11 +376,19 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
         penSize: 1,
         drawLocked: false,
         settings: { ...DEFAULT_SETTINGS },
+        startedAt: 0,
+        stats: emptyStats(),
+        newBest: false,
 
         async newGame(seed, difficulty) {
           const mine = ++generation;
           const useSeed = seed && seed.length > 0 ? seed : makeSeed();
           set((d) => {
+            // Leaving an unwon game that had a placement is an abandon (stats rules).
+            if (d.status === 'playing' && hasAny(d.placements))
+              d.stats = recordAbandon(d.stats, true);
+            d.newBest = false;
+            d.startedAt = 0;
             d.puzzle = null;
             d.status = 'generating';
             d.error = null;
@@ -391,6 +413,7 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
               d.puzzle = puzzle;
               d.status = 'playing';
               d.running = true;
+              d.startedAt = Date.now();
             });
           } catch (e) {
             if (mine !== generation) return;
@@ -399,6 +422,70 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
               d.error = e instanceof Error ? e.message : String(e);
             });
           }
+        },
+
+        async resumeGame(save) {
+          const mine = ++generation;
+          set((d) => {
+            d.puzzle = null;
+            d.status = 'generating';
+            d.error = null;
+            d.selectedPerson = null;
+            d.selection = [];
+            d.running = false;
+            d.newBest = false;
+          });
+          try {
+            const puzzle = await client.generate(save.seed, save.difficulty);
+            if (mine !== generation) return;
+            if (puzzle.version !== save.generatorVersion)
+              throw new Error('The saved game was made by a different puzzle generator.');
+            const won = save.status === 'won';
+            set((d) => {
+              d.puzzle = puzzle;
+              d.status = won ? 'won' : 'playing';
+              d.running = !won;
+              d.placements = save.placements;
+              d.tentativePlacements = save.tentativePlacements;
+              d.annotations = save.annotations;
+              d.whatIfStack = save.whatIfStack;
+              d.history = { past: [...save.history.past], future: [...save.history.future] };
+              d.elapsedMs = save.elapsedMs;
+              d.hintsUsed = save.hintsUsed;
+              d.checksUsed = save.checksUsed;
+              d.assistsUsed = save.assistsUsed;
+              d.assistedPeople = save.assistedPeople;
+              d.startedAt = save.startedAt;
+            });
+          } catch (e) {
+            if (mine !== generation) return;
+            set((d) => {
+              d.status = 'idle';
+              d.error = e instanceof Error ? e.message : String(e);
+            });
+          }
+        },
+
+        setStats(stats) {
+          set((d) => {
+            d.stats = stats;
+          });
+        },
+
+        abandonSaved(save) {
+          set((d) => {
+            d.stats = recordAbandon(
+              d.stats,
+              save.status !== 'won' && Object.values(save.placements).some((c) => c !== null),
+            );
+          });
+        },
+
+        resetStats() {
+          set((d) => {
+            d.stats = emptyStats();
+            d.newBest = false;
+          });
         },
 
         selectPerson(person) {
@@ -512,6 +599,9 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
             set((d) => {
               d.status = 'won';
               d.running = false;
+              const r = recordWin(d.stats, s.puzzle!.difficulty, d.elapsedMs, d.hintsUsed);
+              d.stats = r.stats;
+              d.newBest = r.newBest;
             });
           }
           return result;
