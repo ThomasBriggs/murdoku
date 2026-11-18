@@ -11,8 +11,8 @@ export interface ModalProps {
   actions?: ReactNode;
   /** Wider dialog for forms and reference text. */
   wide?: boolean;
-  /** Where focus starts: the first focusable element (default) or the first action button. */
-  initialFocus?: 'first' | 'actions';
+  /** Where focus starts: the first focusable element (default), the first action button, or the dialog itself (long reading content: stays scrolled to the top). */
+  initialFocus?: 'first' | 'actions' | 'dialog';
 }
 
 const FOCUSABLE = 'button:not(:disabled), input:not(:disabled), a[href], textarea:not(:disabled)';
@@ -25,8 +25,11 @@ export function Modal(p: ModalProps) {
 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
-    const scope = p.initialFocus === 'actions' ? actionsRef.current : ref.current;
-    scope?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+    if (p.initialFocus === 'dialog') ref.current?.focus();
+    else {
+      const scope = p.initialFocus === 'actions' ? actionsRef.current : ref.current;
+      scope?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+    }
     return () => previous?.focus?.();
     // Only on mount: the dialog's content may re-render while open.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -59,6 +62,7 @@ export function Modal(p: ModalProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        tabIndex={-1}
       >
         <h2 id={titleId} className={styles.title}>
           {p.title}

@@ -37,3 +37,6 @@
   max-height: calc(100dvh - 2rem);
   overflow-y: auto;
 }
+.dialog:focus {
+  outline: none;
+}
