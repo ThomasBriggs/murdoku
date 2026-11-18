@@ -79,6 +79,14 @@ export const TOOLS: readonly ToolDef[] = [
     key: 's',
     help: 'Drag or Shift-click to select many cells, then apply a mark, colour or candidate to all',
   },
+  {
+    id: 'draw',
+    label: 'Draw',
+    glyph: '✍',
+    shortcut: 'D',
+    key: 'd',
+    help: 'Freehand pen, highlighter and eraser over the board (Esc to stop)',
+  },
 ];
 
 /** Tools on the compact mobile bar; the rest live in its "More" sheet. */

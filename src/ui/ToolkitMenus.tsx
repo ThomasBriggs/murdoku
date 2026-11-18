@@ -11,12 +11,12 @@ export const LAYER_LABELS: Record<LayerId, string> = {
   tentative: 'Tentative placements',
 };
 
-/** The drawing layer arrives with the pen tool (SPEC §6.5.6); its entry is shown disabled. */
+/** Layers that can be toggled and cleared. */
 const AVAILABLE: Record<LayerId, boolean> = {
   crosses: true,
   candidates: true,
   highlights: true,
-  drawing: false,
+  drawing: true,
   margins: true,
   tentative: true,
 };

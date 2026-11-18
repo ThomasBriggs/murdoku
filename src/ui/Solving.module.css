@@ -1,0 +1,275 @@
+/* Draw controls ----------------------------------------------------------- */
+.drawControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.6rem;
+  margin-bottom: 0.4rem;
+}
+.group {
+  display: flex;
+  gap: 0.25rem;
+}
+.drawControls button[aria-pressed='true'] {
+  background: var(--selected-bg);
+  border-color: var(--selected);
+  box-shadow: inset 0 0 0 1px var(--selected);
+  font-weight: 700;
+}
+.dot {
+  display: inline-block;
+  border-radius: 50%;
+  background: currentColor;
+}
+.hint {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+.spacer {
+  flex: 1;
+}
+@media (max-width: 600px) {
+  .hideNarrow {
+    display: none;
+  }
+  .drawControls {
+    justify-content: center;
+  }
+}
+
+/* Logic grid ---------------------------------------------------------------- */
+.logicPanel {
+  margin-top: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.logicSheet {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  overflow: auto;
+  padding: 0.75rem 12px 2rem;
+  background: var(--bg);
+}
+.panelHead {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+.panelHead h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  flex: none;
+}
+.panelHead .hint {
+  flex: 1;
+}
+.tables {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.logicTable {
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  flex: 1 1 18rem;
+  max-width: 100%;
+}
+.logicTable caption {
+  text-align: left;
+  font-weight: 700;
+  padding: 0.2rem 0;
+}
+.logicTable th,
+.logicTable td {
+  border: 1px solid var(--border);
+  padding: 0;
+  text-align: center;
+}
+.logicTable thead th {
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 0.1rem 0.15rem;
+  min-width: 1.7rem;
+  white-space: nowrap;
+}
+.logicTable thead th > span:not(.roomSwatch) {
+  display: block;
+}
+.roomSwatch {
+  display: block;
+  width: 0.85rem;
+  height: 0.85rem;
+  margin: 0 auto 1px;
+  border-radius: 3px;
+  background: light-dark(var(--room-l), var(--room-d));
+  border: 1px solid var(--wall);
+}
+.personHead {
+  text-align: left !important;
+  white-space: nowrap;
+  padding: 0.1rem 0.3rem !important;
+  font-weight: 500;
+}
+.personDot {
+  display: inline-grid;
+  place-items: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #111;
+  margin-right: 0.25rem;
+  vertical-align: middle;
+}
+.personName {
+  vertical-align: middle;
+}
+.logicCell {
+  all: unset;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-width: 1.7rem;
+  height: 1.7rem;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.logicCell:hover {
+  background: var(--hl-fill);
+}
+.logicCell:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+}
+.logicCell[data-state='1'] {
+  color: var(--danger);
+}
+.logicCell[data-state='2'] {
+  color: var(--hc-green);
+  background: color-mix(in srgb, var(--hc-green) 16%, transparent);
+}
+@media (max-width: 600px) {
+  .logicCell {
+    height: 2.1rem;
+    min-width: 1.9rem;
+  }
+  .logicTable {
+    flex-basis: 100%;
+  }
+  .personName {
+    max-width: 4.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+  }
+}
+
+/* Scratchpad ------------------------------------------------------------------ */
+.scratch {
+  margin-top: 0.75rem;
+}
+.scratchToggle {
+  width: 100%;
+  justify-content: flex-start;
+  font-weight: 600;
+}
+.scratchText {
+  display: block;
+  width: 100%;
+  margin-top: 0.35rem;
+  box-sizing: border-box;
+  min-height: 6rem;
+  resize: vertical;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem;
+}
+.scratchText:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 1px;
+}
+
+/* What-if ------------------------------------------------------------------ */
+.whatIfBanner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 0.5rem;
+  border-radius: 8px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--whatif, #8a4fd0) 22%, var(--surface));
+  border: 2px dashed var(--whatif, #8a4fd0);
+}
+.crumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.crumbs li + li::before {
+  content: '›';
+  margin: 0 0.4rem;
+}
+.crumbs li[aria-current='step'] {
+  color: var(--text);
+  font-weight: 700;
+}
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 0.5);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  z-index: 100;
+}
+.dialog {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem;
+  max-width: 26rem;
+  width: 100%;
+  box-shadow: 0 10px 40px rgb(0 0 0 / 0.4);
+}
+.dialog h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.15rem;
+}
+.noteWhy {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+.noteWhy input {
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.4rem 0.5rem;
+}
+.dialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}

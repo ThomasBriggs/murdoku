@@ -37,7 +37,7 @@ export default function App({ store }: { store?: StoreApi<GameStore> } = {}) {
 
   return (
     <StoreContext.Provider value={s}>
-      <header className={styles.header}>
+      <header className={`${styles.header} print-hide`}>
         <h1 data-testid="app-title">Murdoku</h1>
         {puzzle && (
           <p className={styles.meta}>

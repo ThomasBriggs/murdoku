@@ -108,6 +108,24 @@ export function Toolbar(p: ToolbarProps) {
               />
               Clear a person’s candidate initials once placed
             </label>
+            <label>
+              <input
+                type="checkbox"
+                data-testid="setting-linklogic"
+                checked={p.settings.linkLogicGrid}
+                onChange={(e) => p.onSettings({ linkLogicGrid: e.target.checked })}
+              />
+              Logic grid ticks shade the selected person’s cells
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                data-testid="setting-clueallows"
+                checked={p.settings.showClueAllows}
+                onChange={(e) => p.onSettings({ showClueAllows: e.target.checked })}
+              />
+              Show where the selected person’s clue allows (counts as an assist)
+            </label>
             <fieldset className={styles.theme}>
               <legend>Theme</legend>
               {THEMES.map((t) => (

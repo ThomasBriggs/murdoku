@@ -145,3 +145,21 @@
     outline-offset: -3px;
   }
 }
+
+/* Assists: cells the selected person's clue rules out, and cells their logic-grid ticks allow. */
+.dim::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgb(20 20 20 / 0.5);
+  pointer-events: none;
+  z-index: 1;
+}
+.possible::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--hc-blue) 30%, transparent);
+  box-shadow: inset 0 0 0 2px var(--hc-blue);
+  pointer-events: none;
+}

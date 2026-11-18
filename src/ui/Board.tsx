@@ -7,6 +7,7 @@ import type { Tool } from '../state/store';
 import styles from './Board.module.css';
 import { Cell, type ActivateMods, type CellAnn } from './Cell';
 import { CellMarks, type CandidateView } from './CellMarks';
+import { DrawingLayer, type DrawingProps } from './DrawingLayer';
 import { NoteInput } from './NoteInput';
 import type { RoomColor } from './roomColors';
 import { COLUMN_LETTERS, panelOrder, type Highlight } from './types';
@@ -27,6 +28,12 @@ export interface BoardProps {
   autoCross: boolean;
   conflictHighlight: boolean;
   shakeCell: number | null;
+  /** Cells the selected person's clue rules out (assist) and cells their logic-grid ticks allow. */
+  dimmed?: ReadonlySet<number>;
+  possible?: ReadonlySet<number>;
+  /** Open what-if depth (0 = none); tints the board. */
+  whatIfLevel?: number;
+  draw: Omit<DrawingProps, 'strokes' | 'visible'>;
   onCursor(r: number, c: number): void;
   onActivate(r: number, c: number, mods?: ActivateMods): void;
   onContextMenu(r: number, c: number): void;
@@ -214,6 +221,7 @@ export function Board(p: BoardProps) {
       className={`${styles.frame} ${vis.margins ? '' : styles.noMargins}`}
       data-testid="board"
       data-tool={p.tool}
+      data-whatif={p.whatIfLevel ? p.whatIfLevel : undefined}
     >
       <div className={styles.colNotes} data-testid="col-notes">
         {vis.margins &&
@@ -306,6 +314,8 @@ export function Board(p: BoardProps) {
                   selected={occ !== undefined && occ === p.selectedPerson}
                   cursor={p.cursor.r === r && p.cursor.c === c}
                   shaking={p.shakeCell === key}
+                  dimmed={p.dimmed?.has(key)}
+                  possible={p.possible?.has(key)}
                   ann={ann}
                   annotations={
                     <CellMarks
@@ -328,6 +338,7 @@ export function Board(p: BoardProps) {
           </div>
         ))}
       </div>
+      <DrawingLayer strokes={annotations.strokes} visible={vis.drawing} {...p.draw} />
       <div className={styles.rowNotes} data-testid="row-notes">
         {vis.margins &&
           Array.from({ length: GRID_SIZE }, (_, r) => (

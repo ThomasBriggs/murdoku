@@ -28,6 +28,10 @@ export interface CellProps {
   /** Roving-tabindex cursor is on this cell. */
   cursor: boolean;
   shaking: boolean;
+  /** Ruled out by the selected person's clue (assist, SPEC §6.5.9). */
+  dimmed?: boolean;
+  /** Possible for the selected person according to the player's logic grid. */
+  possible?: boolean;
   onActivate(r: number, c: number, mods?: ActivateMods): void;
   onFocusCell(r: number, c: number): void;
   onContextMenu?(r: number, c: number): void;
@@ -90,6 +94,8 @@ export function Cell(p: CellProps) {
     p.ann?.inSelection && styles.inSel,
     (p.ann?.mark === 'cross' || p.ann?.tentative.length) && styles.crossed,
     p.shaking && styles.shake,
+    p.dimmed && styles.dim,
+    p.possible && styles.possible,
   ]
     .filter(Boolean)
     .join(' ');
@@ -114,6 +120,8 @@ export function Cell(p: CellProps) {
       data-highlight={p.highlighted ? 'true' : undefined}
       data-mark={p.ann?.mark || undefined}
       data-hl-color={p.ann?.color || undefined}
+      data-dim={p.dimmed ? 'true' : undefined}
+      data-possible={p.possible ? 'true' : undefined}
       data-sel={p.ann?.inSelection ? 'true' : undefined}
       data-candidates={p.ann?.candidates.length ? p.ann.candidates.join(',') : undefined}
       data-eliminated={p.ann?.eliminated.length ? p.ann.eliminated.join(',') : undefined}

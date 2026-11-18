@@ -1,0 +1,234 @@
+/* Print / PDF (SPEC §6.5.10): a clean black-and-white single page. The sheet is
+   hidden on screen and is the only thing shown when printing. */
+.print-sheet {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: auto;
+    margin: 10mm;
+  }
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .print-hide,
+  [data-testid='game'] > :not(.print-sheet),
+  [data-testid='puzzle-status'],
+  [data-testid='generating'] {
+    display: none !important;
+  }
+  [data-testid='game'] {
+    display: block !important;
+    padding: 0 !important;
+    max-width: none !important;
+  }
+
+  .print-sheet {
+    --icon-fill: #e4e4e4;
+    --icon: #000;
+    display: block;
+    color: #000;
+    background: #fff;
+    font-family: system-ui, sans-serif;
+    font-size: 9.5pt;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .print-sheet h1 {
+    margin: 0;
+    font-size: 16pt;
+    color: #000;
+  }
+  .print-sheet h2 {
+    margin: 0.5em 0 0.2em;
+    font-size: 10pt;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .ps-meta {
+    margin: 0.1em 0 0.6em;
+  }
+
+  .ps-frame {
+    --lab: 5mm;
+    --note: 0mm;
+    display: grid;
+    grid-template-columns: var(--lab) 140mm var(--note);
+    grid-template-rows: var(--lab) 140mm;
+    width: max-content;
+    margin-bottom: 0.6em;
+  }
+  .ps-with-notes {
+    --note: 16mm;
+    grid-template-rows: 5mm var(--lab) 140mm;
+  }
+  .ps-colnotes,
+  .ps-collabels,
+  .ps-rowlabels,
+  .ps-rownotes {
+    display: grid;
+    font-size: 8pt;
+    font-weight: 700;
+    text-align: center;
+    align-items: center;
+  }
+  .ps-colnotes,
+  .ps-collabels {
+    grid-template-columns: repeat(9, 1fr);
+    grid-column: 2;
+  }
+  .ps-rowlabels,
+  .ps-rownotes {
+    grid-template-rows: repeat(9, 1fr);
+  }
+  .ps-rowlabels {
+    grid-column: 1;
+  }
+  .ps-rownotes {
+    grid-column: 3;
+    text-align: left;
+    padding-left: 1mm;
+    font-weight: 400;
+  }
+  .ps-colnotes {
+    font-weight: 400;
+    font-size: 7pt;
+    overflow: hidden;
+  }
+  .ps-grid {
+    grid-column: 2;
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    grid-template-rows: repeat(9, 1fr);
+    background: #fff;
+    border: 0;
+  }
+  .ps-cell {
+    position: relative;
+    box-sizing: border-box;
+    border: 0 solid #000;
+    border-top: 0.3pt solid #777;
+    border-left: 0.3pt solid #777;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+  }
+  .ps-t {
+    border-top: 2.2pt solid #000;
+  }
+  .ps-l {
+    border-left: 2.2pt solid #000;
+  }
+  .ps-r {
+    border-right: 2.2pt solid #000;
+  }
+  .ps-b {
+    border-bottom: 2.2pt solid #000;
+  }
+  .ps-room {
+    position: absolute;
+    top: 0.6mm;
+    left: 1mm;
+    right: 0.5mm;
+    font-size: 5.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    line-height: 1.1;
+    z-index: 1;
+  }
+  .ps-furn {
+    width: 62%;
+    height: 62%;
+    margin-top: 2mm;
+    color: #000;
+  }
+  .ps-furn svg,
+  .ps-furn-s svg {
+    width: 100%;
+    height: 100%;
+    stroke: #000;
+  }
+  .ps-person {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 8mm;
+    height: 8mm;
+    border: 1.2pt solid #000;
+    border-radius: 50%;
+    background: #fff;
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    font-size: 11pt;
+    z-index: 2;
+  }
+  .ps-mark {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 16pt;
+    z-index: 1;
+  }
+  .ps-dot,
+  .ps-unsure {
+    font-size: 9pt;
+    inset: auto 1mm 0.5mm auto;
+  }
+  .ps-cands {
+    position: absolute;
+    inset: auto 0.5mm 0.5mm 0.5mm;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.7mm;
+    font-size: 5.5pt;
+    z-index: 1;
+  }
+  .ps-cands i {
+    font-style: normal;
+    font-weight: 700;
+  }
+  .ps-cands .ps-no {
+    text-decoration: line-through;
+    font-weight: 400;
+  }
+
+  .ps-lists {
+    display: grid;
+    grid-template-columns: 38mm 1fr;
+    gap: 6mm;
+    align-items: start;
+  }
+  .ps-lists ul,
+  .ps-lists ol {
+    margin: 0;
+    padding-left: 1.2em;
+  }
+  .ps-lists ul {
+    list-style: square;
+  }
+  .ps-lists li {
+    margin-bottom: 0.15em;
+    break-inside: avoid;
+  }
+  .ps-furnlist {
+    list-style: none !important;
+    padding-left: 0 !important;
+  }
+  .ps-furn-s {
+    display: inline-block;
+    width: 3.4mm;
+    height: 3.4mm;
+    margin-right: 1mm;
+    vertical-align: middle;
+  }
+  .ps-clues ol {
+    list-style: none;
+    padding-left: 0;
+    columns: 1;
+  }
+}

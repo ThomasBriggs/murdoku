@@ -47,3 +47,18 @@
     padding: 0;
   }
 }
+
+/* What-if: a tinted, dashed frame around the board while a hypothesis is open. */
+.boardArea[data-whatif] {
+  --whatif: #8a4fd0;
+  border: 3px dashed var(--whatif);
+  border-radius: 10px;
+  padding: 0.5rem;
+  background: color-mix(in srgb, var(--whatif) 9%, transparent);
+}
+.boardArea[data-whatif='2'] {
+  --whatif: #d0701a;
+}
+.boardArea[data-whatif='3'] {
+  --whatif: #1a9a8a;
+}

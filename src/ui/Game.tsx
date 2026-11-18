@@ -1,11 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { setHas } from '../engine/cellset';
+import { allowedCells } from '../engine/clues/evaluate';
+import { GRID_SIZE } from '../engine/constants';
 import { cellKey } from '../engine/types';
 import { furnitureCells, roomCells } from '../state/selection';
-import type { ColorId } from '../state/annotations';
-import { selectConflicts, type Tool } from '../state/store';
+import { slotOf, type ColorId } from '../state/annotations';
+import { logicPossibleCells } from '../state/logicGrid';
+import { selectConflicts, WHATIF_MAX_DEPTH, type Tool } from '../state/store';
 import { Board } from './Board';
 import type { ActivateMods } from './Cell';
 import { ConfirmDialog } from './ConfirmDialog';
+import { DrawControls } from './DrawControls';
+import { LogicGrid } from './LogicGrid';
+import { PrintSheet } from './PrintSheet';
+import { Scratchpad } from './Scratchpad';
+import { WhatIfBanner, WhatIfEndDialog, type WhatIfEnd } from './WhatIf';
 import { FurnitureLegend } from './FurnitureLegend';
 import { ClearMenu, describeClear, LayersMenu, type ClearChoice } from './ToolkitMenus';
 import { ColorPicker, PRIMARY_TOOLS, ToolPalette } from './ToolPalette';
@@ -49,6 +58,10 @@ export function Game() {
   const canUndo = useGame((g) => g.history.past.length > 0);
   const canRedo = useGame((g) => g.history.future.length > 0);
   const anyPlaced = useGame((g) => Object.values(g.placements).some((c) => c !== null));
+  const whatIfLevel = useGame((g) => g.whatIfStack.length);
+  const pen = useGame((g) => g.pen);
+  const penSize = useGame((g) => g.penSize);
+  const drawLocked = useGame((g) => g.drawLocked);
 
   const [cursor, setCursor] = useState({ r: 0, c: 0 });
   const [highlight, setHighlight] = useState<Highlight | null>(null);
@@ -57,6 +70,11 @@ export function Game() {
   const mobile = useMediaQuery('(max-width: 600px)');
   const [moreOpen, setMoreOpen] = useState(false);
   const [clearChoice, setClearChoice] = useState<ClearChoice | null>(null);
+  const [logicOpen, setLogicOpen] = useState(false);
+  const [scratchOpen, setScratchOpen] = useState(false);
+  const [whatIfEnd, setWhatIfEnd] = useState<WhatIfEnd | null>(null);
+  const [printOpen, setPrintOpen] = useState(false);
+  const [printMarks, setPrintMarks] = useState(false);
   const cursorRef = useRef(cursor);
   useEffect(() => {
     cursorRef.current = cursor;
@@ -74,6 +92,24 @@ export function Game() {
   );
 
   const selectionSet = useMemo(() => new Set(selection), [selection]);
+
+  // Assists: cells the selected person's clue rules out (SPEC §6.5.9) ...
+  const dimmed = useMemo(() => {
+    if (!settings.showClueAllows || selected === null || !puzzle) return undefined;
+    const allowed = allowedCells(puzzle, selected);
+    const out = new Set<number>();
+    for (let r = 0; r < GRID_SIZE; r++)
+      for (let c = 0; c < GRID_SIZE; c++) if (!setHas(allowed, r, c)) out.add(cellKey(r, c));
+    return out;
+  }, [settings.showClueAllows, selected, puzzle]);
+  // ... and cells the player's own logic-grid ticks leave possible (§6.5.5).
+  const possible = useMemo(() => {
+    if (!settings.linkLogicGrid || selected === null || !puzzle) return undefined;
+    return (
+      logicPossibleCells(annotations.logicGrid, puzzle.roomOf, slotOf(puzzle.people, selected)) ??
+      undefined
+    );
+  }, [settings.linkLogicGrid, selected, puzzle, annotations.logicGrid]);
 
   /** Cells a mark/key acts on: the multi-selection when there is one, else the cursor cell. */
   const targets = useCallback(
@@ -101,7 +137,8 @@ export function Game() {
       const s = store.getState();
       const key = cellKey(r, c);
       const sel = s.selectedPerson;
-      const t = s.tool;
+      // The draw tool only owns the pointer through the overlay; taps that reach a cell place.
+      const t = s.tool === 'draw' ? 'place' : s.tool;
       if (mods.keyboard && s.selection.length > 0 && t !== 'place' && t !== 'select') {
         s.applyTool(s.selection, mods.shift);
         return;
@@ -162,7 +199,7 @@ export function Game() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (confirmReset || clearChoice) return;
+      if (confirmReset || clearChoice || whatIfEnd || printOpen) return;
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
       const mod = e.ctrlKey || e.metaKey;
@@ -177,6 +214,7 @@ export function Game() {
         e.preventDefault();
         store.getState().redo();
       } else if (e.key === 'Escape') {
+        if (s.tool === 'draw') s.setTool('place');
         s.selectPerson(null);
         s.clearSelection();
       } else if (!mod && !e.altKey) {
@@ -197,7 +235,13 @@ export function Game() {
         else if (k === 'n') s.setTool(s.tool === 'notes' ? 'place' : 'notes');
         else if (k === 'p') s.setTool(s.tool === 'pencil' ? 'place' : 'pencil');
         else if (k === 'e') s.setTool(s.tool === 'eliminate' ? 'place' : 'eliminate');
-        else if (k === 'v') s.setTool('place');
+        else if (k === 'd') s.setTool(s.tool === 'draw' ? 'place' : 'draw');
+        else if (k === 'g') setLogicOpen((o) => !o);
+        else if (k === 'w') {
+          // W starts a what-if, or (inside one) asks how to end it; Shift+W nests another.
+          if (s.whatIfStack.length === 0 || e.shiftKey) s.startWhatIf();
+          else setWhatIfEnd('choose');
+        } else if (k === 'v') s.setTool('place');
         else if (k === 's') s.setTool(s.tool === 'select' ? 'place' : 'select');
         else if (k === 'c') {
           if (s.tool === 'highlight') s.cycleColor();
@@ -211,7 +255,7 @@ export function Game() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [store, confirmReset, clearChoice, targets]);
+  }, [store, confirmReset, clearChoice, whatIfEnd, printOpen, targets]);
 
   if (!puzzle) return null;
   const actions = store.getState();
@@ -221,6 +265,20 @@ export function Game() {
     actions.setTool('highlight');
     if (store.getState().selection.length > 0) store.getState().applyTool(selection);
   };
+  const closeMore = () => setMoreOpen(false);
+  const drawControls = (
+    <DrawControls
+      pen={pen}
+      size={penSize}
+      locked={drawLocked}
+      visible={annotations.layerVisibility.drawing}
+      hasStrokes={annotations.strokes.length > 0}
+      onPen={(v) => actions.setPen(v)}
+      onSize={(v) => actions.setPenSize(v)}
+      onLock={(v) => actions.setDrawLocked(v)}
+      onClear={() => actions.clearLayer('drawing')}
+    />
+  );
   const toolbar = (compact: boolean) => (
     <Toolbar
       compact={compact}
@@ -238,6 +296,46 @@ export function Game() {
         onToggle={(l, v) => actions.setLayerVisible(l, v)}
       />
       <ClearMenu onChoose={setClearChoice} />
+      <button
+        type="button"
+        data-testid="whatif-start"
+        disabled={whatIfLevel >= WHATIF_MAX_DEPTH}
+        aria-keyshortcuts="w"
+        title="Start what-if (W): try a hypothesis in pencil, then keep or abandon it"
+        onClick={() => {
+          actions.startWhatIf();
+          closeMore();
+        }}
+      >
+        <span aria-hidden="true">⑂</span>
+        <span>Start what-if</span>
+      </button>
+      <button
+        type="button"
+        data-testid="logic-toggle"
+        aria-pressed={logicOpen}
+        aria-keyshortcuts="g"
+        title="Logic grid (G)"
+        onClick={() => {
+          setLogicOpen((o) => !o);
+          closeMore();
+        }}
+      >
+        <span aria-hidden="true">▦</span>
+        <span>Logic grid</span>
+      </button>
+      <button
+        type="button"
+        data-testid="print-button"
+        title="Print or save as PDF"
+        onClick={() => {
+          setPrintOpen(true);
+          closeMore();
+        }}
+      >
+        <span aria-hidden="true">⎙</span>
+        <span>Print</span>
+      </button>
     </Toolbar>
   );
 
@@ -246,8 +344,9 @@ export function Game() {
       <div className={styles.toolbarArea}>
         {mobile ? (
           <>
-            {tool === 'highlight' && !moreOpen && (
+            {(tool === 'highlight' || tool === 'draw') && !moreOpen && (
               <div className={palette.slim} data-testid="color-row">
+                {tool === 'draw' && drawControls}
                 <ColorPicker color={color} onColor={onColor} />
               </div>
             )}
@@ -332,11 +431,20 @@ export function Game() {
         ) : (
           <>
             <ToolPalette tool={tool} color={color} onTool={onTool} onColor={onColor} />
+            {tool === 'draw' && drawControls}
             {toolbar(false)}
           </>
         )}
       </div>
-      <div className={styles.boardArea}>
+      <div className={styles.boardArea} data-whatif={whatIfLevel || undefined}>
+        {whatIfLevel > 0 && (
+          <WhatIfBanner
+            level={whatIfLevel}
+            onKeep={() => setWhatIfEnd('keep')}
+            onAbandon={() => setWhatIfEnd('abandon')}
+            onNest={() => actions.startWhatIf()}
+          />
+        )}
         <Board
           puzzle={puzzle}
           roomColors={roomColors}
@@ -352,6 +460,17 @@ export function Game() {
           autoCross={settings.autoCross}
           conflictHighlight={settings.conflictHighlight}
           shakeCell={shakeCell}
+          dimmed={dimmed}
+          possible={possible}
+          whatIfLevel={whatIfLevel}
+          draw={{
+            active: tool === 'draw' && !drawLocked,
+            pen,
+            size: penSize,
+            color,
+            onStroke: (s) => actions.addStroke(s),
+            onErase: (i) => actions.eraseStrokes(i),
+          }}
           onCursor={(r, c) => setCursor({ r, c })}
           onActivate={onActivate}
           onContextMenu={onContextMenu}
@@ -388,6 +507,22 @@ export function Game() {
             )
           }
         />
+        {logicOpen && (
+          <LogicGrid
+            puzzle={puzzle}
+            roomColors={roomColors}
+            grid={annotations.logicGrid}
+            sheet={mobile}
+            onCycle={(t, slot, i) => actions.cycleLogicCell(t, slot, i)}
+            onClose={() => setLogicOpen(false)}
+          />
+        )}
+        <Scratchpad
+          value={annotations.scratchpad}
+          open={scratchOpen}
+          onToggle={setScratchOpen}
+          onCommit={(text) => actions.setScratchpad(text)}
+        />
       </div>
       <div className={styles.panelArea}>
         <PeoplePanel
@@ -400,6 +535,51 @@ export function Game() {
           onHighlight={setHighlight}
         />
       </div>
+      <PrintSheet
+        puzzle={puzzle}
+        placements={placements}
+        annotations={annotations}
+        includeMarks={printMarks}
+      />
+      {whatIfEnd && (
+        <WhatIfEndDialog
+          mode={whatIfEnd}
+          level={whatIfLevel}
+          onCancel={() => setWhatIfEnd(null)}
+          onEnd={(outcome, note) => {
+            if (outcome === 'keep') actions.keepWhatIf(note);
+            else actions.abandonWhatIf(note);
+            setWhatIfEnd(null);
+          }}
+        />
+      )}
+      {printOpen && (
+        <ConfirmDialog
+          testId="print-dialog"
+          title="Print or save as PDF"
+          confirmLabel="Print"
+          confirmTestId="print-confirm"
+          cancelTestId="print-cancel"
+          neutral
+          onCancel={() => setPrintOpen(false)}
+          onConfirm={() => {
+            setPrintOpen(false);
+            // Let the dialog unmount first so focus and layout are settled.
+            window.setTimeout(() => window.print(), 50);
+          }}
+        >
+          <p>A clean black-and-white page with the board, rooms and clues.</p>
+          <label>
+            <input
+              type="checkbox"
+              data-testid="print-include-marks"
+              checked={printMarks}
+              onChange={(e) => setPrintMarks(e.target.checked)}
+            />{' '}
+            Include my marks (placements, crosses, candidates, margin notes)
+          </label>
+        </ConfirmDialog>
+      )}
       {confirmReset && (
         <ConfirmDialog
           testId="reset-dialog"
