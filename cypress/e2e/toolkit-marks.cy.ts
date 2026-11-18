@@ -139,12 +139,12 @@ describe('solving toolkit: marks, notes, highlights', () => {
   it('quick-selects a row, a column, a room and a furniture type', () => {
     load();
     cy.get('[data-testid="row-label-3"]').click();
-    cy.get('[data-sel="true"]').should('have.length', 10);
+    cy.get('[data-sel="true"]').should('have.length', 9);
     cell(3, 7).should('have.attr', 'data-sel', 'true');
     cy.get('[data-testid="col-label-5"]').click({ shiftKey: true });
     cy.get('[data-sel="true"]').should('have.length', 17);
     cy.get('[data-testid="col-label-0"]').click();
-    cy.get('[data-sel="true"]').should('have.length', 10);
+    cy.get('[data-sel="true"]').should('have.length', 9);
     cell(8, 0).should('have.attr', 'data-sel', 'true');
 
     // whole room by double-clicking its label, then cross it all out
