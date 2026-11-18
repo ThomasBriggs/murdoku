@@ -69,3 +69,58 @@ export function gesture(points: [number, number][]) {
     cy.wrap($l).trigger('pointerup', at(points[points.length - 1]!));
   });
 }
+
+/** Open the desktop overflow menu or the mobile More sheet, unless it is already open. */
+export function openMore() {
+  cy.get('body').then(($b) => {
+    if ($b.find(sel('overflow-menu')).length || $b.find(sel('more-sheet')).length) return;
+    cy.get(sel($b.find(sel('overflow-button')).length ? 'overflow-button' : 'more-button')).click();
+  });
+}
+
+/** Click a secondary action (Reset, Layers, Clear, What-if, Logic grid, Print, Settings), opening the menu first. */
+export function moreClick(id: string) {
+  openMore();
+  cy.get(sel(id)).click();
+}
+
+/** Run axe on the page (or a context) and fail with a readable list of violations. */
+export function checkA11y(context?: string) {
+  cy.injectAxe();
+  cy.checkA11y(
+    context ?? undefined,
+    {
+      runOnly: {
+        type: 'tag',
+        values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'],
+      },
+    },
+    (violations) => {
+      const msg = violations
+        .map(
+          (v) =>
+            `${v.id} [${v.impact}] ${v.help}\n` +
+            v.nodes
+              .slice(0, 6)
+              .map(
+                (n) =>
+                  `    ${n.target.join(' ')}  ${(n.any[0]?.message ?? n.failureSummary ?? '').split('\n')[0]}`,
+              )
+              .join('\n'),
+        )
+        .join('\n');
+      cy.task('log', `AXE VIOLATIONS:\n${msg}`);
+    },
+  );
+}
+
+/** Pick a theme through the Settings popover (desktop menu or mobile sheet), then close it again. */
+export function setTheme(theme: 'light' | 'dark') {
+  moreClick('settings-button');
+  cy.get(sel(`theme-${theme}`)).check();
+  cy.get(sel('settings-button')).click();
+  cy.get('body').then(($b) => {
+    if ($b.find(sel('more-close')).length) cy.get(sel('more-close')).click();
+    else if ($b.find(sel('overflow-menu')).length) cy.get('body').type('{esc}');
+  });
+}
