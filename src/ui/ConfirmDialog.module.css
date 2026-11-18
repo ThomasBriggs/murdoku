@@ -30,7 +30,7 @@
 .danger {
   background: var(--danger);
   border-color: var(--danger);
-  color: #fff;
+  color: var(--on-danger);
 }
 .wide {
   max-width: 34rem;

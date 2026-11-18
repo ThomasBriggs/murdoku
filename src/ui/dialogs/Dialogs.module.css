@@ -41,7 +41,7 @@
 .primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 .stats {
   display: grid;
@@ -136,6 +136,6 @@
   padding: 0 0.5rem;
   border-radius: 999px;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-size: 0.8rem;
 }

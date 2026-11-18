@@ -43,7 +43,7 @@
   right: -10%;
   top: -10%;
   background: var(--danger);
-  color: #fff;
+  color: var(--on-danger);
 }
 .conflict {
   box-shadow:
