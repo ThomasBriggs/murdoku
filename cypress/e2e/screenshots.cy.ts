@@ -1,6 +1,8 @@
 // Visual review shots. Cypress's Electron screenshot capture hangs in some headless
 // setups, so these only run on request:
 //   cypress run --browser firefox --expose SCREENSHOTS=1 --spec cypress/e2e/screenshots.cy.ts
+import { moreClick, setTheme as sharedSetTheme } from '../support/helpers';
+
 const URL = '/?seed=cy-board&d=easy';
 const cell = (r: number, c: number) => cy.get(`[data-testid="cell-${r}-${c}"]`);
 
@@ -25,11 +27,7 @@ suite('board screenshots', () => {
         cy.viewport(w, h);
         cy.visit(URL);
         cy.get('[data-testid="board"]').should('be.visible');
-        inMore(w, () => {
-          cy.get('[data-testid="settings-button"]').click();
-          cy.get(`[data-testid="theme-${theme}"]`).check();
-          cy.get('[data-testid="settings-button"]').click();
-        });
+        setTheme(w, theme);
         cy.get('[data-testid="board-grid"] [data-blocked="false"]').then(($cells) => {
           const free = $cells
             .toArray()
@@ -59,11 +57,7 @@ suite('toolkit screenshots', () => {
       cy.viewport(w, h);
       cy.visit('/?seed=cy-marks&d=easy');
       cy.get('[data-testid="board"]').should('be.visible');
-      inMore(w, () => {
-        cy.get('[data-testid="settings-button"]').click();
-        cy.get(`[data-testid="theme-${theme}"]`).check();
-        cy.get('[data-testid="settings-button"]').click();
-      });
+      setTheme(w, theme);
       // crosses, dots and a question mark
       cy.get('[data-testid="tool-cross"]').click();
       for (const [r, c] of [
@@ -134,12 +128,31 @@ suite('toolkit screenshots', () => {
     });
 });
 
-function setTheme(w: number, theme: 'light' | 'dark') {
-  inMore(w, () => {
-    cy.get('[data-testid="settings-button"]').click();
-    cy.get(`[data-testid="theme-${theme}"]`).check();
-    cy.get('[data-testid="settings-button"]').click();
+suite('tentative close-up', () => {
+  it('tentative token next to a placed token', () => {
+    cy.viewport(1280, 900);
+    cy.visit('/?seed=cy-marks&d=easy');
+    cy.get('[data-testid="board"]').should('be.visible');
+    cy.get('[data-testid="board-grid"] [data-blocked="false"]').then(($cells) => {
+      const free = $cells
+        .toArray()
+        .map((el) => [Number(el.dataset.r), Number(el.dataset.c)] as [number, number]);
+      cy.get('[data-testid="person-card-0"]').click();
+      cell(free[0]![0], free[0]![1]).click();
+      cy.get('[data-testid="tool-pencil"]').click();
+      cy.get('[data-testid="person-card-4"]').click();
+      cell(free[1]![0], free[1]![1]).click();
+      cy.get('[data-testid="person-card-5"]').click();
+      cell(free[2]![0], free[2]![1]).click();
+    });
+    cy.get('[data-testid="tool-place"]').click();
+    cy.get('[data-testid^="tentative-"]').first().scrollIntoView();
+    cy.get('[data-testid="board"]').screenshot('tentative-closeup', { capture: 'viewport' });
   });
+});
+
+function setTheme(_w: number, theme: 'light' | 'dark') {
+  sharedSetTheme(theme);
 }
 
 function logicMarks() {
@@ -222,7 +235,7 @@ suite('advanced toolkit screenshots', () => {
     cy.visit('/?seed=cy-adv&d=easy');
     cy.get('[data-testid="board"]').should('be.visible');
     setTheme(375, 'light');
-    inMore(375, () => cy.get('[data-testid="logic-toggle"]').click());
+    moreClick('logic-toggle');
     cy.get('[data-testid="logic-grid"]').should('be.visible');
     logicMarks();
     cy.get('[data-testid="logic-grid"]').scrollTo('top');
