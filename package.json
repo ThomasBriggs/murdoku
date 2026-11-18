@@ -13,7 +13,8 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "e2e": "npm run build && start-server-and-test preview http://localhost:4173 'cypress run'",
+    "e2e": "npm run build && start-server-and-test preview http://localhost:4173 'cypress run --browser firefox'",
+    "e2e:electron": "npm run build && start-server-and-test preview http://localhost:4173 'cypress run --browser electron'",
     "e2e:open": "start-server-and-test preview http://localhost:4173 'cypress open'"
   },
   "dependencies": {
