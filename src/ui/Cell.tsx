@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { memo, useEffect, type CSSProperties, type ReactNode } from 'react';
 import { FURNITURE, isOccupiable } from '../engine/furniture';
 import type { FurnitureType, Person, Room } from '../engine/types';
 import type { ColorId, MarkKind } from '../state/annotations';
@@ -78,7 +78,48 @@ export function cellLabel(
   return `Row ${r + 1}, column ${COLUMN_LETTERS[c]}, ${roomName}, ${f}, ${state}`;
 }
 
-export function Cell(p: CellProps) {
+let renderProbe: ((r: number, c: number) => void) | null = null;
+/** Test hook: called after every committed render of any Cell (used by the re-render guard). */
+export function setCellRenderProbe(fn: ((r: number, c: number) => void) | null) {
+  renderProbe = fn;
+}
+
+const sameList = (a: readonly unknown[], b: readonly unknown[]) =>
+  a === b || (a.length === b.length && a.every((x, i) => x === b[i]));
+
+function sameAnn(a: CellAnn | undefined, b: CellAnn | undefined) {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return (
+    a.mark === b.mark &&
+    a.color === b.color &&
+    a.inSelection === b.inSelection &&
+    sameList(a.candidates, b.candidates) &&
+    sameList(a.eliminated, b.eliminated) &&
+    sameList(a.tentative, b.tentative)
+  );
+}
+
+/**
+ * Re-render a cell only when something it shows changed. Callbacks are ignored (the parent
+ * passes inline wrappers around stable store actions), and `annotations` is derived from `ann`.
+ */
+function cellPropsEqual(a: CellProps, b: CellProps) {
+  for (const k of Object.keys(a) as (keyof CellProps)[]) {
+    if (k === 'annotations' || typeof a[k] === 'function') continue;
+    if (k === 'ann') {
+      if (!sameAnn(a.ann, b.ann)) return false;
+    } else if (k === 'conflicts') {
+      if (!sameList(a.conflicts, b.conflicts)) return false;
+    } else if (!Object.is(a[k], b[k])) return false;
+  }
+  return true;
+}
+
+export const Cell = memo(function Cell(p: CellProps) {
+  useEffect(() => {
+    renderProbe?.(p.r, p.c);
+  });
   const { r, c, room, furniture, walls, person } = p;
   const blocked = furniture !== null && !isOccupiable(furniture);
   const hasConflict = p.conflicts.length > 0;
@@ -191,4 +232,4 @@ export function Cell(p: CellProps) {
       )}
     </div>
   );
-}
+}, cellPropsEqual);
