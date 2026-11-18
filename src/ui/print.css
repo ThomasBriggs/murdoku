@@ -133,7 +133,8 @@
     top: 0.6mm;
     left: 1mm;
     right: 0.5mm;
-    font-size: 5.5pt;
+    font-size: 5pt;
+    letter-spacing: -0.02em;
     font-weight: 700;
     text-transform: uppercase;
     line-height: 1.1;

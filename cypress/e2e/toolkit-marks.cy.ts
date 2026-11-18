@@ -27,7 +27,7 @@ function drag(cells: [number, number][]) {
 describe('solving toolkit: marks, notes, highlights', () => {
   it('has a tooltip with the shortcut on every tool', () => {
     load();
-    cy.get('button[data-testid^="tool-"]').should('have.length', 9);
+    cy.get('button[data-testid^="tool-"]').should('have.length', 10);
     tool('cross').should('have.attr', 'title').and('contain', 'X');
     tool('pencil').should('have.attr', 'title').and('contain', 'P');
     tool('notes').should('have.attr', 'title').and('contain', 'N');
@@ -139,12 +139,12 @@ describe('solving toolkit: marks, notes, highlights', () => {
   it('quick-selects a row, a column, a room and a furniture type', () => {
     load();
     cy.get('[data-testid="row-label-3"]').click();
-    cy.get('[data-sel="true"]').should('have.length', 9);
+    cy.get('[data-sel="true"]').should('have.length', 10);
     cell(3, 7).should('have.attr', 'data-sel', 'true');
     cy.get('[data-testid="col-label-5"]').click({ shiftKey: true });
     cy.get('[data-sel="true"]').should('have.length', 17);
     cy.get('[data-testid="col-label-0"]').click();
-    cy.get('[data-sel="true"]').should('have.length', 9);
+    cy.get('[data-sel="true"]').should('have.length', 10);
     cell(8, 0).should('have.attr', 'data-sel', 'true');
 
     // whole room by double-clicking its label, then cross it all out

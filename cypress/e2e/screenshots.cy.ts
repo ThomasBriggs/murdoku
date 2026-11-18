@@ -133,3 +133,98 @@ suite('toolkit screenshots', () => {
       cy.screenshot(`toolkit-${name}-${theme}`, { capture: 'fullPage' });
     });
 });
+
+function setTheme(w: number, theme: 'light' | 'dark') {
+  inMore(w, () => {
+    cy.get('[data-testid="settings-button"]').click();
+    cy.get(`[data-testid="theme-${theme}"]`).check();
+    cy.get('[data-testid="settings-button"]').click();
+  });
+}
+
+function logicMarks() {
+  for (const [t, s, i, n] of [
+    ['rooms', 0, 0, 2],
+    ['rooms', 0, 1, 1],
+    ['rooms', 0, 2, 1],
+    ['rooms', 1, 1, 2],
+    ['rooms', 2, 0, 1],
+    ['rows', 0, 3, 2],
+    ['rows', 1, 0, 1],
+    ['cols', 2, 4, 2],
+    ['cols', 3, 4, 1],
+  ] as const)
+    for (let k = 0; k < n; k++) cy.get(`[data-testid="logic-${t}-${s}-${i}"]`).click();
+}
+
+suite('advanced toolkit screenshots', () => {
+  it('logic grid desktop light', () => {
+    cy.viewport(1280, 900);
+    cy.visit('/?seed=cy-adv&d=easy');
+    cy.get('[data-testid="board"]').should('be.visible');
+    setTheme(1280, 'light');
+    cy.get('body').type('g');
+    logicMarks();
+    cy.get('[data-testid="logic-grid"]').scrollIntoView();
+    cy.screenshot('logic-grid-desktop-light', { capture: 'fullPage' });
+  });
+
+  it('pen drawing and what-if banner desktop dark', () => {
+    cy.viewport(1280, 900);
+    cy.visit('/?seed=cy-adv&d=easy');
+    cy.get('[data-testid="board"]').should('be.visible');
+    setTheme(1280, 'dark');
+    cy.get('body').type('w');
+    cy.get('[data-testid="person-card-1"]').click();
+    cy.get('[data-testid="board-grid"] [data-blocked="false"]').first().click();
+    cy.get('body').type('d');
+    const stroke = (pts: [number, number][]) =>
+      cy.get('[data-testid="drawing-layer"]').then(($l) => {
+        const rect = $l[0]!.getBoundingClientRect();
+        const at = ([x, y]: [number, number]) => ({
+          clientX: rect.left + rect.width * x,
+          clientY: rect.top + rect.height * y,
+          pointerId: 1,
+          button: 0,
+          force: true,
+        });
+        cy.wrap($l).trigger('pointerdown', at(pts[0]!));
+        for (const p of pts.slice(1)) cy.wrap($l).trigger('pointermove', at(p));
+        cy.wrap($l).trigger('pointerup', at(pts[pts.length - 1]!));
+      });
+    cy.get('[data-testid="color-red"]').click();
+    // a circle around a few cells, then an arrow
+    const circle: [number, number][] = Array.from({ length: 25 }, (_, i) => [
+      0.3 + 0.16 * Math.cos((i / 24) * 2 * Math.PI),
+      0.35 + 0.12 * Math.sin((i / 24) * 2 * Math.PI),
+    ]);
+    stroke(circle);
+    cy.get('[data-testid="color-blue"]').click();
+    stroke([
+      [0.5, 0.75],
+      [0.7, 0.62],
+      [0.65, 0.64],
+      [0.7, 0.62],
+      [0.69, 0.68],
+    ]);
+    cy.get('[data-testid="pen-highlighter"]').click();
+    cy.get('[data-testid="color-amber"]').click();
+    stroke([
+      [0.1, 0.9],
+      [0.6, 0.9],
+    ]);
+    cy.get('body').type('{esc}');
+    cy.screenshot('pen-whatif-desktop-dark', { capture: 'fullPage' });
+  });
+
+  it('logic grid sheet mobile light', () => {
+    cy.viewport(375, 740);
+    cy.visit('/?seed=cy-adv&d=easy');
+    cy.get('[data-testid="board"]').should('be.visible');
+    setTheme(375, 'light');
+    inMore(375, () => cy.get('[data-testid="logic-toggle"]').click());
+    cy.get('[data-testid="logic-grid"]').should('be.visible');
+    logicMarks();
+    cy.screenshot('logic-grid-mobile-light', { capture: 'viewport' });
+  });
+});
