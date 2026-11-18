@@ -262,6 +262,8 @@ export function Game() {
 
   const onColor = (c: ColorId) => {
     actions.setColor(c);
+    // While drawing, the colour is the pen's colour; otherwise it switches to Highlight.
+    if (tool === 'draw') return;
     actions.setTool('highlight');
     if (store.getState().selection.length > 0) store.getState().applyTool(selection);
   };

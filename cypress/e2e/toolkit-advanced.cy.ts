@@ -70,6 +70,17 @@ describe('solving toolkit: logic grid, pen, scratchpad, what-if, helpers, print'
     cy.get('[data-testid="drawing-layer"] path[data-testid^="stroke-"]').should('have.length', 0);
     tid('undo').click();
     cy.get('[data-testid="drawing-layer"] path[data-testid^="stroke-"]').should('have.length', 1);
+    // picking a colour while drawing keeps the draw tool and colours the pen
+    tid('color-red').click();
+    tid('tool-draw').should('have.attr', 'aria-pressed', 'true');
+    gesture([
+      [0.1, 0.6],
+      [0.5, 0.6],
+    ]);
+    cy.get('[data-testid="drawing-layer"] path[data-testid="stroke-1"]')
+      .should('have.attr', 'style')
+      .and('contain', 'hc-red');
+    tid('undo').click();
     // highlighter and a different width
     tid('pen-highlighter').click();
     tid('pen-size-2').click();
