@@ -15,6 +15,17 @@ describe('layout', () => {
         expect(gap).to.be.lessThan(141);
       });
     });
+    cy.get(sel('board')).then(($b) => {
+      const r = $b[0]!.getBoundingClientRect();
+      cy.log(`board spans ${Math.round(r.top)}..${Math.round(r.bottom)}px`);
+      expect(r.bottom, 'board fully above the fold').to.be.lessThan(901);
+    });
+    cy.get(sel('room-legend')).then(($l) => {
+      const bottom = $l[0]!.getBoundingClientRect().bottom;
+      cy.log(`room legend ends at ${Math.round(bottom)}px`);
+      expect(bottom, 'room legend fully visible').to.be.lessThan(901);
+    });
+    cy.window().its('scrollY').should('eq', 0);
     cy.get(sel('furniture-legend')).then(($l) => {
       const bottom = $l[0]!.getBoundingClientRect().bottom;
       cy.log(`furniture legend ends at ${Math.round(bottom)}px`);
