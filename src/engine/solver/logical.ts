@@ -826,10 +826,14 @@ export function solveLogically(
 }
 
 /**
- * The next deduction a human could make from the player's current placements:
- * the first 'place' step the solver finds for someone not yet placed (or, if
- * it only finds eliminations, the first one beyond plain clue filtering).
- * Returns null if the board is complete, contradictory, or the solver stalls.
+ * Next step a person can act on: the first 'place' deduction for someone not
+ * yet placed. Eliminations found on the way (room logic, locked sets, trials)
+ * are summarised in front of it, so the explanation reads as a short chain.
+ * When the solver narrows someone down to a single cell without recording a
+ * placement (the last person, or a finish by elimination) that placement is
+ * synthesised. If no placement can be derived, the first elimination beyond
+ * plain clue filtering is returned. Null if the board is complete,
+ * contradictory, or the solver stalls.
  */
 export function nextDeduction(puzzle: Puzzle, state: PlayerState): Deduction | null {
   const ctx = makeCtx(puzzle, true);
@@ -851,6 +855,36 @@ export function nextDeduction(puzzle: Puzzle, state: PlayerState): Deduction | n
     return found !== null;
   };
   run(ctx, cand, 6, firstPlace);
-  if (found) return found;
-  return ctx.rec!.steps[0] ?? null;
+  const steps = ctx.rec!.steps;
+  // Eliminations that led here, skipping plain clue filtering (technique 1).
+  const chain = (until: Deduction | null) =>
+    steps
+      .slice(0, until ? steps.indexOf(until) : steps.length)
+      .filter((d) => d.kind === 'eliminate' && d.technique >= 4)
+      .slice(-3);
+  const withChain = (d: Deduction, lead: Deduction[]): Deduction =>
+    lead.length === 0
+      ? d
+      : {
+          ...d,
+          technique: Math.max(d.technique, ...lead.map((l) => l.technique)) as Technique,
+          explanation: `${lead.map((l) => l.explanation).join(' ')} ${d.explanation}`,
+          involvedCells: [...lead.flatMap((l) => l.involvedCells), ...d.involvedCells],
+        };
+  if (found) return withChain(found, chain(found));
+  for (let p = 0; p < PEOPLE; p++) {
+    if (placedNow.has(p) || countOf(cand, p) !== 1) continue;
+    const r = lowBit(rowMaskOf(cand, p));
+    const cell = { r, c: lowBit(cand[p * N + r]!) };
+    const synthetic: Deduction = {
+      technique: 2,
+      kind: 'place',
+      person: p,
+      cells: [cell],
+      explanation: `Everywhere else is ruled out for ${name(ctx, p)}, so ${name(ctx, p)} must be at ${cellLabel(cell)}.`,
+      involvedCells: [cell],
+    };
+    return withChain(synthetic, chain(null));
+  }
+  return steps[0] ?? null;
 }

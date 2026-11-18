@@ -168,6 +168,24 @@ describe('logical solver', () => {
     expect(places).toBeGreaterThan(20);
   });
 
+  it('repeated nextDeduction calls place everyone, correctly, on every difficulty', () => {
+    for (const difficulty of ['easy', 'medium', 'hard'] as const) {
+      for (let i = 0; i < 8; i++) {
+        const { puzzle, solution } = generatePuzzle(`hint-drive-${difficulty}-${i}`, difficulty);
+        const placements: (Cell | null)[] = puzzle.people.map(() => null);
+        for (let step = 0; step < 9; step++) {
+          const d = nextDeduction(puzzle, { placements });
+          expect(d?.kind).toBe('place');
+          const cell = d!.cells[0]!;
+          expect(cell).toEqual(solution.cellOf[d!.person!]);
+          expect(placements[d!.person!]).toBeNull();
+          placements[d!.person!] = cell;
+        }
+        expect(nextDeduction(puzzle, { placements })).toBeNull();
+      }
+    }
+  });
+
   it('nextDeduction returns null for a full or contradictory board', () => {
     const { puzzle, solution } = generatePuzzle('hint-full', 'easy');
     expect(nextDeduction(puzzle, { placements: solution.cellOf })).toBeNull();
