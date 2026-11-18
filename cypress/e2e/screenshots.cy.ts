@@ -229,3 +229,59 @@ suite('advanced toolkit screenshots', () => {
     cy.screenshot('logic-grid-mobile-light', { capture: 'viewport' });
   });
 });
+
+suite('game flow screenshots', () => {
+  const t = (id: string) => `[data-testid="${id}"]`;
+
+  it('hint panel desktop light', () => {
+    cy.viewport(1280, 900);
+    cy.visit('/?seed=cy-flow&d=easy');
+    cy.get(t('board')).should('be.visible');
+    setTheme(1280, 'light');
+    cy.get(t('hint-button')).click();
+    cy.get(t('hint-panel')).should('be.visible');
+    cy.screenshot('hint-desktop-light', { capture: 'fullPage' });
+  });
+
+  it('win dialog desktop dark', () => {
+    cy.viewport(1280, 900);
+    cy.visit('/?seed=cy-flow&d=easy');
+    cy.get(t('board')).should('be.visible');
+    setTheme(1280, 'dark');
+    const solve = (guard = 20) => {
+      cy.get(t('accuse-button')).then(($a) => {
+        if (!$a.prop('disabled') || guard === 0) return;
+        cy.get(t('hint-button')).click();
+        cy.get(t('hint-panel')).then(($p) => {
+          cy.get(t(`person-card-${$p.attr('data-hint-person')}`)).click();
+          cell(Number($p.attr('data-hint-row')), Number($p.attr('data-hint-col'))).click();
+          solve(guard - 1);
+        });
+      });
+    };
+    solve();
+    cy.get(t('accuse-button')).click();
+    const tryNext = (ids: string[], i = 0) => {
+      cy.get(t(`accuse-suspect-${ids[i]}`)).check();
+      cy.get(t('accuse-confirm')).click();
+      cy.get(`${t('win-dialog')}, ${t('accuse-result')}`).then(($el) => {
+        if ($el.attr('data-testid') !== 'win-dialog') tryNext(ids, i + 1);
+      });
+    };
+    cy.get('[data-testid^="accuse-suspect-"]').then(($r) =>
+      tryNext($r.toArray().map((el) => el.dataset.testid!.replace('accuse-suspect-', ''))),
+    );
+    cy.get(t('win-dialog')).should('be.visible');
+    cy.screenshot('win-desktop-dark', { capture: 'viewport' });
+  });
+
+  it('rules dialog mobile light', () => {
+    cy.viewport(375, 740);
+    cy.visit('/?seed=cy-flow&d=easy');
+    cy.get(t('board')).should('be.visible');
+    setTheme(375, 'light');
+    cy.get(t('rules-button')).click();
+    cy.get(t('rules-dialog')).should('be.visible');
+    cy.screenshot('rules-mobile-light', { capture: 'viewport' });
+  });
+});
