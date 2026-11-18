@@ -1,0 +1,10 @@
+// Cloudflare Workers static-assets config (used by `npx wrangler deploy`).
+// The site is fully static: no Worker script, just the Vite build in ./dist.
+// "name" must match the Worker name you chose in the Cloudflare dashboard.
+{
+  "name": "murdoku",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./dist"
+  }
+}
