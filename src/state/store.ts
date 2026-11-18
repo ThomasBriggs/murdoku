@@ -15,6 +15,13 @@ import {
 } from '../engine/types';
 import {
   addClueHighlight,
+  addStroke,
+  appendScratchpadLine,
+  cycleLogicCell,
+  removeStrokes,
+  setScratchpad,
+  type LogicTable,
+  type Stroke,
   clearAllAnnotations,
   clearCells,
   clearClueHighlights,
@@ -52,6 +59,10 @@ export interface Settings {
   autoCross: boolean;
   conflictHighlight: boolean;
   autoClearCandidates: boolean;
+  /** A tick in the logic grid's People x Rooms shades that person's possible cells (SPEC §6.5.5). */
+  linkLogicGrid: boolean;
+  /** Dim the cells the selected person's clue rules out; counts as an assist (SPEC §6.5.9). */
+  showClueAllows: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -59,6 +70,8 @@ export const DEFAULT_SETTINGS: Settings = {
   autoCross: true,
   conflictHighlight: true,
   autoClearCandidates: true,
+  linkLogicGrid: false,
+  showClueAllows: false,
 };
 
 export type Placements = Record<PersonId, CellKey | null>;
@@ -72,11 +85,39 @@ export interface Undoable {
   placements: Placements;
   tentativePlacements: Placements;
   annotations: Annotations;
+  /**
+   * The what-if stack is part of the undoable slice, so starting, keeping and
+   * abandoning a branch are ordinary history entries: undo always restores a
+   * consistent (board, stack) pair.
+   */
+  whatIfStack: WhatIfFrame[];
 }
+
+/** The branch-able part of the state: everything in `Undoable` except the stack itself. */
+export type BoardSnapshot = Omit<Undoable, 'whatIfStack'>;
+
+/** One level of what-if: the board as it was when the branch started. JSON-serialisable. */
+export interface WhatIfFrame {
+  snapshot: BoardSnapshot;
+}
+
+export const WHATIF_MAX_DEPTH = 3;
 
 /** The active tool of the palette (SPEC §6.5). */
 export type Tool =
-  'place' | 'pencil' | 'cross' | 'dot' | 'unsure' | 'notes' | 'eliminate' | 'highlight' | 'select';
+  | 'place'
+  | 'pencil'
+  | 'cross'
+  | 'dot'
+  | 'unsure'
+  | 'notes'
+  | 'eliminate'
+  | 'highlight'
+  | 'select'
+  | 'draw';
+
+/** Pen layer tool (SPEC §6.5.6) and its size index into PEN_WIDTHS. */
+export type PenKind = 'pen' | 'highlighter' | 'eraser';
 
 export type TentativeResult = 'placed' | 'removed' | 'refused';
 
@@ -91,6 +132,8 @@ export interface GameState {
   /** "I think B goes here": never counted for conflicts, allPlaced or accuse. */
   tentativePlacements: Placements;
   annotations: Annotations;
+  /** Open what-if branches, outermost first (max WHATIF_MAX_DEPTH). Undoable. */
+  whatIfStack: WhatIfFrame[];
   /** Multi-selection of cells (not undoable, not saved). */
   selection: CellKey[];
   tool: Tool;
@@ -101,6 +144,12 @@ export interface GameState {
   hintsUsed: number;
   checksUsed: number;
   assistsUsed: number;
+  /** People for whom "show where this clue allows" was already counted (once per person per game). */
+  assistedPeople: PersonId[];
+  /** Pen layer view state (not undoable, not saved). */
+  pen: PenKind;
+  penSize: 0 | 1 | 2;
+  drawLocked: boolean;
   settings: Settings;
 }
 
@@ -164,6 +213,24 @@ export interface GameActions {
   clearAnnotations(): boolean;
   /** Clear placements, tentative placements and annotations. */
   resetEverything(): boolean;
+  // ---- pen layer, logic grid, scratchpad (SPEC §6.5.5-7)
+  setPen(pen: PenKind): void;
+  setPenSize(size: 0 | 1 | 2): void;
+  setDrawLocked(locked: boolean): void;
+  /** One undo step per finished stroke. */
+  addStroke(stroke: Stroke): boolean;
+  /** One undo step for any number of strokes (an eraser gesture). */
+  eraseStrokes(indices: readonly number[]): boolean;
+  cycleLogicCell(table: LogicTable, slot: number, index: number): boolean;
+  /** One undo step per call; the UI debounces and commits on blur. */
+  setScratchpad(text: string): boolean;
+  // ---- what-if branches (SPEC §6.5.8)
+  /** Snapshot the board onto the stack; refused beyond WHATIF_MAX_DEPTH. */
+  startWhatIf(): boolean;
+  /** Merge: pop the snapshot, keep the current board. `note` is appended to the scratchpad. */
+  keepWhatIf(note?: string): boolean;
+  /** Revert the board to the snapshot and pop it. `note` is appended to the scratchpad. */
+  abandonWhatIf(note?: string): boolean;
   tick(deltaMs: number): void;
   setRunning(running: boolean): void;
   updateSettings(patch: Partial<Settings>): void;
@@ -178,13 +245,20 @@ function emptyPlacements(): Placements {
 }
 
 export function undoableOf(
-  s: Pick<GameState, 'placements' | 'tentativePlacements' | 'annotations'>,
+  s: Pick<GameState, 'placements' | 'tentativePlacements' | 'annotations' | 'whatIfStack'>,
 ): Undoable {
   return {
     placements: s.placements,
     tentativePlacements: s.tentativePlacements,
     annotations: s.annotations,
+    whatIfStack: s.whatIfStack,
   };
+}
+
+/** The note line appended to the scratchpad when a what-if ends. */
+export function whatIfNoteLine(note: string, outcome: 'kept' | 'abandoned'): string {
+  const t = note.trim();
+  return t === '' ? '' : `What-if: ${t} → ${outcome}`;
 }
 
 /** Annotations from a snapshot, keeping the CURRENT layer visibility (a view setting). */
@@ -240,6 +314,17 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
       const playing = () => get().status === 'playing';
 
       /**
+       * "Show where this clue allows" is an assist: count it once per person per
+       * game, the first time that person is selected while the setting is on.
+       */
+      function countAssist(d: GameStore, person: PersonId | null): void {
+        if (person === null || !d.settings.showClueAllows || d.status !== 'playing') return;
+        if (d.assistedPeople.includes(person)) return;
+        d.assistedPeople.push(person);
+        d.assistsUsed += 1;
+      }
+
+      /**
        * Run a pure annotation helper; when it changes something, record the
        * previous state as one undo step. Returns whether anything changed.
        */
@@ -262,6 +347,7 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
         placements: emptyPlacements(),
         tentativePlacements: noTentative(),
         annotations: emptyAnnotations(),
+        whatIfStack: [],
         selection: [],
         tool: 'place',
         color: COLOR_IDS[0],
@@ -271,6 +357,10 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
         hintsUsed: 0,
         checksUsed: 0,
         assistsUsed: 0,
+        assistedPeople: [],
+        pen: 'pen',
+        penSize: 1,
+        drawLocked: false,
         settings: { ...DEFAULT_SETTINGS },
 
         async newGame(seed, difficulty) {
@@ -284,6 +374,7 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
             d.placements = emptyPlacements();
             d.tentativePlacements = noTentative();
             d.annotations = emptyAnnotations();
+            d.whatIfStack = [];
             d.selection = [];
             d.history = emptyHistory();
             d.elapsedMs = 0;
@@ -291,6 +382,7 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
             d.hintsUsed = 0;
             d.checksUsed = 0;
             d.assistsUsed = 0;
+            d.assistedPeople = [];
           });
           try {
             const puzzle = await client.generate(useSeed, difficulty);
@@ -312,6 +404,7 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
         selectPerson(person) {
           set((d) => {
             d.selectedPerson = person;
+            countAssist(d, person);
           });
         },
 
@@ -358,6 +451,7 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
               d.placements = prev.placements;
               d.tentativePlacements = prev.tentativePlacements;
               d.annotations = restoreAnnotations(prev.annotations, current.annotations);
+              d.whatIfStack = prev.whatIfStack;
               ok = true;
             }
           });
@@ -374,6 +468,7 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
               d.placements = next.placements;
               d.tentativePlacements = next.tentativePlacements;
               d.annotations = restoreAnnotations(next.annotations, current.annotations);
+              d.whatIfStack = next.whatIfStack;
               ok = true;
             }
           });
@@ -594,7 +689,71 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
         updateSettings(patch) {
           set((d) => {
             Object.assign(d.settings, patch);
+            if (patch.showClueAllows) countAssist(d, d.selectedPerson);
           });
+        },
+
+        setPen(pen) {
+          set((d) => {
+            d.pen = pen;
+          });
+        },
+        setPenSize(size) {
+          set((d) => {
+            d.penSize = size;
+          });
+        },
+        setDrawLocked(locked) {
+          set((d) => {
+            d.drawLocked = locked;
+          });
+        },
+        addStroke: (stroke) => annotate((a) => addStroke(a, stroke)),
+        eraseStrokes: (indices) => annotate((a) => removeStrokes(a, indices)),
+        cycleLogicCell: (table, slot, index) =>
+          annotate((a) => cycleLogicCell(a, table, slot, index)),
+        setScratchpad: (text) => annotate((a) => setScratchpad(a, text)),
+
+        startWhatIf() {
+          const s = get();
+          if (!playing() || s.whatIfStack.length >= WHATIF_MAX_DEPTH) return false;
+          const snapshot: BoardSnapshot = {
+            placements: s.placements,
+            tentativePlacements: s.tentativePlacements,
+            annotations: s.annotations,
+          };
+          commit((d) => {
+            d.whatIfStack = [...s.whatIfStack, { snapshot }];
+          });
+          return true;
+        },
+
+        keepWhatIf(note = '') {
+          const s = get();
+          if (!playing() || s.whatIfStack.length === 0) return false;
+          const line = whatIfNoteLine(note, 'kept');
+          commit((d) => {
+            d.whatIfStack = s.whatIfStack.slice(0, -1);
+            d.annotations = appendScratchpadLine(s.annotations, line);
+          });
+          return true;
+        },
+
+        abandonWhatIf(note = '') {
+          const s = get();
+          const frame = s.whatIfStack[s.whatIfStack.length - 1];
+          if (!playing() || !frame) return false;
+          const line = whatIfNoteLine(note, 'abandoned');
+          commit((d) => {
+            d.placements = frame.snapshot.placements;
+            d.tentativePlacements = frame.snapshot.tentativePlacements;
+            d.annotations = appendScratchpadLine(
+              restoreAnnotations(frame.snapshot.annotations, s.annotations),
+              line,
+            );
+            d.whatIfStack = s.whatIfStack.slice(0, -1);
+          });
+          return true;
         },
       };
     }),

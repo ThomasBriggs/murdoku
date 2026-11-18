@@ -135,3 +135,14 @@ export function checkPlacement(puzzle: Puzzle, placement: Placement): Violation[
   }
   return out;
 }
+
+/**
+ * Cells a person's own static clue allows (the "show where this clue allows"
+ * helper, SPEC §6.5.9). Uses only the public puzzle: never the solution, so
+ * the solution cell is always allowed but so may be many others.
+ */
+export function allowedCells(puzzle: Puzzle, person: PersonId): CellSet {
+  const board = getBoard(puzzle);
+  const clue = puzzle.clues.find((c) => c.person === person);
+  return clue ? staticCandidates(board, clue.atoms) : board.free.slice();
+}

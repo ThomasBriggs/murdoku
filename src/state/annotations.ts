@@ -15,6 +15,7 @@
 import { produce } from 'immer';
 import { PEOPLE } from '../engine/constants';
 import type { CellKey, Person, PersonId, RoomId } from '../engine/types';
+import { simplifyRDP } from './drawing';
 
 export const COLOR_IDS = ['amber', 'red', 'green', 'blue', 'purple', 'orange'] as const;
 export type ColorId = (typeof COLOR_IDS)[number];
@@ -337,6 +338,61 @@ export function setPersonNote(a: Annotations, person: PersonId, text: string): A
     if (t === '') delete d.personNotes[person];
     else d.personNotes[person] = t;
   });
+}
+
+// ---------------------------------------------------------------- logic grid
+
+export type LogicTable = 'rooms' | 'rows' | 'cols';
+
+/** Cycle one logic-grid cell: blank, cross, tick, blank. `slot` is the person's panel slot. */
+export function cycleLogicCell(
+  a: Annotations,
+  table: LogicTable,
+  slot: number,
+  index: number,
+): Annotations {
+  if (slot < 0 || slot >= PEOPLE || index < 0 || index >= GRID) return a;
+  return produce(a, (d) => {
+    const row = d.logicGrid[table][slot]!;
+    row[index] = ((row[index]! + 1) % 3) as Mark3;
+  });
+}
+
+// ---------------------------------------------------------------- drawing and scratchpad
+
+/** Append a finished stroke (simplified with Ramer-Douglas-Peucker). Empty strokes are ignored. */
+export function addStroke(a: Annotations, stroke: Stroke): Annotations {
+  if (stroke.pts.length === 0) return a;
+  const pts = simplifyRDP(stroke.pts);
+  return produce(a, (d) => {
+    d.strokes.push({ tool: stroke.tool, color: stroke.color, width: stroke.width, pts });
+  });
+}
+
+/** Remove the strokes at these indices. */
+export function removeStrokes(a: Annotations, indices: readonly number[]): Annotations {
+  const drop = new Set(indices.filter((i) => i >= 0 && i < a.strokes.length));
+  if (drop.size === 0) return a;
+  return produce(a, (d) => {
+    d.strokes = d.strokes.filter((_, i) => !drop.has(i));
+  });
+}
+
+export const SCRATCHPAD_MAX = 20000;
+
+export function setScratchpad(a: Annotations, text: string): Annotations {
+  const t = text.slice(0, SCRATCHPAD_MAX);
+  if (a.scratchpad === t) return a;
+  return produce(a, (d) => {
+    d.scratchpad = t;
+  });
+}
+
+/** Append one line to the scratchpad (used by the what-if "note why" prompt). */
+export function appendScratchpadLine(a: Annotations, line: string): Annotations {
+  const l = line.trim();
+  if (l === '') return a;
+  return setScratchpad(a, a.scratchpad === '' ? l : `${a.scratchpad.replace(/\n+$/, '')}\n${l}`);
 }
 
 // ---------------------------------------------------------------- layers and clearing
