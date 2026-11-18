@@ -219,7 +219,11 @@ describe('solving toolkit: marks, notes, highlights', () => {
         'line-through',
       );
 
+      cy.get(`[data-testid="person-note-${person}"]`).should('not.exist');
+      cy.get(`[data-testid="person-note-btn-${person}"]`).click();
       cy.get(`[data-testid="person-note-${person}"]`).type('row 2 or 7{enter}');
+      cy.get(`[data-testid="person-note-text-${person}"]`).should('contain.text', 'row 2 or 7');
+      cy.get(`[data-testid="person-note-text-${person}"]`).click();
       cy.get(`[data-testid="person-note-${person}"]`).should('have.value', 'row 2 or 7');
     });
   });
@@ -296,5 +300,50 @@ describe('solving toolkit: marks, notes, highlights', () => {
     cy.get('[data-testid="row-note-0"]').should('be.visible');
     tool('cross').click();
     cell(4, 4).click().should('have.attr', 'data-mark', 'cross');
+  });
+
+  it('mobile: compact bar, colour row with Highlight, and a More sheet for the rest', () => {
+    cy.viewport(375, 740);
+    load();
+    // the bar is one slim row with the common tools only
+    cy.get('[data-testid="tool-palette"] button').should('have.length', 5);
+    cy.get('[data-testid="tool-dot"]').should('not.exist');
+    cy.get('[data-testid="more-button"]').parent().invoke('height').should('be.lessThan', 70);
+    cy.get('[data-testid="color-row"]').should('not.exist');
+    tool('highlight').click();
+    cy.get('[data-testid="color-row"] [data-testid^="color-"]')
+      .should('have.length', 6)
+      .and('be.visible');
+    cy.get('[data-testid="color-red"]').click();
+    cell(3, 3).click().should('have.attr', 'data-hl-color', 'red');
+    // the sheet holds the other tools and the menus
+    cy.get('[data-testid="more-button"]').click();
+    cy.get('[data-testid="more-sheet"]').should('be.visible');
+    for (const t of ['dot', 'unsure', 'eliminate', 'select']) tool(t).should('be.visible');
+    for (const id of ['redo', 'reset', 'layers-button', 'clear-button', 'settings-button'])
+      cy.get(`[data-testid="${id}"]`).should('be.visible');
+    tool('dot').click();
+    cy.get('[data-testid="more-sheet"]').should('not.exist');
+    cell(4, 4).click().should('have.attr', 'data-mark', 'dot');
+    // a colour picked in the sheet activates Highlight
+    cy.get('[data-testid="more-button"]').click();
+    cy.get('[data-testid="color-blue"]').click();
+    cell(5, 5).click().should('have.attr', 'data-hl-color', 'blue');
+    // undo stays on the bar
+    cy.get('[data-testid="undo"]').click();
+    cell(5, 5).should('not.have.attr', 'data-hl-color');
+    cy.get('[data-testid="more-button"]').click();
+    cy.get('[data-testid="more-backdrop"]').click({ force: true });
+    cy.get('[data-testid="more-sheet"]').should('not.exist');
+  });
+
+  it('desktop: people cards stay compact (all nine fit) until a note is opened', () => {
+    cy.viewport(1280, 900);
+    load();
+    cy.get('[data-testid="person-card-0"], [data-testid^="person-card-"]')
+      .last()
+      .then(($c) => {
+        expect($c[0]!.getBoundingClientRect().bottom).to.be.at.most(900);
+      });
   });
 });

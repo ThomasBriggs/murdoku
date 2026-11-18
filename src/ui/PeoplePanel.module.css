@@ -12,7 +12,7 @@
   background: var(--surface);
   border: 2px solid var(--border);
   border-radius: 8px;
-  padding: 0.5rem 0.65rem;
+  padding: 0.4rem 0.6rem;
   cursor: pointer;
 }
 .card:hover {
@@ -24,6 +24,11 @@
   box-shadow: 0 0 0 2px var(--selected);
   background: var(--selected-bg);
 }
+.top {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
 .head {
   all: unset;
   box-sizing: border-box;
@@ -31,8 +36,45 @@
   grid-template-columns: 2.25rem 1fr auto;
   align-items: center;
   gap: 0.6rem;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   cursor: pointer;
+}
+.icons {
+  display: inline-flex;
+  gap: 0.2rem;
+}
+.icon {
+  width: 1.6rem;
+  height: 1.6rem;
+  padding: 0;
+  justify-content: center;
+  font-size: 0.8rem;
+  line-height: 1;
+  border-radius: 5px;
+  color: var(--text-muted);
+}
+.icon[aria-pressed='true'],
+.icon[data-has-note='true'] {
+  background: var(--selected-bg);
+  border-color: var(--selected);
+  color: var(--text);
+}
+.noteText {
+  all: unset;
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  cursor: text;
+  font-size: 0.8rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.noteText:focus-visible {
+  outline: 2px solid var(--focus);
 }
 .head:focus-visible {
   outline: 3px solid var(--focus);
@@ -63,8 +105,8 @@
   color: var(--text-muted);
 }
 .clue {
-  margin: 0.35rem 0 0;
-  font-size: 0.9rem;
+  margin: 0.25rem 0 0;
+  font-size: 0.88rem;
   line-height: 1.4;
 }
 .roomWord,
@@ -192,7 +234,7 @@
   --c: var(--hc-orange);
 }
 .noteRow {
-  margin-top: 0.3rem;
+  margin-top: 0.25rem;
 }
 .noteInput {
   all: unset;

@@ -87,6 +87,9 @@
   width: 100%;
   height: auto;
 }
+.crossed .furniture {
+  opacity: 0.35;
+}
 .blocked .furniture {
   opacity: 1;
 }

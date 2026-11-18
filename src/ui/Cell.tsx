@@ -88,6 +88,7 @@ export function Cell(p: CellProps) {
     p.highlighted && styles.highlight,
     p.selected && styles.selected,
     p.ann?.inSelection && styles.inSel,
+    (p.ann?.mark === 'cross' || p.ann?.tentative.length) && styles.crossed,
     p.shaking && styles.shake,
   ]
     .filter(Boolean)

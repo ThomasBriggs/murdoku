@@ -193,6 +193,15 @@ export function PeoplePanel({
   const [pending, setPending] = useState<{ person: PersonId; start: number; end: number } | null>(
     null,
   );
+  // People whose note field is open for editing (a non-empty note shows as text otherwise).
+  const [noteOpen, setNoteOpen] = useState<ReadonlySet<PersonId>>(new Set());
+  const setEditing = (id: PersonId, on: boolean) =>
+    setNoteOpen((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(id);
+      else next.delete(id);
+      return next;
+    });
   const clueRefs = useRef(new Map<PersonId, HTMLElement>());
   const actions = store.getState;
 
@@ -217,6 +226,8 @@ export function PeoplePanel({
           const marks = annotations.clueHighlights[person.id] ?? [];
           const note = annotations.personNotes[person.id] ?? '';
           const pend = pending?.person === person.id ? pending : null;
+          const editingNote = noteOpen.has(person.id);
+          const noteShown = editingNote || note !== '';
           return (
             <li
               key={person.id}
@@ -227,27 +238,54 @@ export function PeoplePanel({
               data-struck={struck ? 'true' : 'false'}
               onClick={() => onSelect(selected ? null : person.id)}
             >
-              <button
-                type="button"
-                className={styles.head}
-                aria-pressed={selected}
-                aria-keyshortcuts={String(i + 1)}
-              >
-                <span className={styles.tokenBox}>
-                  <Token person={person} scope="card-" />
+              <div className={styles.top}>
+                <button
+                  type="button"
+                  className={styles.head}
+                  aria-pressed={selected}
+                  aria-keyshortcuts={String(i + 1)}
+                >
+                  <span className={styles.tokenBox}>
+                    <Token person={person} scope="card-" />
+                  </span>
+                  <span className={styles.name}>
+                    {person.name}
+                    {person.isVictim && <span className={styles.victimTag}>Victim</span>}
+                  </span>
+                  <span className={styles.status} data-testid={`person-status-${person.id}`}>
+                    {where
+                      ? `Placed ${COLUMN_LETTERS[where.c]}${where.r + 1}`
+                      : guessAt
+                        ? `Guess ${COLUMN_LETTERS[guessAt.c]}${guessAt.r + 1}`
+                        : 'Unplaced'}
+                  </span>
+                </button>
+                <span className={styles.icons} onClick={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    className={styles.icon}
+                    data-testid={`clue-strike-${person.id}`}
+                    aria-pressed={struck}
+                    aria-label={struck ? 'Remove the strike-through' : 'Strike through this clue'}
+                    title={struck ? 'Remove the strike-through' : 'Strike through this clue'}
+                    onClick={() => actions().toggleClueStruck(person.id)}
+                  >
+                    <s>ab</s>
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.icon}
+                    data-testid={`person-note-btn-${person.id}`}
+                    aria-pressed={noteShown}
+                    aria-label={`Note for ${person.name}`}
+                    title="Add a note to this card"
+                    data-has-note={note ? 'true' : undefined}
+                    onClick={() => setEditing(person.id, true)}
+                  >
+                    ✎
+                  </button>
                 </span>
-                <span className={styles.name}>
-                  {person.name}
-                  {person.isVictim && <span className={styles.victimTag}>Victim</span>}
-                </span>
-                <span className={styles.status} data-testid={`person-status-${person.id}`}>
-                  {where
-                    ? `Placed ${COLUMN_LETTERS[where.c]}${where.r + 1}`
-                    : guessAt
-                      ? `Guess ${COLUMN_LETTERS[guessAt.c]}${guessAt.r + 1}`
-                      : 'Unplaced'}
-                </span>
-              </button>
+              </div>
               <p
                 className={`${styles.clue} ${struck ? styles.clueStruck : ''}`}
                 data-testid={`person-clue-${person.id}`}
@@ -275,72 +313,80 @@ export function PeoplePanel({
                   'The victim. Only the murderer shared a room with them.'
                 ) : null}
               </p>
-              <div
-                className={styles.tools}
-                onClick={(e) => e.stopPropagation()}
-                role="group"
-                aria-label={`${person.name} clue tools`}
-              >
-                <button
-                  type="button"
-                  className={styles.mini}
-                  data-testid={`clue-strike-${person.id}`}
-                  aria-pressed={struck}
-                  title="Strike through this clue"
-                  onClick={() => actions().toggleClueStruck(person.id)}
+              {(marks.length > 0 || pend) && (
+                <div
+                  className={styles.tools}
+                  onClick={(e) => e.stopPropagation()}
+                  role="group"
+                  aria-label={`${person.name} clue tools`}
                 >
-                  {struck ? 'Un-strike' : 'Strike'}
-                </button>
-                {marks.length > 0 && (
-                  <button
-                    type="button"
-                    className={styles.mini}
-                    data-testid={`clue-hl-clear-${person.id}`}
-                    title="Remove the colours from this clue"
-                    onClick={() => actions().clearClueHighlights(person.id)}
-                  >
-                    Clear colours
-                  </button>
-                )}
-                {pend && (
-                  <span
-                    className={styles.hlBar}
-                    role="group"
-                    aria-label="Highlight the selected words"
-                    data-testid={`clue-hl-bar-${person.id}`}
-                  >
-                    {COLOR_IDS.map((c) => (
-                      <button
-                        type="button"
-                        key={c}
-                        className={styles.hlSwatch}
-                        data-color={c}
-                        data-testid={`clue-hl-${person.id}-${c}`}
-                        title={`Highlight in ${COLOR_INFO[c].label.toLowerCase()}`}
-                        aria-label={`Highlight selected words in ${COLOR_INFO[c].label.toLowerCase()}`}
-                        onClick={() => {
-                          actions().addClueHighlight(person.id, pend.start, pend.end, c);
-                          window.getSelection()?.removeAllRanges();
-                          setPending(null);
-                        }}
-                      >
-                        {COLOR_INFO[c].glyph}
-                      </button>
-                    ))}
-                  </span>
-                )}
-              </div>
-              <div className={styles.noteRow} onClick={(e) => e.stopPropagation()}>
-                <NoteInput
-                  className={styles.noteInput}
-                  value={note}
-                  maxLength={200}
-                  placeholder="Note, e.g. row 2 or 7"
-                  label={`Note for ${person.name}`}
-                  testId={`person-note-${person.id}`}
-                  onCommit={(t) => actions().setPersonNote(person.id, t)}
-                />
-              </div>
+                  {marks.length > 0 && (
+                    <button
+                      type="button"
+                      className={styles.mini}
+                      data-testid={`clue-hl-clear-${person.id}`}
+                      title="Remove the colours from this clue"
+                      onClick={() => actions().clearClueHighlights(person.id)}
+                    >
+                      Clear colours
+                    </button>
+                  )}
+                  {pend && (
+                    <span
+                      className={styles.hlBar}
+                      role="group"
+                      aria-label="Highlight the selected words"
+                      data-testid={`clue-hl-bar-${person.id}`}
+                    >
+                      {COLOR_IDS.map((c) => (
+                        <button
+                          type="button"
+                          key={c}
+                          className={styles.hlSwatch}
+                          data-color={c}
+                          data-testid={`clue-hl-${person.id}-${c}`}
+                          title={`Highlight in ${COLOR_INFO[c].label.toLowerCase()}`}
+                          aria-label={`Highlight selected words in ${COLOR_INFO[c].label.toLowerCase()}`}
+                          onClick={() => {
+                            actions().addClueHighlight(person.id, pend.start, pend.end, c);
+                            window.getSelection()?.removeAllRanges();
+                            setPending(null);
+                          }}
+                        >
+                          {COLOR_INFO[c].glyph}
+                        </button>
+                      ))}
+                    </span>
+                  )}
+                </div>
+              )}
+              {noteShown && (
+                <div className={styles.noteRow} onClick={(e) => e.stopPropagation()}>
+                  {editingNote ? (
+                    <NoteInput
+                      autoFocus
+                      className={styles.noteInput}
+                      value={note}
+                      maxLength={200}
+                      placeholder="Note, e.g. row 2 or 7"
+                      label={`Note for ${person.name}`}
+                      testId={`person-note-${person.id}`}
+                      onCommit={(t) => actions().setPersonNote(person.id, t)}
+                      onDone={() => setEditing(person.id, false)}
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      className={styles.noteText}
+                      data-testid={`person-note-text-${person.id}`}
+                      title="Click to edit this note"
+                      onClick={() => setEditing(person.id, true)}
+                    >
+                      {note}
+                    </button>
+                  )}
+                </div>
+              )}
             </li>
           );
         })}

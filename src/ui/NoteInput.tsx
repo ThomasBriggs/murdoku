@@ -14,6 +14,7 @@ export function NoteInput({
   autoFocus,
   maxLength = NOTE_MAX,
   placeholder,
+  onDone,
 }: {
   value: string;
   label: string;
@@ -23,6 +24,8 @@ export function NoteInput({
   autoFocus?: boolean;
   maxLength?: number;
   placeholder?: string;
+  /** Called after the field loses focus (whether or not the text changed). */
+  onDone?(): void;
 }) {
   return (
     <input
@@ -34,6 +37,7 @@ export function NoteInput({
       aria-label={label}
       title={value || label}
       data-testid={testId}
+      data-filled={value ? 'true' : undefined}
       autoFocus={autoFocus}
       placeholder={placeholder}
       autoComplete="off"
@@ -47,6 +51,7 @@ export function NoteInput({
       }}
       onBlur={(e) => {
         if (e.currentTarget.value.trim() !== value) onCommit(e.currentTarget.value);
+        onDone?.();
       }}
     />
   );

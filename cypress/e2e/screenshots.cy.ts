@@ -4,6 +4,16 @@
 const URL = '/?seed=cy-board&d=easy';
 const cell = (r: number, c: number) => cy.get(`[data-testid="cell-${r}-${c}"]`);
 
+/** On mobile widths the less-used controls live in the "More" sheet. */
+function inMore(w: number, action: () => void) {
+  if (w > 600) return action();
+  cy.get('[data-testid="more-button"]').click();
+  action();
+  cy.get('body').then(($b) => {
+    if ($b.find('[data-testid="more-close"]').length) cy.get('[data-testid="more-close"]').click();
+  });
+}
+
 const suite = Cypress.expose('SCREENSHOTS') ? describe : describe.skip;
 suite('board screenshots', () => {
   for (const [name, w, h] of [
@@ -15,9 +25,11 @@ suite('board screenshots', () => {
         cy.viewport(w, h);
         cy.visit(URL);
         cy.get('[data-testid="board"]').should('be.visible');
-        cy.get('[data-testid="settings-button"]').click();
-        cy.get(`[data-testid="theme-${theme}"]`).check();
-        cy.get('[data-testid="settings-button"]').click();
+        inMore(w, () => {
+          cy.get('[data-testid="settings-button"]').click();
+          cy.get(`[data-testid="theme-${theme}"]`).check();
+          cy.get('[data-testid="settings-button"]').click();
+        });
         cy.get('[data-testid="board-grid"] [data-blocked="false"]').then(($cells) => {
           const free = $cells
             .toArray()
@@ -47,9 +59,11 @@ suite('toolkit screenshots', () => {
       cy.viewport(w, h);
       cy.visit('/?seed=cy-marks&d=easy');
       cy.get('[data-testid="board"]').should('be.visible');
-      cy.get('[data-testid="settings-button"]').click();
-      cy.get(`[data-testid="theme-${theme}"]`).check();
-      cy.get('[data-testid="settings-button"]').click();
+      inMore(w, () => {
+        cy.get('[data-testid="settings-button"]').click();
+        cy.get(`[data-testid="theme-${theme}"]`).check();
+        cy.get('[data-testid="settings-button"]').click();
+      });
       // crosses, dots and a question mark
       cy.get('[data-testid="tool-cross"]').click();
       for (const [r, c] of [
@@ -59,9 +73,9 @@ suite('toolkit screenshots', () => {
         [5, 5],
       ])
         cell(r!, c!).click();
-      cy.get('[data-testid="tool-dot"]').click();
+      inMore(w, () => cy.get('[data-testid="tool-dot"]').click());
       cell(2, 2).click();
-      cy.get('[data-testid="tool-unsure"]').click();
+      inMore(w, () => cy.get('[data-testid="tool-unsure"]').click());
       cell(3, 3).click();
       // highlights in three colours
       for (const [colour, cells] of [
@@ -88,6 +102,7 @@ suite('toolkit screenshots', () => {
           ],
         ],
       ] as const) {
+        cy.get('[data-testid="tool-highlight"]').click();
         cy.get(`[data-testid="color-${colour}"]`).click();
         for (const [r, c] of cells) cell(r, c).click();
       }

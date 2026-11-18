@@ -81,7 +81,18 @@ export const TOOLS: readonly ToolDef[] = [
   },
 ];
 
+/** Tools on the compact mobile bar; the rest live in its "More" sheet. */
+export const PRIMARY_TOOLS: readonly Tool[] = ['place', 'pencil', 'cross', 'notes', 'highlight'];
+
 export interface ToolPaletteProps {
+  /** Only these tools (default: all). */
+  only?: readonly Tool[];
+  /** Tools to leave out. */
+  except?: readonly Tool[];
+  showColors?: boolean;
+  /** Wrap onto several lines instead of scrolling sideways (used in the mobile sheet). */
+  wrap?: boolean;
+  testId?: string;
   tool: Tool;
   color: ColorId;
   onTool(tool: Tool): void;
@@ -89,10 +100,18 @@ export interface ToolPaletteProps {
 }
 
 export function ToolPalette(p: ToolPaletteProps) {
+  const shown = TOOLS.filter(
+    (t) => (!p.only || p.only.includes(t.id)) && !p.except?.includes(t.id),
+  );
   return (
-    <div className={styles.palette} role="toolbar" aria-label="Tools" data-testid="tool-palette">
+    <div
+      className={`${styles.palette} ${p.wrap ? styles.wrapAll : ''}`}
+      role="toolbar"
+      aria-label="Tools"
+      data-testid={p.testId ?? 'tool-palette'}
+    >
       <div className={styles.tools}>
-        {TOOLS.map((t) => (
+        {shown.map((t) => (
           <button
             type="button"
             key={t.id}
@@ -111,24 +130,30 @@ export function ToolPalette(p: ToolPaletteProps) {
           </button>
         ))}
       </div>
-      <div className={styles.colors} role="radiogroup" aria-label="Highlight colour">
-        {COLOR_IDS.map((c) => (
-          <button
-            type="button"
-            key={c}
-            role="radio"
-            className={styles.swatch}
-            data-color={c}
-            data-testid={`color-${c}`}
-            aria-checked={p.color === c}
-            title={`${COLOR_INFO[c].label} (${COLOR_INFO[c].pattern}). Press C to cycle`}
-            aria-label={`${COLOR_INFO[c].label} highlight`}
-            onClick={() => p.onColor(c)}
-          >
-            {COLOR_INFO[c].glyph}
-          </button>
-        ))}
-      </div>
+      {p.showColors !== false && <ColorPicker color={p.color} onColor={p.onColor} />}
+    </div>
+  );
+}
+
+export function ColorPicker({ color, onColor }: { color: ColorId; onColor(c: ColorId): void }) {
+  return (
+    <div className={styles.colors} role="radiogroup" aria-label="Highlight colour">
+      {COLOR_IDS.map((c) => (
+        <button
+          type="button"
+          key={c}
+          role="radio"
+          className={styles.swatch}
+          data-color={c}
+          data-testid={`color-${c}`}
+          aria-checked={color === c}
+          title={`${COLOR_INFO[c].label} (${COLOR_INFO[c].pattern}). Press C to cycle`}
+          aria-label={`${COLOR_INFO[c].label} highlight`}
+          onClick={() => onColor(c)}
+        >
+          {COLOR_INFO[c].glyph}
+        </button>
+      ))}
     </div>
   );
 }

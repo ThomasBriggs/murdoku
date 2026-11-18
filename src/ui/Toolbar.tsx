@@ -8,6 +8,8 @@ export interface ToolbarProps {
   canRedo: boolean;
   canReset: boolean;
   settings: Settings;
+  /** Hide the Undo button (the mobile bar has its own). */
+  compact?: boolean;
   onUndo(): void;
   onRedo(): void;
   onReset(): void;
@@ -22,16 +24,18 @@ export function Toolbar(p: ToolbarProps) {
   const [open, setOpen] = useState(false);
   return (
     <div className={styles.toolbar} role="toolbar" aria-label="Board tools" data-testid="toolbar">
-      <button
-        type="button"
-        data-testid="undo"
-        disabled={!p.canUndo}
-        onClick={p.onUndo}
-        title="Undo (Ctrl+Z)"
-      >
-        <UndoIcon className={styles.icon} />
-        <span>Undo</span>
-      </button>
+      {!p.compact && (
+        <button
+          type="button"
+          data-testid="undo"
+          disabled={!p.canUndo}
+          onClick={p.onUndo}
+          title="Undo (Ctrl+Z)"
+        >
+          <UndoIcon className={styles.icon} />
+          <span>Undo</span>
+        </button>
+      )}
       <button
         type="button"
         data-testid="redo"
@@ -69,7 +73,7 @@ export function Toolbar(p: ToolbarProps) {
         {open && (
           <div
             id="settings-popover"
-            className={styles.popover}
+            className={`${styles.popover} ${p.compact ? styles.popoverLeft : ''}`}
             role="group"
             aria-label="Settings"
             data-testid="settings-popover"

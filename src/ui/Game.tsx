@@ -1,13 +1,16 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { cellKey } from '../engine/types';
 import { furnitureCells, roomCells } from '../state/selection';
+import type { ColorId } from '../state/annotations';
 import { selectConflicts, type Tool } from '../state/store';
 import { Board } from './Board';
 import type { ActivateMods } from './Cell';
 import { ConfirmDialog } from './ConfirmDialog';
 import { FurnitureLegend } from './FurnitureLegend';
 import { ClearMenu, describeClear, LayersMenu, type ClearChoice } from './ToolkitMenus';
-import { ToolPalette } from './ToolPalette';
+import { ColorPicker, PRIMARY_TOOLS, ToolPalette } from './ToolPalette';
+import palette from './ToolPalette.module.css';
+import { UndoIcon } from './icons/glyphs';
 import { useGame, useStoreApi } from './context';
 import styles from './Game.module.css';
 import { PeoplePanel } from './PeoplePanel';
@@ -17,6 +20,19 @@ import { Toolbar } from './Toolbar';
 import { conflictsByPerson, type Highlight } from './types';
 
 const SHAKE_MS = 400;
+
+/** Subscribe to a CSS media query (false where matchMedia does not exist, e.g. jsdom). */
+function useMediaQuery(query: string): boolean {
+  return useSyncExternalStore(
+    (notify) => {
+      const mq = window.matchMedia?.(query);
+      mq?.addEventListener('change', notify);
+      return () => mq?.removeEventListener('change', notify);
+    },
+    () => window.matchMedia?.(query).matches ?? false,
+    () => false,
+  );
+}
 
 /** The playable screen: header, board, toolbar and people panel. */
 export function Game() {
@@ -38,6 +54,8 @@ export function Game() {
   const [highlight, setHighlight] = useState<Highlight | null>(null);
   const [shakeCell, setShakeCell] = useState<number | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
+  const mobile = useMediaQuery('(max-width: 600px)');
+  const [moreOpen, setMoreOpen] = useState(false);
   const [clearChoice, setClearChoice] = useState<ClearChoice | null>(null);
   const cursorRef = useRef(cursor);
   useEffect(() => {
@@ -198,35 +216,125 @@ export function Game() {
   if (!puzzle) return null;
   const actions = store.getState();
 
+  const onColor = (c: ColorId) => {
+    actions.setColor(c);
+    actions.setTool('highlight');
+    if (store.getState().selection.length > 0) store.getState().applyTool(selection);
+  };
+  const toolbar = (compact: boolean) => (
+    <Toolbar
+      compact={compact}
+      canUndo={canUndo}
+      canRedo={canRedo}
+      canReset={anyPlaced}
+      settings={settings}
+      onUndo={() => actions.undo()}
+      onRedo={() => actions.redo()}
+      onReset={() => setConfirmReset(true)}
+      onSettings={(patch) => actions.updateSettings(patch)}
+    >
+      <LayersMenu
+        visibility={annotations.layerVisibility}
+        onToggle={(l, v) => actions.setLayerVisible(l, v)}
+      />
+      <ClearMenu onChoose={setClearChoice} />
+    </Toolbar>
+  );
+
   return (
     <div className={styles.layout} data-testid="game">
       <div className={styles.toolbarArea}>
-        <ToolPalette
-          tool={tool}
-          color={color}
-          onTool={onTool}
-          onColor={(c) => {
-            actions.setColor(c);
-            actions.setTool('highlight');
-            if (store.getState().selection.length > 0) store.getState().applyTool(selection);
-          }}
-        />
-        <Toolbar
-          canUndo={canUndo}
-          canRedo={canRedo}
-          canReset={anyPlaced}
-          settings={settings}
-          onUndo={() => actions.undo()}
-          onRedo={() => actions.redo()}
-          onReset={() => setConfirmReset(true)}
-          onSettings={(patch) => actions.updateSettings(patch)}
-        >
-          <LayersMenu
-            visibility={annotations.layerVisibility}
-            onToggle={(l, v) => actions.setLayerVisible(l, v)}
-          />
-          <ClearMenu onChoose={setClearChoice} />
-        </Toolbar>
+        {mobile ? (
+          <>
+            {tool === 'highlight' && !moreOpen && (
+              <div className={palette.slim} data-testid="color-row">
+                <ColorPicker color={color} onColor={onColor} />
+              </div>
+            )}
+            <div className={palette.bar}>
+              <ToolPalette
+                only={PRIMARY_TOOLS}
+                showColors={false}
+                tool={tool}
+                color={color}
+                onTool={onTool}
+                onColor={onColor}
+              />
+              <button
+                type="button"
+                className={palette.barBtn}
+                data-testid="undo"
+                disabled={!canUndo}
+                onClick={() => actions.undo()}
+                title="Undo (Ctrl+Z)"
+                aria-label="Undo"
+              >
+                <UndoIcon style={{ width: '1.2rem', height: '1.2rem' }} />
+              </button>
+              <button
+                type="button"
+                className={palette.barBtn}
+                data-testid="more-button"
+                aria-expanded={moreOpen}
+                aria-label="More tools"
+                title="More tools and options"
+                onClick={() => setMoreOpen((o) => !o)}
+              >
+                ⋯
+              </button>
+            </div>
+            {moreOpen && (
+              <>
+                <div
+                  className={palette.sheetBackdrop}
+                  data-testid="more-backdrop"
+                  onClick={() => setMoreOpen(false)}
+                />
+                <div
+                  className={palette.sheet}
+                  role="dialog"
+                  aria-label="More tools"
+                  data-testid="more-sheet"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') setMoreOpen(false);
+                  }}
+                >
+                  <div className={palette.sheetHead}>
+                    More
+                    <button
+                      type="button"
+                      data-testid="more-close"
+                      onClick={() => setMoreOpen(false)}
+                    >
+                      Done
+                    </button>
+                  </div>
+                  <ToolPalette
+                    wrap
+                    except={PRIMARY_TOOLS}
+                    testId="tool-palette-more"
+                    tool={tool}
+                    color={color}
+                    onTool={(t) => {
+                      onTool(t);
+                      setMoreOpen(false);
+                    }}
+                    onColor={(c) => {
+                      onColor(c);
+                      setMoreOpen(false);
+                    }}
+                  />
+                  {toolbar(true)}
+                </div>
+              </>
+            )}
+          </>
+        ) : (
+          <>
+            <ToolPalette tool={tool} color={color} onTool={onTool} onColor={onColor} />
+            {toolbar(false)}
+          </>
+        )}
       </div>
       <div className={styles.boardArea}>
         <Board

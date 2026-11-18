@@ -383,10 +383,16 @@ describe('clue annotations', () => {
     expect(card(id)).toHaveAttribute('data-struck', 'true');
     expect(store.getState().annotations.clueStruck).toEqual([id]);
 
+    expect(screen.queryByTestId(`person-note-${id}`)).toBeNull(); // hidden until asked for
+    fireEvent.click(screen.getByTestId(`person-note-btn-${id}`));
     const note = screen.getByTestId(`person-note-${id}`) as HTMLInputElement;
     fireEvent.change(note, { target: { value: 'row 2 or 7' } });
     fireEvent.blur(note);
     expect(store.getState().annotations.personNotes[id]).toBe('row 2 or 7');
+    // a non-empty note shows as text; clicking it edits again
+    expect(screen.getByTestId(`person-note-text-${id}`)).toHaveTextContent('row 2 or 7');
+    fireEvent.click(screen.getByTestId(`person-note-text-${id}`));
+    expect(screen.getByTestId(`person-note-${id}`)).toBeInTheDocument();
   });
 
   it('splits clue text at highlight ranges', () => {
