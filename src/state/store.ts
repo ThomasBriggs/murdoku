@@ -3,13 +3,43 @@ import { immer } from 'zustand/middleware/immer';
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import { checkPlacement, type Violation } from '../engine/clues/evaluate';
 import { PEOPLE } from '../engine/constants';
+import { isOccupiable } from '../engine/furniture';
 import {
   parseCellKey,
   type CellKey,
   type Difficulty,
+  type FurnitureType,
   type PersonId,
   type PuzzleView,
+  type RoomId,
 } from '../engine/types';
+import {
+  addClueHighlight,
+  clearAllAnnotations,
+  clearCells,
+  clearClueHighlights,
+  clearLayer,
+  clearPersonCandidates,
+  COLOR_IDS,
+  emptyAnnotations,
+  removeClueHighlight,
+  setColNote,
+  setHighlight,
+  setLayerVisible,
+  setPersonNote,
+  setRoomNote,
+  setRowNote,
+  slotOf,
+  toggleCandidate,
+  toggleClueStruck,
+  toggleClueTick,
+  toggleMark,
+  type Annotations,
+  type ColorId,
+  type LayerId,
+  type MarkKind,
+} from './annotations';
+import { mergeSelection, type SelectMode } from './selection';
 import { createEngineClient, type EngineClient } from '../worker/client';
 import type { HintResult } from '../worker/protocol';
 import { emptyHistory, popRedo, popUndo, pushHistory, type History } from './history';
@@ -34,13 +64,21 @@ export const DEFAULT_SETTINGS: Settings = {
 export type Placements = Record<PersonId, CellKey | null>;
 
 /**
- * The part of the state that undo/redo restores. Milestones 5b/6 add their
- * annotation fields here (and to `undoableOf` / `restoreUndoable`); the
- * history mechanism itself needs no change.
+ * The part of the state that undo/redo restores: real placements, tentative
+ * (pencil) placements and all annotations. Layer visibility is a view
+ * preference and is NOT rewound by undo (see `restoreAnnotations`).
  */
 export interface Undoable {
   placements: Placements;
+  tentativePlacements: Placements;
+  annotations: Annotations;
 }
+
+/** The active tool of the palette (SPEC §6.5). */
+export type Tool =
+  'place' | 'pencil' | 'cross' | 'dot' | 'unsure' | 'notes' | 'eliminate' | 'highlight' | 'select';
+
+export type TentativeResult = 'placed' | 'removed' | 'refused';
 
 export type PlaceResult = 'placed' | 'moved' | 'displaced' | 'noop' | 'refused';
 
@@ -50,6 +88,13 @@ export interface GameState {
   error: string | null;
   selectedPerson: PersonId | null;
   placements: Placements;
+  /** "I think B goes here": never counted for conflicts, allPlaced or accuse. */
+  tentativePlacements: Placements;
+  annotations: Annotations;
+  /** Multi-selection of cells (not undoable, not saved). */
+  selection: CellKey[];
+  tool: Tool;
+  color: ColorId;
   history: History<Undoable>;
   elapsedMs: number;
   running: boolean;
@@ -80,6 +125,45 @@ export interface GameActions {
     accusationCorrect: boolean;
     won: boolean;
   } | null>;
+  // ---- toolkit (SPEC §6.5); every one of these is undoable except the view state
+  setTool(tool: Tool): void;
+  setColor(color: ColorId): void;
+  /** Next highlight colour in the cycle; returns it. */
+  cycleColor(): ColorId;
+  selectCells(cells: readonly CellKey[], mode?: SelectMode): void;
+  clearSelection(): void;
+  /** Toggle a cross / dot / unsure mark on cells. */
+  applyMark(cells: readonly CellKey[], mark: MarkKind): boolean;
+  /** Toggle a person's candidate (or, with `eliminate`, eliminated) initial on cells. */
+  applyCandidate(cells: readonly CellKey[], person: PersonId, eliminate?: boolean): boolean;
+  applyHighlight(cells: readonly CellKey[], color: ColorId | null): boolean;
+  /** Remove marks, candidates and highlights from cells. */
+  clearCellAnnotations(cells: readonly CellKey[]): boolean;
+  /**
+   * Apply the ACTIVE tool to cells (cross/dot/unsure/notes/eliminate/highlight;
+   * pencil uses the first cell). `eliminate` forces elimination in notes mode.
+   */
+  applyTool(cells: readonly CellKey[], eliminate?: boolean): boolean;
+  placeTentative(person: PersonId, cell: CellKey): TentativeResult;
+  removeTentative(person: PersonId): boolean;
+  /** Turn a tentative placement into a real one. */
+  promoteTentative(person: PersonId): boolean;
+  setRowNote(row: number, text: string): boolean;
+  setColNote(col: number, text: string): boolean;
+  setRoomNote(room: RoomId, text: string): boolean;
+  toggleClueTick(person: PersonId, atom: number): boolean;
+  toggleClueStruck(person: PersonId): boolean;
+  addClueHighlight(person: PersonId, start: number, end: number, color: ColorId): boolean;
+  removeClueHighlight(person: PersonId, index: number): boolean;
+  clearClueHighlights(person: PersonId): boolean;
+  setPersonNote(person: PersonId, text: string): boolean;
+  /** View preference: not undoable. */
+  setLayerVisible(layer: LayerId, visible: boolean): void;
+  clearLayer(layer: LayerId): boolean;
+  /** Clear every annotation and tentative placement; placements stay. */
+  clearAnnotations(): boolean;
+  /** Clear placements, tentative placements and annotations. */
+  resetEverything(): boolean;
   tick(deltaMs: number): void;
   setRunning(running: boolean): void;
   updateSettings(patch: Partial<Settings>): void;
@@ -93,8 +177,34 @@ function emptyPlacements(): Placements {
   return p;
 }
 
-export function undoableOf(s: Pick<GameState, 'placements'>): Undoable {
-  return { placements: s.placements };
+export function undoableOf(
+  s: Pick<GameState, 'placements' | 'tentativePlacements' | 'annotations'>,
+): Undoable {
+  return {
+    placements: s.placements,
+    tentativePlacements: s.tentativePlacements,
+    annotations: s.annotations,
+  };
+}
+
+/** Annotations from a snapshot, keeping the CURRENT layer visibility (a view setting). */
+function restoreAnnotations(snapshot: Annotations, current: Annotations): Annotations {
+  return snapshot.layerVisibility === current.layerVisibility
+    ? snapshot
+    : { ...snapshot, layerVisibility: current.layerVisibility };
+}
+
+function noTentative(): Placements {
+  return emptyPlacements();
+}
+
+const hasAny = (p: Placements) => Object.values(p).some((c) => c !== null);
+
+/** Furniture that blocks standing (SPEC §12). Uses the public board, never the solution. */
+function isBlocked(puzzle: PuzzleView, cell: CellKey): boolean {
+  const { r, c } = parseCellKey(cell);
+  const f: FurnitureType | null = puzzle.furniture[r]?.[c] ?? null;
+  return f !== null && !isOccupiable(f);
 }
 
 function randomSeed(): string {
@@ -129,12 +239,32 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
 
       const playing = () => get().status === 'playing';
 
+      /**
+       * Run a pure annotation helper; when it changes something, record the
+       * previous state as one undo step. Returns whether anything changed.
+       */
+      function annotate(fn: (a: Annotations) => Annotations): boolean {
+        if (!playing()) return false;
+        const cur = get().annotations;
+        const next = fn(cur);
+        if (next === cur) return false;
+        commit((d) => {
+          d.annotations = next;
+        });
+        return true;
+      }
+
       return {
         puzzle: null,
         status: 'idle',
         error: null,
         selectedPerson: null,
         placements: emptyPlacements(),
+        tentativePlacements: noTentative(),
+        annotations: emptyAnnotations(),
+        selection: [],
+        tool: 'place',
+        color: COLOR_IDS[0],
         history: emptyHistory(),
         elapsedMs: 0,
         running: false,
@@ -152,6 +282,9 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
             d.error = null;
             d.selectedPerson = null;
             d.placements = emptyPlacements();
+            d.tentativePlacements = noTentative();
+            d.annotations = emptyAnnotations();
+            d.selection = [];
             d.history = emptyHistory();
             d.elapsedMs = 0;
             d.running = false;
@@ -188,12 +321,7 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
           if (!s.puzzle.people.some((p) => p.id === person)) return 'refused';
           const current = s.placements[person] ?? null;
           if (current === cell) return 'noop';
-          // Blocking cells: checkPlacement reports a 'blocked' violation for a lone person.
-          const probe = s.puzzle.people.map(() => null) as (ReturnType<
-            typeof parseCellKey
-          > | null)[];
-          probe[person] = parseCellKey(cell);
-          if (checkPlacement(s.puzzle, probe).some((v) => v.kind === 'blocked')) return 'refused';
+          if (isBlocked(s.puzzle, cell)) return 'refused';
 
           const occupant = s.puzzle.people.find(
             (p) => p.id !== person && s.placements[p.id] === cell,
@@ -201,6 +329,13 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
           commit((d) => {
             if (occupant) d.placements[occupant.id] = null;
             d.placements[person] = cell;
+            // A real placement replaces the person's tentative one.
+            d.tentativePlacements[person] = null;
+            if (s.settings.autoClearCandidates)
+              d.annotations = clearPersonCandidates(
+                s.annotations,
+                slotOf(s.puzzle!.people, person),
+              );
           });
           return occupant ? 'displaced' : current !== null ? 'moved' : 'placed';
         },
@@ -221,6 +356,8 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
             const prev = popUndo(d.history, current);
             if (prev) {
               d.placements = prev.placements;
+              d.tentativePlacements = prev.tentativePlacements;
+              d.annotations = restoreAnnotations(prev.annotations, current.annotations);
               ok = true;
             }
           });
@@ -235,6 +372,8 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
             const next = popRedo(d.history, current);
             if (next) {
               d.placements = next.placements;
+              d.tentativePlacements = next.tentativePlacements;
+              d.annotations = restoreAnnotations(next.annotations, current.annotations);
               ok = true;
             }
           });
@@ -242,10 +381,12 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
         },
 
         reset() {
-          if (!playing() || !Object.values(get().placements).some((c) => c !== null)) return;
+          if (!playing() || !(hasAny(get().placements) || hasAny(get().tentativePlacements)))
+            return;
           // Recorded as a normal board change, so a reset can be undone.
           commit((d) => {
             d.placements = emptyPlacements();
+            d.tentativePlacements = noTentative();
           });
         },
 
@@ -279,6 +420,163 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
             });
           }
           return result;
+        },
+
+        setTool(tool) {
+          set((d) => {
+            d.tool = tool;
+          });
+        },
+
+        setColor(color) {
+          set((d) => {
+            d.color = color;
+          });
+        },
+
+        cycleColor() {
+          const next = COLOR_IDS[(COLOR_IDS.indexOf(get().color) + 1) % COLOR_IDS.length]!;
+          set((d) => {
+            d.color = next;
+          });
+          return next;
+        },
+
+        selectCells(cells, mode = 'replace') {
+          set((d) => {
+            d.selection = mergeSelection(d.selection, cells, mode);
+          });
+        },
+
+        clearSelection() {
+          if (get().selection.length === 0) return;
+          set((d) => {
+            d.selection = [];
+          });
+        },
+
+        applyMark: (cells, mark) => annotate((a) => toggleMark(a, cells, mark)),
+
+        applyCandidate(cells, person, eliminate = false) {
+          const puzzle = get().puzzle;
+          if (!puzzle) return false;
+          const slot = slotOf(puzzle.people, person);
+          return annotate((a) => toggleCandidate(a, cells, slot, eliminate ? 'no' : 'yes'));
+        },
+
+        applyHighlight: (cells, color) => annotate((a) => setHighlight(a, cells, color)),
+
+        clearCellAnnotations: (cells) => annotate((a) => clearCells(a, cells)),
+
+        applyTool(cells, eliminate = false) {
+          const s = get();
+          switch (s.tool) {
+            case 'cross':
+            case 'dot':
+            case 'unsure':
+              return s.applyMark(cells, s.tool);
+            case 'highlight':
+              return s.applyHighlight(cells, s.color);
+            case 'notes':
+            case 'eliminate':
+              return s.selectedPerson === null
+                ? false
+                : s.applyCandidate(cells, s.selectedPerson, eliminate || s.tool === 'eliminate');
+            case 'pencil': {
+              const cell = cells[0];
+              return s.selectedPerson === null || cell === undefined
+                ? false
+                : s.placeTentative(s.selectedPerson, cell) !== 'refused';
+            }
+            default:
+              return false;
+          }
+        },
+
+        placeTentative(person, cell) {
+          const s = get();
+          if (!s.puzzle || s.status !== 'playing') return 'refused';
+          if (!s.puzzle.people.some((p) => p.id === person)) return 'refused';
+          // A placed person needs no tentative guess; blocking cells are refused as for real placements.
+          if (s.placements[person] != null || isBlocked(s.puzzle, cell)) return 'refused';
+          const removing = s.tentativePlacements[person] === cell;
+          commit((d) => {
+            d.tentativePlacements[person] = removing ? null : cell;
+          });
+          return removing ? 'removed' : 'placed';
+        },
+
+        removeTentative(person) {
+          if (!playing() || get().tentativePlacements[person] == null) return false;
+          commit((d) => {
+            d.tentativePlacements[person] = null;
+          });
+          return true;
+        },
+
+        promoteTentative(person) {
+          const cell = get().tentativePlacements[person];
+          if (cell == null) return false;
+          return get().place(person, cell) !== 'refused';
+        },
+
+        setRowNote: (row, text) => annotate((a) => setRowNote(a, row, text)),
+        setColNote: (col, text) => annotate((a) => setColNote(a, col, text)),
+        setRoomNote: (room, text) => annotate((a) => setRoomNote(a, room, text)),
+
+        toggleClueTick(person, atom) {
+          const clue = get().puzzle?.clues.find((c) => c.person === person);
+          if (!clue) return false;
+          return annotate((a) => toggleClueTick(a, person, atom, clue.atoms.length));
+        },
+        toggleClueStruck: (person) => annotate((a) => toggleClueStruck(a, person)),
+        addClueHighlight: (person, start, end, color) =>
+          annotate((a) => addClueHighlight(a, person, start, end, color)),
+        removeClueHighlight: (person, index) =>
+          annotate((a) => removeClueHighlight(a, person, index)),
+        clearClueHighlights: (person) => annotate((a) => clearClueHighlights(a, person)),
+        setPersonNote: (person, text) => annotate((a) => setPersonNote(a, person, text)),
+
+        setLayerVisible(layer, visible) {
+          set((d) => {
+            d.annotations = setLayerVisible(get().annotations, layer, visible);
+          });
+        },
+
+        clearLayer(layer) {
+          if (!playing()) return false;
+          if (layer !== 'tentative') return annotate((a) => clearLayer(a, layer));
+          if (!hasAny(get().tentativePlacements)) return false;
+          commit((d) => {
+            d.tentativePlacements = noTentative();
+          });
+          return true;
+        },
+
+        clearAnnotations() {
+          if (!playing()) return false;
+          const s = get();
+          const next = clearAllAnnotations(s.annotations);
+          if (next === s.annotations && !hasAny(s.tentativePlacements)) return false;
+          commit((d) => {
+            d.annotations = next;
+            d.tentativePlacements = noTentative();
+          });
+          return true;
+        },
+
+        resetEverything() {
+          if (!playing()) return false;
+          const s = get();
+          const next = clearAllAnnotations(s.annotations);
+          if (next === s.annotations && !hasAny(s.tentativePlacements) && !hasAny(s.placements))
+            return false;
+          commit((d) => {
+            d.annotations = next;
+            d.tentativePlacements = noTentative();
+            d.placements = emptyPlacements();
+          });
+          return true;
         },
 
         tick(deltaMs) {
