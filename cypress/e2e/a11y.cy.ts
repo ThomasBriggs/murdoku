@@ -95,43 +95,52 @@ describe('accessibility (axe)', () => {
     checkA11y();
   });
 
-  it('header dialogs: rules, stats, new game', () => {
-    cy.viewport(1280, 900);
-    load();
-    cy.get(sel('rules-button')).click();
-    checkA11y();
-    cy.get('body').type('{esc}');
-    cy.get(sel('stats-button')).click();
-    checkA11y();
-    cy.get(sel('stats-reset')).click();
-    checkA11y();
-    cy.get(sel('stats-reset-no')).click();
-    cy.get(sel('stats-close')).click();
-    cy.get(sel('new-game-button')).click();
-    checkA11y();
-  });
+  for (const theme of ['light', 'dark'] as const) {
+    it(`header dialogs: rules, stats, new game, ${theme}`, () => {
+      cy.viewport(1280, 900);
+      load();
+      setTheme(theme);
+      cy.get(sel('rules-button')).click();
+      checkA11y();
+      cy.get('body').type('{esc}');
+      cy.get(sel('stats-button')).click();
+      checkA11y();
+      cy.get(sel('stats-reset')).click();
+      checkA11y();
+      cy.get(sel('stats-reset-no')).click();
+      cy.get(sel('stats-close')).click();
+      cy.get(sel('new-game-button')).click();
+      checkA11y();
+    });
+  }
 
-  it('confirm dialogs: reset, clear, print', () => {
-    cy.viewport(1280, 900);
-    load();
-    cy.get(sel('person-card-0')).click();
-    cy.get('[data-testid="board-grid"] [data-blocked="false"]').first().click();
-    moreClick('reset');
-    checkA11y();
-    cy.get(sel('cancel-reset')).click();
-    moreClick('clear-button');
-    checkA11y();
-    cy.get(sel('clear-annotations')).click();
-    checkA11y();
-    cy.get(sel('cancel-reset')).click();
-    moreClick('print-button');
-    checkA11y();
-  });
+  for (const theme of ['light', 'dark'] as const) {
+    it(`confirm dialogs: reset, clear, print, ${theme}`, () => {
+      cy.viewport(1280, 900);
+      load();
+      setTheme(theme);
+      cy.get(sel('person-card-0')).click();
+      cy.get('[data-testid="board-grid"] [data-blocked="false"]').first().click();
+      moreClick('reset');
+      checkA11y();
+      cy.get(sel('cancel-reset')).click();
+      moreClick('clear-button');
+      checkA11y();
+      cy.get(sel('clear-annotations')).click();
+      checkA11y();
+      cy.get(sel('cancel-reset')).click();
+      moreClick('print-button');
+      checkA11y();
+    });
+  }
 
-  it('accuse and win dialogs', () => {
-    cy.viewport(1280, 900);
-    load();
-    playToWin();
-    checkA11y();
-  });
+  for (const theme of ['light', 'dark'] as const) {
+    it(`accuse and win dialogs, ${theme}`, () => {
+      cy.viewport(1280, 900);
+      load();
+      setTheme(theme);
+      playToWin();
+      checkA11y();
+    });
+  }
 });
