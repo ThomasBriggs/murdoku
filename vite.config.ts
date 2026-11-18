@@ -2,6 +2,8 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
+  // Relative asset URLs so dist/ works from any static path (e.g. a GitHub Pages subpath).
+  base: './',
   plugins: [react()],
   test: {
     environment: 'jsdom',
