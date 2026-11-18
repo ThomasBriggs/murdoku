@@ -12,9 +12,20 @@ export interface ClueToken {
   ref?: RoomId | FurnitureType | PersonId;
 }
 
+/** Internal: a token plus the clue atom it expresses (undefined for subject and connectors). */
+interface TaggedToken extends ClueToken {
+  atom?: number;
+}
+
 export interface RenderedClue {
   text: string;
   tokens: ClueToken[];
+  /**
+   * Parallel to `tokens`: index into `clue.atoms` of the atom each token
+   * expresses, or null for the subject, "was" and the connectors (", ", " and ",
+   * ", but ") between atoms. Lets the UI tick off each part of a clue.
+   */
+  atomOfToken: (number | null)[];
 }
 
 export interface RenderContext {
@@ -38,6 +49,8 @@ const letter = (i: number) => 'ABCDEFGHI'.charAt(i);
 const NEG_SLOT = 6;
 
 interface Phrase {
+  /** Index of the atom in `clue.atoms`. */
+  atom: number;
   /** Sort slot: 0 = "sitting on…", 1 = "in the Room", 2+ = tail items, NEG_SLOT+ = negatives. */
   slot: number;
   /** Used when the phrase opens the sentence, or follows another phrase in the tail. */
@@ -45,7 +58,12 @@ interface Phrase {
   tail: Piece[];
 }
 
-function phrase(ctx: RenderContext, atom: Atom): Phrase {
+function phrase(ctx: RenderContext, atom: Atom, index: number): Phrase {
+  const ph = phraseOf(ctx, atom);
+  return { ...ph, atom: index };
+}
+
+function phraseOf(ctx: RenderContext, atom: Atom): Omit<Phrase, 'atom'> {
   const roomOf = (id: RoomId) => ctx.rooms[id]!;
   switch (atom.kind) {
     case 'on': {
@@ -95,12 +113,18 @@ function phrase(ctx: RenderContext, atom: Atom): Phrase {
   }
 }
 
-function toTokens(pieces: Piece[]): ClueToken[] {
-  const out: ClueToken[] = [];
+/** Tag every piece of a phrase with its atom index. */
+function tag(pieces: Piece[], atom: number): Piece[] {
+  return pieces.map((p): TaggedToken => ({ ...(typeof p === 'string' ? plain(p) : p), atom }));
+}
+
+function toTokens(pieces: Piece[]): TaggedToken[] {
+  const out: TaggedToken[] = [];
   for (const p of pieces) {
-    const t = typeof p === 'string' ? plain(p) : p;
+    const t: TaggedToken = typeof p === 'string' ? plain(p) : p;
     const last = out[out.length - 1];
-    if (last && last.kind === 'plain' && t.kind === 'plain') last.text += t.text;
+    if (last && last.kind === 'plain' && t.kind === 'plain' && last.atom === t.atom)
+      last.text += t.text;
     else out.push({ ...t });
   }
   return out;
@@ -116,18 +140,18 @@ function toTokens(pieces: Piece[]): ClueToken[] {
  */
 export function renderClue(ctx: RenderContext, clue: Clue): RenderedClue {
   const subject = ctx.people[clue.person];
-  const all = clue.atoms.map((a) => phrase(ctx, a)).sort((a, b) => a.slot - b.slot);
+  const all = clue.atoms.map((a, i) => phrase(ctx, a, i)).sort((a, b) => a.slot - b.slot);
   const phrases = all.filter((p) => p.slot < NEG_SLOT);
   const negatives = all.filter((p) => p.slot >= NEG_SLOT);
   const head: Piece[] = [];
   let i = 0;
   const first = phrases[0];
   if (first) {
-    head.push(...first.lead);
+    head.push(...tag(first.lead, first.atom));
     i = 1;
     const second = phrases[1];
     if (first.slot === 0 && second && second.slot === 1) {
-      head.push(' ', ...second.lead);
+      head.push(' ', ...tag(second.lead, second.atom));
       i = 2;
     }
   }
@@ -143,13 +167,22 @@ export function renderClue(ctx: RenderContext, clue: Clue): RenderedClue {
         : k === rest.length - 1
           ? ' and '
           : ', ';
-    pieces.push(sep, ...p.tail);
+    pieces.push(sep, ...tag(p.tail, p.atom));
   });
   negatives.forEach((p, k) => {
-    if (phrases.length === 0 && k === 0) pieces.push(...p.lead);
-    else pieces.push(k === 0 ? ', but ' : ' and ', ...p.tail);
+    if (phrases.length === 0 && k === 0) pieces.push(...tag(p.lead, p.atom));
+    else pieces.push(k === 0 ? ', but ' : ' and ', ...tag(p.tail, p.atom));
   });
   pieces.push('.');
-  const tokens = toTokens(pieces);
-  return { text: tokens.map((t) => t.text).join(''), tokens };
+  const tagged = toTokens(pieces);
+  const tokens = tagged.map((t) => ({
+    text: t.text,
+    kind: t.kind,
+    ...(t.ref !== undefined && { ref: t.ref }),
+  }));
+  return {
+    text: tokens.map((t) => t.text).join(''),
+    tokens,
+    atomOfToken: tagged.map((t) => t.atom ?? null),
+  };
 }

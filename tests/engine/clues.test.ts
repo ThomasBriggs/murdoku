@@ -319,3 +319,38 @@ describe('render', () => {
     ]);
   });
 });
+
+describe('clue atom spans', () => {
+  it('tags every token of an atom, and only those, with its index in clue.atoms', () => {
+    const ctx = {
+      rooms: [{ id: 0, type: 'study', name: 'Study', cells: [], color: '#fff' }],
+      people: [{ id: 0, name: 'Charles', initial: 'C', color: '#000', isVictim: false }],
+    } as Parameters<typeof renderClue>[0];
+    const r = renderClue(ctx, {
+      person: 0,
+      // deliberately out of render order: the room atom is atoms[0], the chair atoms[1]
+      atoms: [
+        { kind: 'inRoom', room: 0 },
+        { kind: 'on', furniture: 'chair' },
+        { kind: 'beside', furniture: 'bookshelf' },
+      ],
+    });
+    expect(r.atomOfToken).toHaveLength(r.tokens.length);
+    const spanText = (i: number) =>
+      r.tokens
+        .filter((_, k) => r.atomOfToken[k] === i)
+        .map((t) => t.text)
+        .join('');
+    expect(spanText(1)).toBe('sitting on a chair');
+    expect(spanText(0)).toBe('in the Study');
+    expect(spanText(2)).toBe('beside a bookshelf');
+    // the subject and connectors belong to no atom
+    expect(r.atomOfToken[0]).toBeNull();
+    const rest = r.tokens
+      .filter((_, k) => r.atomOfToken[k] === null)
+      .map((t) => t.text)
+      .join('|');
+    expect(rest).toContain('Charles');
+    expect(rest).toContain(' was ');
+  });
+});
