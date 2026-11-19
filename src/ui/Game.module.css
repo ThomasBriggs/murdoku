@@ -161,6 +161,8 @@
   max-width: calc(100vw - 1rem);
 }
 .dock {
+  --dk-size: 2.5rem;
+  --dk-radius: 0.75rem;
   display: flex;
   align-items: center;
   gap: 0.2rem;
@@ -179,32 +181,41 @@
   margin-inline: 0.3rem;
   flex: none;
 }
-.dockBtn {
-  width: 2.4rem;
-  height: 2.4rem;
+.dockBtn,
+.cluesBtn {
+  width: var(--dk-size, 2.5rem);
+  height: var(--dk-size, 2.5rem);
   padding: 0;
   justify-content: center;
-  border-radius: 50%;
+  border-radius: var(--dk-radius, 0.75rem);
   border-color: transparent;
   background: transparent;
+  transition:
+    background-color 0.14s ease,
+    box-shadow 0.14s ease;
 }
 .dockBtn svg {
   width: 1.3rem;
   height: 1.3rem;
 }
-.dockBtn:hover:not(:disabled) {
-  background: var(--selected-bg);
+.dockBtn:hover:not(:disabled),
+.cluesBtn:hover {
+  background: color-mix(in srgb, var(--text) 9%, transparent);
+  border-color: transparent;
+}
+.dockBtn:focus-visible,
+.cluesBtn:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
 }
 .cluesBtn {
+  width: auto;
   gap: 0.4rem;
-  height: 2.4rem;
-  padding: 0 0.4rem 0 0.8rem;
-  border-radius: 999px;
+  padding: 0 0.35rem 0 0.75rem;
   font-weight: 600;
 }
 .cluesBtn[aria-expanded='true'] {
   background: var(--selected-bg);
-  border-color: var(--selected);
 }
 .count {
   min-width: 1.5rem;
@@ -290,13 +301,8 @@
   .layout {
     --side-pad: 3.9rem;
   }
-  .dockBtn,
-  .cluesBtn {
-    width: 2.1rem;
-    height: 2.1rem;
-  }
-  .cluesBtn {
-    width: auto;
+  .dock {
+    --dk-size: 2.2rem;
   }
   .actions button {
     width: 3rem;

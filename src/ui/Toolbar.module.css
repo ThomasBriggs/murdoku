@@ -117,21 +117,25 @@
 }
 
 .dockOverflow > button {
-  width: 2.4rem;
-  height: 2.4rem;
+  width: var(--dk-size, 2.5rem);
+  height: var(--dk-size, 2.5rem);
   padding: 0;
   justify-content: center;
-  border-radius: 50%;
+  border-radius: var(--dk-radius, 0.75rem);
   border-color: transparent;
   background: transparent;
   font-size: 1.3rem;
   line-height: 1;
+  transition: background-color 0.14s ease;
 }
-@media (max-width: 760px) {
-  .dockOverflow > button {
-    width: 2.1rem;
-    height: 2.1rem;
-  }
+.dockOverflow > button:hover:not(:disabled),
+.dockOverflow > button[aria-expanded='true'] {
+  background: color-mix(in srgb, var(--text) 9%, transparent);
+  border-color: transparent;
+}
+.dockOverflow > button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
 }
 /* Dock overflow menu: opens upwards, anchored to the dock button. */
 .overflowUp {

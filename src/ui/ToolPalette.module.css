@@ -188,50 +188,64 @@
   padding: 0;
 }
 .strip .tool {
+  position: relative;
+  width: var(--dk-size, 2.5rem);
+  height: var(--dk-size, 2.5rem);
+  padding: 0;
+  justify-content: center;
   border-color: transparent;
+  border-radius: var(--dk-radius, 0.75rem);
   background: transparent;
-  border-radius: 50%;
+  transition:
+    background-color 0.14s ease,
+    color 0.14s ease,
+    box-shadow 0.14s ease;
 }
 .strip .tool:hover {
-  background: var(--selected-bg);
+  background: color-mix(in srgb, var(--text) 9%, transparent);
+  border-color: transparent;
+}
+.strip .tool:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
 }
 .strip .tool[aria-pressed='true'] {
   background: var(--selected);
-  border-color: var(--selected);
-  box-shadow: 0 2px 8px rgb(0 0 0 / 0.3);
+  border-color: transparent;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--selected) 45%, transparent);
   color: var(--bg);
+}
+.strip .tool[aria-pressed='true']:hover {
+  background: color-mix(in srgb, var(--selected) 88%, var(--text));
 }
 .strip .tool[aria-pressed='true'] .kbd {
   color: inherit;
+  opacity: 0.85;
 }
 .strip .tools {
   flex-wrap: nowrap;
   align-items: center;
-}
-.strip .tool {
-  position: relative;
-  width: 2.4rem;
-  height: 2.4rem;
-  padding: 0;
-  justify-content: center;
+  gap: 0.15rem;
 }
 .strip .label {
   display: none;
 }
 .strip .glyph {
-  width: 1.4rem;
-  height: 1.4rem;
+  width: 1.3rem;
+  height: 1.3rem;
+  translate: 0 -0.1rem;
 }
 .strip .kbd {
   position: absolute;
-  right: 2px;
-  bottom: 0;
+  right: 0.28rem;
+  bottom: 0.2rem;
   font-size: 0.55rem;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1;
   color: var(--text-muted);
-  max-width: 1.6rem;
+  max-width: 1.4rem;
   overflow: hidden;
+  pointer-events: none;
 }
 .groupSep {
   width: 1px;
@@ -243,10 +257,4 @@
 .menuIcon {
   width: 1.1rem;
   height: 1.1rem;
-}
-@media (max-width: 760px) {
-  .strip .tool {
-    width: 2.1rem;
-    height: 2.1rem;
-  }
 }
