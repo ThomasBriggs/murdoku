@@ -61,7 +61,7 @@ export function Toolbar(p: ToolbarProps) {
 }
 
 /** The desktop "more" menu: secondary actions in a popover that closes after a plain action. */
-function OverflowMenu({ children }: { children: ReactNode }) {
+export function OverflowMenu({ children, up }: { children: ReactNode; up?: boolean }) {
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -74,7 +74,10 @@ function OverflowMenu({ children }: { children: ReactNode }) {
     return () => document.removeEventListener('pointerdown', away);
   }, [open]);
   return (
-    <div className={`${styles.settingsWrap} ${styles.overflowWrap}`} ref={wrap}>
+    <div
+      className={`${styles.settingsWrap} ${up ? styles.dockOverflow : styles.overflowWrap}`}
+      ref={wrap}
+    >
       <button
         type="button"
         ref={trigger}
@@ -91,7 +94,7 @@ function OverflowMenu({ children }: { children: ReactNode }) {
       {open && (
         <div
           id="overflow-menu"
-          className={styles.overflow}
+          className={`${styles.overflow} ${up ? styles.overflowUp : ''}`}
           role="group"
           aria-label="More actions"
           data-testid="overflow-menu"
@@ -124,10 +127,15 @@ export function SettingsMenu({
   settings,
   onSettings,
   compact,
+  iconOnly,
+  className,
 }: {
   settings: Settings;
   onSettings(patch: Partial<Settings>): void;
   compact?: boolean;
+  /** Header variant: a bare gear whose popover drops down from the right edge. */
+  iconOnly?: boolean;
+  className?: string;
 }) {
   const p = { settings, onSettings, compact };
   const [open, setOpen] = useState(false);
@@ -135,6 +143,8 @@ export function SettingsMenu({
     <div className={styles.settingsWrap}>
       <button
         type="button"
+        className={className}
+        aria-label="Settings"
         data-testid="settings-button"
         aria-expanded={open}
         aria-controls="settings-popover"
@@ -142,12 +152,12 @@ export function SettingsMenu({
         title="Settings"
       >
         <GearIcon className={styles.icon} />
-        <span>Settings</span>
+        {!iconOnly && <span>Settings</span>}
       </button>
       {open && (
         <div
           id="settings-popover"
-          className={`${styles.popover} ${p.compact ? styles.popoverLeft : ''}`}
+          className={`${styles.popover} ${p.compact ? styles.popoverLeft : ''} ${iconOnly ? styles.popoverRight : ''}`}
           role="group"
           aria-label="Settings"
           data-testid="settings-popover"

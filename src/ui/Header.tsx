@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useGame } from './context';
+import { useGame, useStoreApi } from './context';
 import { copyText, shareUrl } from './url';
 import styles from '../App.module.css';
 import { formatTime } from './time';
+import { SettingsMenu } from './Toolbar';
 
-/** Title, New Game, difficulty, timer and Rules (Settings lives in the toolbar). */
+/** Slim one-line header: title, difficulty + timer, and icon buttons for the app-level actions. */
 export function Header({
   onNewGame,
   onRules,
@@ -14,6 +15,8 @@ export function Header({
   onRules(): void;
   onStats(): void;
 }) {
+  const store = useStoreApi();
+  const settings = useGame((g) => g.settings);
   const puzzle = useGame((g) => g.puzzle);
   const elapsed = useGame((g) => g.elapsedMs);
   const status = useGame((g) => g.status);
@@ -33,21 +36,10 @@ export function Header({
       <h1 data-testid="app-title" className={styles.hTitle}>
         Murdoku
       </h1>
-      <button
-        type="button"
-        className={styles.hNew}
-        data-testid="new-game-button"
-        onClick={onNewGame}
-      >
-        New game
-      </button>
-      {puzzle && (
+      {puzzle ? (
         <p className={styles.meta}>
           <span data-testid="puzzle-difficulty" className={styles.difficulty}>
             {puzzle.difficulty}
-          </span>
-          <span className={styles.seed}>
-            seed <code data-testid="puzzle-seed">{puzzle.seed}</code>
           </span>
           <span
             className={styles.timer}
@@ -58,43 +50,72 @@ export function Header({
           >
             {formatTime(elapsed)}
           </span>
+          <span className={styles.seed}>
+            seed <code data-testid="puzzle-seed">{puzzle.seed}</code>
+          </span>
         </p>
+      ) : (
+        <span className={styles.meta} />
       )}
-      <span className={styles.grow} />
       <span className="sr-only" role="status" data-testid="share-status">
         {shared === 'ok' && 'Link to this puzzle copied.'}
         {shared === 'fail' && 'Could not copy the link.'}
       </span>
-      <button
-        type="button"
-        className={styles.hShare}
-        data-testid="share-button"
-        disabled={!puzzle}
-        title="Copy a link to this puzzle (no progress included)"
-        onClick={() => void share()}
-      >
-        {shared === 'ok' ? 'Link copied' : shared === 'fail' ? 'Copy failed' : 'Share'}
-      </button>
-      <button
-        type="button"
-        className={styles.hStats}
-        data-testid="stats-button"
-        title="Statistics"
-        onClick={onStats}
-      >
-        Stats
-      </button>
-      <button
-        type="button"
-        className={styles.hRules}
-        data-testid="rules-button"
-        aria-label="Rules"
-        title="Rules and shortcuts"
-        onClick={onRules}
-      >
-        <span aria-hidden="true">?</span>
-        <span>Rules</span>
-      </button>
+      <div className={styles.hActions}>
+        <button
+          type="button"
+          className={styles.hBtn}
+          data-testid="new-game-button"
+          aria-label="New game"
+          title="New game"
+          onClick={onNewGame}
+        >
+          <span aria-hidden="true">＋</span>
+        </button>
+        <button
+          type="button"
+          className={styles.hBtn}
+          data-testid="share-button"
+          disabled={!puzzle}
+          aria-label={shared === 'ok' ? 'Link copied' : 'Share'}
+          title={
+            shared === 'ok'
+              ? 'Link copied'
+              : shared === 'fail'
+                ? 'Copy failed'
+                : 'Share: copy a link to this puzzle (no progress included)'
+          }
+          onClick={() => void share()}
+        >
+          <span aria-hidden="true">{shared === 'ok' ? '✓' : '⤴'}</span>
+        </button>
+        <button
+          type="button"
+          className={styles.hBtn}
+          data-testid="stats-button"
+          aria-label="Statistics"
+          title="Statistics"
+          onClick={onStats}
+        >
+          <span aria-hidden="true">▥</span>
+        </button>
+        <button
+          type="button"
+          className={styles.hBtn}
+          data-testid="rules-button"
+          aria-label="Rules"
+          title="Rules and shortcuts"
+          onClick={onRules}
+        >
+          <span aria-hidden="true">?</span>
+        </button>
+        <SettingsMenu
+          iconOnly
+          className={styles.hBtn}
+          settings={settings}
+          onSettings={(patch) => store.getState().updateSettings(patch)}
+        />
+      </div>
     </header>
   );
 }

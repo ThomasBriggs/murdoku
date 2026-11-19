@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { setHas } from '../engine/cellset';
 import { allowedCells } from '../engine/clues/evaluate';
 import { GRID_SIZE } from '../engine/constants';
@@ -33,13 +41,13 @@ import { FurnitureLegend } from './FurnitureLegend';
 import { ClearMenu, describeClear, LayersMenu, type ClearChoice } from './ToolkitMenus';
 import { ColorPicker, PRIMARY_TOOLS, ToolPalette } from './ToolPalette';
 import palette from './ToolPalette.module.css';
-import { CheckIcon, FlagIcon, HintIcon, ResetIcon, UndoIcon } from './icons/glyphs';
+import { CheckIcon, FlagIcon, HintIcon, RedoIcon, ResetIcon, UndoIcon } from './icons/glyphs';
 import { useGame, useStoreApi } from './context';
 import styles from './Game.module.css';
 import { PeoplePanel } from './PeoplePanel';
 import { RoomLegend } from './RoomLegend';
 import { assignRoomColors } from './roomColors';
-import { SettingsMenu, Toolbar } from './Toolbar';
+import { OverflowMenu, Toolbar } from './Toolbar';
 import { conflictsByPerson, type Highlight } from './types';
 
 const SHAKE_MS = 400;
@@ -125,6 +133,11 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
   const [clearChoice, setClearChoice] = useState<ClearChoice | null>(null);
   const [logicOpen, setLogicOpen] = useState(false);
   const [scratchOpen, setScratchOpen] = useState(false);
+  // The clue drawer starts open on wide screens only.
+  const [cluesOpen, setCluesOpen] = useState(
+    () => window.matchMedia?.('(min-width: 1200px)').matches ?? false,
+  );
+  const [keyOpen, setKeyOpen] = useState(false);
   const [whatIfEnd, setWhatIfEnd] = useState<WhatIfEnd | null>(null);
   const [printOpen, setPrintOpen] = useState(false);
   const [printMarks, setPrintMarks] = useState(false);
@@ -426,78 +439,67 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
       onClear={() => actions.clearLayer('drawing')}
     />
   );
-  const toolbar = (compact: boolean) => (
-    <Toolbar
-      compact={compact}
-      canUndo={canUndo}
-      canRedo={canRedo}
-      onUndo={() => actions.undo()}
-      onRedo={() => actions.redo()}
-      secondary={
-        <>
-          <button
-            type="button"
-            data-testid="reset"
-            disabled={!anyPlaced}
-            onClick={() => setConfirmReset(true)}
-            title="Reset board"
-          >
-            <ResetIcon className={palette.menuIcon} />
-            <span>Reset</span>
-          </button>
-          <LayersMenu
-            visibility={annotations.layerVisibility}
-            onToggle={(l, v) => actions.setLayerVisible(l, v)}
-          />
-          <ClearMenu onChoose={setClearChoice} />
-          <button
-            type="button"
-            data-testid="whatif-start"
-            disabled={whatIfLevel >= WHATIF_MAX_DEPTH}
-            aria-keyshortcuts="w"
-            title="Start what-if (W): try a hypothesis in pencil, then keep or abandon it"
-            onClick={() => {
-              actions.startWhatIf();
-              closeMore();
-            }}
-          >
-            <span aria-hidden="true">⑂</span>
-            <span>Start what-if</span>
-          </button>
-          <button
-            type="button"
-            data-testid="logic-toggle"
-            aria-pressed={logicOpen}
-            aria-keyshortcuts="g"
-            title="Logic grid (G)"
-            onClick={() => {
-              setLogicOpen((o) => !o);
-              closeMore();
-            }}
-          >
-            <span aria-hidden="true">▦</span>
-            <span>Logic grid</span>
-          </button>
-          <button
-            type="button"
-            data-testid="print-button"
-            title="Print or save as PDF"
-            onClick={() => {
-              setPrintOpen(true);
-              closeMore();
-            }}
-          >
-            <span aria-hidden="true">⎙</span>
-            <span>Print</span>
-          </button>
-          <SettingsMenu
-            compact={compact}
-            settings={settings}
-            onSettings={(patch) => actions.updateSettings(patch)}
-          />
-        </>
-      }
-    >
+  const secondary = (
+    <>
+      <button
+        type="button"
+        data-testid="reset"
+        disabled={!anyPlaced}
+        onClick={() => setConfirmReset(true)}
+        title="Reset board"
+      >
+        <ResetIcon className={palette.menuIcon} />
+        <span>Reset</span>
+      </button>
+      <LayersMenu
+        visibility={annotations.layerVisibility}
+        onToggle={(l, v) => actions.setLayerVisible(l, v)}
+      />
+      <ClearMenu onChoose={setClearChoice} />
+      <button
+        type="button"
+        data-testid="whatif-start"
+        disabled={whatIfLevel >= WHATIF_MAX_DEPTH}
+        aria-keyshortcuts="w"
+        title="Start what-if (W): try a hypothesis in pencil, then keep or abandon it"
+        onClick={() => {
+          actions.startWhatIf();
+          closeMore();
+        }}
+      >
+        <span aria-hidden="true">⑂</span>
+        <span>Start what-if</span>
+      </button>
+      <button
+        type="button"
+        data-testid="logic-toggle"
+        aria-pressed={logicOpen}
+        aria-keyshortcuts="g"
+        title="Logic grid (G)"
+        onClick={() => {
+          setLogicOpen((o) => !o);
+          closeMore();
+        }}
+      >
+        <span aria-hidden="true">▦</span>
+        <span>Logic grid</span>
+      </button>
+      <button
+        type="button"
+        data-testid="print-button"
+        title="Print or save as PDF"
+        onClick={() => {
+          setPrintOpen(true);
+          closeMore();
+        }}
+      >
+        <span aria-hidden="true">⎙</span>
+        <span>Print</span>
+      </button>
+    </>
+  );
+  const investigate = (
+    <>
       <button
         type="button"
         data-testid="hint-button"
@@ -542,14 +544,223 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
         <FlagIcon className={palette.menuIcon} />
         <span>Accuse</span>
       </button>
+    </>
+  );
+  const toolbar = (compact: boolean) => (
+    <Toolbar
+      compact={compact}
+      canUndo={canUndo}
+      canRedo={canRedo}
+      onUndo={() => actions.undo()}
+      onRedo={() => actions.redo()}
+      secondary={secondary}
+    >
+      {investigate}
     </Toolbar>
   );
 
+  const unplaced = puzzle.people.filter((x) => placements[x.id] == null).length;
+  const cluesButton = (
+    <button
+      type="button"
+      className={styles.cluesBtn}
+      data-testid="clues-toggle"
+      aria-expanded={cluesOpen}
+      aria-controls="clues-drawer"
+      title="Show or hide the clues"
+      onClick={() => setCluesOpen((o) => !o)}
+    >
+      <span>Clues</span>
+      <span className={styles.count} data-testid="clues-count" aria-label={`${unplaced} unplaced`}>
+        {unplaced}
+      </span>
+    </button>
+  );
+  const popup = (tool === 'highlight' || tool === 'draw') && (
+    <div className={styles.popup} data-testid="color-row">
+      {tool === 'draw' && drawControls}
+      <ColorPicker color={color} onColor={onColor} />
+    </div>
+  );
+  const dockButton = (
+    testId: string,
+    label: string,
+    enabled: boolean,
+    onClick: () => void,
+    icon: ReactNode,
+    title: string,
+  ) => (
+    <button
+      type="button"
+      className={styles.dockBtn}
+      data-testid={testId}
+      disabled={!enabled}
+      aria-label={label}
+      title={title}
+      onClick={onClick}
+    >
+      {icon}
+    </button>
+  );
+
   return (
-    <div className={styles.layout} data-testid="game">
-      <div className={styles.toolbarArea}>
-        {mobile ? (
-          <>
+    <div className={styles.layout} data-testid="game" data-clues={cluesOpen ? 'open' : 'closed'}>
+      <div className={styles.boardArea} data-whatif={whatIfLevel || undefined}>
+        {whatIfLevel > 0 && (
+          <WhatIfBanner
+            level={whatIfLevel}
+            onKeep={() => setWhatIfEnd('keep')}
+            onAbandon={() => setWhatIfEnd('abandon')}
+            onNest={() => actions.startWhatIf()}
+          />
+        )}
+        {solved && (
+          <div className={feedback.solved} data-testid="solved-banner" role="status">
+            <span>Solved</span>
+            <span>
+              <button type="button" data-testid="solved-results" onClick={() => setWinOpen(true)}>
+                Results
+              </button>{' '}
+              <button type="button" data-testid="solved-new" onClick={onNewGame}>
+                New game
+              </button>
+            </span>
+          </div>
+        )}
+        {hint && (
+          <HintPanel
+            view={hint}
+            personName={(id) => puzzle.people.find((x) => x.id === id)?.name ?? 'Someone'}
+            onShowOne={() => void requestHint(true)}
+            onApply={applyHint}
+            onDismiss={() => setHint(null)}
+          />
+        )}
+        {check && (
+          <CheckSummary
+            correct={check.correct.length}
+            wrong={check.wrong.length}
+            showWrong={showWrong}
+            onToggleWrong={setShowWrong}
+            onDismiss={() => setCheck(null)}
+          />
+        )}
+
+        <div className={styles.legendRow}>
+          <RoomLegend
+            rooms={puzzle.rooms}
+            colors={roomColors}
+            notes={annotations.roomNotes}
+            showNotes={annotations.layerVisibility.margins}
+            onHighlight={setHighlight}
+            onSelectRoom={(room) => actions.selectCells(roomCells(puzzle.roomOf, room), 'replace')}
+            onNote={(room, text) => actions.setRoomNote(room, text)}
+          />
+
+          <button
+            type="button"
+            className={styles.keyBtn}
+            data-testid="key-toggle"
+            aria-expanded={keyOpen}
+            aria-controls="furniture-key"
+            title="Furniture key"
+            onClick={() => setKeyOpen((o) => !o)}
+          >
+            Key
+          </button>
+          {keyOpen && (
+            <div className={styles.keyPop} id="furniture-key">
+              <FurnitureLegend
+                furniture={puzzle.furniture}
+                onHighlight={setHighlight}
+                onSelect={(type, additive) =>
+                  actions.selectCells(
+                    furnitureCells(puzzle.furniture, type),
+                    additive ? 'add' : 'replace',
+                  )
+                }
+              />
+            </div>
+          )}
+        </div>
+        <Board
+          solved={solved}
+          hintCells={hintCells}
+          wrongPeople={wrongPeople}
+          puzzle={puzzle}
+          roomColors={roomColors}
+          placements={placements}
+          tentative={tentative}
+          annotations={annotations}
+          selection={selectionSet}
+          tool={tool}
+          selectedPerson={selected}
+          cursor={cursor}
+          highlight={highlight}
+          conflicts={conflicts}
+          autoCross={settings.autoCross}
+          conflictHighlight={settings.conflictHighlight}
+          shakeCell={shakeCell}
+          dimmed={dimmed}
+          possible={possible}
+          whatIfLevel={whatIfLevel}
+          draw={{
+            active: tool === 'draw' && !drawLocked,
+            pen,
+            size: penSize,
+            color,
+            onStroke: (s) => actions.addStroke(s),
+            onErase: (i) => actions.eraseStrokes(i),
+          }}
+          onCursor={(r, c) => setCursor({ r, c })}
+          onActivate={onActivate}
+          onContextMenu={onContextMenu}
+          onSelectPerson={(id) => actions.selectPerson(id)}
+          onCandidateKey={(person, eliminate, at) => {
+            actions.applyCandidate(targets(at), person, eliminate);
+          }}
+          onDragSelect={(cells) => actions.selectCells(cells, 'replace')}
+          onQuickSelect={(cells, additive) =>
+            actions.selectCells(cells, additive ? 'add' : 'replace')
+          }
+          onRoomSelect={(room) => actions.selectCells(roomCells(puzzle.roomOf, room), 'replace')}
+          onPromote={(person) => actions.promoteTentative(person)}
+          onRemove={(person) => actions.remove(person)}
+          onRemoveTentative={(person) => actions.removeTentative(person)}
+          onNote={(kind, index, text) =>
+            kind === 'row' ? actions.setRowNote(index, text) : actions.setColNote(index, text)
+          }
+        />
+      </div>
+      {logicOpen && (
+        <div className={mobile ? undefined : styles.logicOverlay}>
+          <LogicGrid
+            puzzle={puzzle}
+            roomColors={roomColors}
+            grid={annotations.logicGrid}
+            sheet={mobile}
+            onCycle={(t, slot, i) => actions.cycleLogicCell(t, slot, i)}
+            onClose={() => setLogicOpen(false)}
+          />
+        </div>
+      )}
+      <div className={styles.scratchFloat} data-open={scratchOpen}>
+        <Scratchpad
+          value={annotations.scratchpad}
+          open={scratchOpen}
+          onToggle={setScratchOpen}
+          onCommit={(text) => actions.setScratchpad(text)}
+        />
+      </div>
+      {!mobile && (
+        <div className={styles.actions} role="group" aria-label="Investigate">
+          {investigate}
+        </div>
+      )}
+      {mobile ? (
+        <>
+          <div className={styles.peek}>{cluesButton}</div>
+          <div className={styles.mobileDock}>
             {(tool === 'highlight' || tool === 'draw') && !moreOpen && (
               <div className={palette.slim} data-testid="color-row">
                 {tool === 'draw' && drawControls}
@@ -651,10 +862,13 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
                 </div>
               </>
             )}
-          </>
-        ) : (
-          <>
-            <div className={styles.toolsArea}>
+          </div>
+        </>
+      ) : (
+        <div className={styles.dockWrap}>
+          <div className={styles.dockStack}>
+            {popup}
+            <div className={styles.dock} data-testid="dock">
               <ToolPalette
                 strip
                 showColors={false}
@@ -663,154 +877,62 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
                 onTool={onTool}
                 onColor={onColor}
               />
-            </div>
-            <div className={styles.actionsArea}>
-              {(tool === 'highlight' || tool === 'draw') && (
-                <div className={styles.context} data-testid="color-row">
-                  {tool === 'draw' && drawControls}
-                  <ColorPicker color={color} onColor={onColor} />
-                </div>
+              <span className={styles.dockSep} aria-hidden="true" />
+              {dockButton(
+                'undo',
+                'Undo',
+                canUndo,
+                () => actions.undo(),
+                <UndoIcon />,
+                'Undo (Ctrl+Z)',
               )}
-              {toolbar(false)}
+              {dockButton(
+                'redo',
+                'Redo',
+                canRedo,
+                () => actions.redo(),
+                <RedoIcon />,
+                'Redo (Ctrl+Shift+Z)',
+              )}
+              <span className={styles.dockSep} aria-hidden="true" />
+              {cluesButton}
+              <OverflowMenu up>{secondary}</OverflowMenu>
             </div>
-          </>
-        )}
-      </div>
-      <div className={styles.boardArea} data-whatif={whatIfLevel || undefined}>
-        {whatIfLevel > 0 && (
-          <WhatIfBanner
-            level={whatIfLevel}
-            onKeep={() => setWhatIfEnd('keep')}
-            onAbandon={() => setWhatIfEnd('abandon')}
-            onNest={() => actions.startWhatIf()}
-          />
-        )}
-        {solved && (
-          <div className={feedback.solved} data-testid="solved-banner" role="status">
-            <span>Solved</span>
-            <span>
-              <button type="button" data-testid="solved-results" onClick={() => setWinOpen(true)}>
-                Results
-              </button>{' '}
-              <button type="button" data-testid="solved-new" onClick={onNewGame}>
-                New game
-              </button>
-            </span>
           </div>
-        )}
-        {hint && (
-          <HintPanel
-            view={hint}
-            personName={(id) => puzzle.people.find((x) => x.id === id)?.name ?? 'Someone'}
-            onShowOne={() => void requestHint(true)}
-            onApply={applyHint}
-            onDismiss={() => setHint(null)}
-          />
-        )}
-        {check && (
-          <CheckSummary
-            correct={check.correct.length}
-            wrong={check.wrong.length}
-            showWrong={showWrong}
-            onToggleWrong={setShowWrong}
-            onDismiss={() => setCheck(null)}
-          />
-        )}
-        <Board
-          solved={solved}
-          hintCells={hintCells}
-          wrongPeople={wrongPeople}
-          puzzle={puzzle}
-          roomColors={roomColors}
-          placements={placements}
-          tentative={tentative}
-          annotations={annotations}
-          selection={selectionSet}
-          tool={tool}
-          selectedPerson={selected}
-          cursor={cursor}
-          highlight={highlight}
-          conflicts={conflicts}
-          autoCross={settings.autoCross}
-          conflictHighlight={settings.conflictHighlight}
-          shakeCell={shakeCell}
-          dimmed={dimmed}
-          possible={possible}
-          whatIfLevel={whatIfLevel}
-          draw={{
-            active: tool === 'draw' && !drawLocked,
-            pen,
-            size: penSize,
-            color,
-            onStroke: (s) => actions.addStroke(s),
-            onErase: (i) => actions.eraseStrokes(i),
-          }}
-          onCursor={(r, c) => setCursor({ r, c })}
-          onActivate={onActivate}
-          onContextMenu={onContextMenu}
-          onSelectPerson={(id) => actions.selectPerson(id)}
-          onCandidateKey={(person, eliminate, at) => {
-            actions.applyCandidate(targets(at), person, eliminate);
-          }}
-          onDragSelect={(cells) => actions.selectCells(cells, 'replace')}
-          onQuickSelect={(cells, additive) =>
-            actions.selectCells(cells, additive ? 'add' : 'replace')
-          }
-          onRoomSelect={(room) => actions.selectCells(roomCells(puzzle.roomOf, room), 'replace')}
-          onPromote={(person) => actions.promoteTentative(person)}
-          onRemove={(person) => actions.remove(person)}
-          onRemoveTentative={(person) => actions.removeTentative(person)}
-          onNote={(kind, index, text) =>
-            kind === 'row' ? actions.setRowNote(index, text) : actions.setColNote(index, text)
-          }
-        />
-        <RoomLegend
-          rooms={puzzle.rooms}
-          colors={roomColors}
-          notes={annotations.roomNotes}
-          showNotes={annotations.layerVisibility.margins}
-          onHighlight={setHighlight}
-          onSelectRoom={(room) => actions.selectCells(roomCells(puzzle.roomOf, room), 'replace')}
-          onNote={(room, text) => actions.setRoomNote(room, text)}
-        />
-        <FurnitureLegend
-          furniture={puzzle.furniture}
-          onHighlight={setHighlight}
-          onSelect={(type, additive) =>
-            actions.selectCells(
-              furnitureCells(puzzle.furniture, type),
-              additive ? 'add' : 'replace',
-            )
-          }
-        />
-        {logicOpen && (
-          <LogicGrid
+        </div>
+      )}
+      <aside
+        className={styles.drawer}
+        id="clues-drawer"
+        data-testid="clues-drawer"
+        aria-label="Clues"
+        hidden={!cluesOpen}
+      >
+        <div className={styles.drawerHead}>
+          <strong>Clues</strong>
+          <span className={styles.drawerSub}>{unplaced} unplaced</span>
+          <button
+            type="button"
+            className={styles.dockBtn}
+            data-testid="clues-close"
+            aria-label="Close clues"
+            onClick={() => setCluesOpen(false)}
+          >
+            ✕
+          </button>
+        </div>
+        <div className={styles.drawerBody}>
+          <PeoplePanel
             puzzle={puzzle}
-            roomColors={roomColors}
-            grid={annotations.logicGrid}
-            sheet={mobile}
-            onCycle={(t, slot, i) => actions.cycleLogicCell(t, slot, i)}
-            onClose={() => setLogicOpen(false)}
+            placements={placements}
+            tentative={tentative}
+            annotations={annotations}
+            selectedPerson={selected}
+            onSelect={(id) => actions.selectPerson(id)}
+            onHighlight={setHighlight}
           />
-        )}
-        <Scratchpad
-          value={annotations.scratchpad}
-          open={scratchOpen}
-          onToggle={setScratchOpen}
-          onCommit={(text) => actions.setScratchpad(text)}
-        />
-      </div>
-      <div className={styles.panelArea}>
-        <PeoplePanel
-          puzzle={puzzle}
-          placements={placements}
-          tentative={tentative}
-          annotations={annotations}
-          selectedPerson={selected}
-          onSelect={(id) => actions.selectPerson(id)}
-          onHighlight={setHighlight}
-        />
-      </div>
+        </div>
+      </aside>
       <PrintSheet
         puzzle={puzzle}
         placements={placements}

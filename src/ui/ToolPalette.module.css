@@ -183,7 +183,26 @@
 /* Desktop strip: icon-only buttons with a small shortcut badge; labels are in the tooltip. */
 .strip {
   flex-wrap: nowrap;
+  overflow: visible;
   margin: 0;
+  padding: 0;
+}
+.strip .tool {
+  border-color: transparent;
+  background: transparent;
+  border-radius: 50%;
+}
+.strip .tool:hover {
+  background: var(--selected-bg);
+}
+.strip .tool[aria-pressed='true'] {
+  background: var(--selected);
+  border-color: var(--selected);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.3);
+  color: var(--bg);
+}
+.strip .tool[aria-pressed='true'] .kbd {
+  color: inherit;
 }
 .strip .tools {
   flex-wrap: nowrap;
@@ -221,19 +240,13 @@
   margin-inline: 0.15rem;
   flex: none;
 }
-@media (min-width: 1100px) {
-  .strip .tools {
-    flex-direction: column;
-  }
-  .groupSep {
-    width: 1.4rem;
-    height: 1px;
-    margin-block: 0.15rem;
-    margin-inline: 0;
-  }
-}
-
 .menuIcon {
   width: 1.1rem;
   height: 1.1rem;
+}
+@media (max-width: 760px) {
+  .strip .tool {
+    width: 2.1rem;
+    height: 2.1rem;
+  }
 }

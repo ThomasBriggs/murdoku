@@ -1,91 +1,346 @@
+/* "Focus" layout: the board is centre stage; everything else floats around it. */
 .layout {
-  display: grid;
-  gap: 0.75rem 1.5rem;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-areas:
-    'board'
-    'panel'
-    'toolbar';
-  padding: 0.75rem 16px 0;
-  max-width: 1200px;
-  margin-inline: auto;
+  --hdr-h: 3rem;
+  --drawer-w: 22rem;
+  --side-pad: 4.75rem;
+  --board-reserve: 13.5rem;
+  padding: 0.6rem var(--side-pad) 7rem;
+  min-height: calc(100dvh - var(--hdr-h));
+}
+@media (min-width: 1200px) {
+  .layout[data-clues='open'] {
+    padding-right: calc(var(--drawer-w) + var(--side-pad));
+  }
 }
 .boardArea {
-  grid-area: board;
+  position: relative;
+  width: 100%;
   min-width: 0;
+  margin-inline: auto;
+  max-width: 1100px;
 }
-.panelArea {
-  grid-area: panel;
-  min-width: 0;
-  padding-bottom: 0.75rem;
+
+/* Room chips along the top edge of the board, with the furniture key tucked behind a toggle. */
+.legendRow {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.3rem 0.5rem;
+  margin-bottom: 0.45rem;
 }
-.toolbarArea {
-  grid-area: toolbar;
-  position: sticky;
-  bottom: 0;
-  z-index: 20;
+.keyBtn {
+  padding: 0.1rem 0.6rem;
+  font-size: 0.75rem;
+  border-radius: 999px;
+  color: var(--text-muted);
+}
+.keyBtn[aria-expanded='true'] {
+  background: var(--selected-bg);
+  border-color: var(--selected);
+  color: var(--text);
+}
+.keyPop {
+  position: absolute;
+  z-index: 35;
+  top: 100%;
+  right: 0;
+  max-width: 100%;
+  padding: 0.5rem 0.6rem;
   background: var(--surface);
-  border-top: 1px solid var(--border);
-  margin-inline: -16px;
-  padding: 0.5rem 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.3);
 }
-.toolsArea,
-.actionsArea {
-  min-width: 0;
+.keyPop ul {
+  margin-top: 0;
 }
-.actionsArea {
+
+/* Logic grid and scratchpad float over the page instead of taking space. */
+.logicOverlay {
+  position: fixed;
+  z-index: 40;
+  top: calc(var(--hdr-h) + 0.6rem);
+  left: 50%;
+  translate: -50% 0;
+  width: min(64rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - var(--hdr-h) - 7.5rem);
+  overflow: auto;
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.4);
+}
+.logicOverlay > * {
+  margin-top: 0 !important;
+}
+.scratchFloat {
+  position: fixed;
+  z-index: 35;
+  left: 1rem;
+  bottom: 6rem;
+  width: 11rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 6px 22px rgb(0 0 0 / 0.25);
+  padding: 0.25rem;
+}
+.scratchFloat[data-open='true'] {
+  width: min(22rem, calc(100vw - 2rem));
+}
+.scratchFloat > * {
+  margin-top: 0 !important;
+}
+
+/* Investigation actions: a small vertical group at the right edge. */
+.actions {
+  position: fixed;
+  z-index: 30;
+  right: 0.9rem;
+  top: 50%;
+  translate: 0 -50%;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem 0.75rem;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.35rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 4px 18px rgb(0 0 0 / 0.22);
 }
-.context {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem 0.75rem;
-}
-@media (min-width: 900px) {
-  .layout {
-    --board-reserve: 15.5rem;
-    grid-template-columns: minmax(0, 1fr) 24rem;
-    grid-template-areas:
-      'toolbar panel'
-      'board panel';
-    grid-template-rows: auto minmax(0, 1fr);
-    align-items: start;
-    padding-top: 0.75rem;
+@media (min-width: 1200px) {
+  .layout[data-clues='open'] .actions {
+    right: calc(var(--drawer-w) + 0.9rem);
   }
-  .toolbarArea {
+}
+.actions button {
+  flex-direction: column;
+  gap: 0.15rem;
+  width: 3.6rem;
+  padding: 0.4rem 0.1rem;
+  font-size: 0.7rem;
+  justify-content: center;
+}
+.actions button[data-testid='accuse-button'] {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--on-danger);
+  font-weight: 700;
+}
+.actions button[data-testid='accuse-button']:disabled {
+  background: transparent;
+  color: var(--danger);
+  border-style: dashed;
+}
+
+/* The dock. */
+.dockWrap {
+  position: fixed;
+  z-index: 30;
+  left: 0;
+  right: 0;
+  bottom: 1rem;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+@media (min-width: 1200px) {
+  .layout[data-clues='open'] .dockWrap {
+    right: var(--drawer-w);
+  }
+}
+.dockStack {
+  position: relative;
+  pointer-events: auto;
+  max-width: calc(100vw - 1rem);
+}
+.dock {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.35rem 0.6rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow:
+    0 10px 30px rgb(0 0 0 / 0.28),
+    0 2px 6px rgb(0 0 0 / 0.16);
+}
+.dockSep {
+  width: 1px;
+  height: 1.7rem;
+  background: var(--border);
+  margin-inline: 0.3rem;
+  flex: none;
+}
+.dockBtn {
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  justify-content: center;
+  border-radius: 50%;
+  border-color: transparent;
+  background: transparent;
+}
+.dockBtn svg {
+  width: 1.3rem;
+  height: 1.3rem;
+}
+.dockBtn:hover:not(:disabled) {
+  background: var(--selected-bg);
+}
+.cluesBtn {
+  gap: 0.4rem;
+  height: 2.4rem;
+  padding: 0 0.4rem 0 0.8rem;
+  border-radius: 999px;
+  font-weight: 600;
+}
+.cluesBtn[aria-expanded='true'] {
+  background: var(--selected-bg);
+  border-color: var(--selected);
+}
+.count {
+  min-width: 1.5rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 0.8rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+/* Secondary pill above the dock: colours and pen controls. */
+.popup {
+  position: absolute;
+  bottom: calc(100% + 0.6rem);
+  left: 50%;
+  translate: -50% 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem 0.75rem;
+  width: max-content;
+  max-width: calc(100vw - 1rem);
+  padding: 0.35rem 0.8rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: 0 6px 22px rgb(0 0 0 / 0.28);
+}
+
+/* Clue drawer (right on desktop, bottom sheet on phones). */
+.drawer {
+  position: fixed;
+  z-index: 50;
+  top: var(--hdr-h);
+  right: 0;
+  bottom: 0;
+  width: min(var(--drawer-w), 100vw);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+  box-shadow: -8px 0 28px rgb(0 0 0 / 0.25);
+}
+.drawer[hidden] {
+  display: none;
+}
+@media (min-width: 1200px) {
+  .drawer {
+    z-index: 20;
+    box-shadow: none;
+  }
+}
+.drawerHead {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.3rem 0.5rem 0.3rem 0.8rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.drawerSub {
+  flex: 1;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.drawerBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0.5rem 0.5rem 1rem;
+}
+
+/* Tablet-ish widths: slimmer dock. */
+@media (max-width: 760px) {
+  .layout {
+    --side-pad: 3.9rem;
+  }
+  .dockBtn,
+  .cluesBtn {
+    width: 2.1rem;
+    height: 2.1rem;
+  }
+  .cluesBtn {
+    width: auto;
+  }
+  .actions button {
+    width: 3rem;
+  }
+}
+
+/* Phones. */
+@media (max-width: 600px) {
+  .layout {
+    --side-pad: 10px;
+    --board-reserve: 12rem;
+    padding-bottom: 6.5rem;
+  }
+  .mobileDock {
+    position: fixed;
+    z-index: 30;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 0.35rem 10px calc(0.35rem + env(safe-area-inset-bottom, 0px));
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -4px 18px rgb(0 0 0 / 0.18);
+  }
+  .peek {
+    position: fixed;
+    z-index: 29;
+    right: 10px;
+    bottom: 4.9rem;
+  }
+  .peek .cluesBtn {
+    box-shadow: 0 4px 14px rgb(0 0 0 / 0.3);
+    padding-left: 0.9rem;
+    height: 2.4rem;
+  }
+  .scratchFloat {
+    left: 10px;
+    bottom: 4.9rem;
+    width: 9.5rem;
+  }
+  .scratchFloat[data-open='true'] {
+    width: calc(100vw - 20px);
+  }
+  .logicOverlay {
     position: static;
-    background: none;
-    border: 0;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: 0.4rem;
   }
-}
-/* Wide screens: the tool palette becomes a vertical strip beside the board. */
-@media (min-width: 1100px) {
-  .layout {
-    max-width: 1320px;
-    grid-template-columns: auto minmax(0, 1fr) 24rem;
-    grid-template-areas:
-      '. actions panel'
-      'tools board panel';
-  }
-  .toolbarArea {
-    display: contents;
-  }
-  .toolsArea {
-    grid-area: tools;
-  }
-  .actionsArea {
-    grid-area: actions;
-  }
-  .boardArea {
-    grid-area: board;
+  .drawer {
+    top: auto;
+    left: 0;
+    width: auto;
+    height: 64dvh;
+    border-left: 0;
+    border-top: 1px solid var(--border);
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -8px 28px rgb(0 0 0 / 0.35);
+    overflow: hidden;
   }
 }
 
