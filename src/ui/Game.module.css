@@ -261,6 +261,10 @@
   background: var(--surface);
   border-bottom: 1px solid var(--border);
 }
+.drawerTitle {
+  margin: 0;
+  font-size: 1rem;
+}
 .drawerSub {
   flex: 1;
   font-size: 0.8rem;

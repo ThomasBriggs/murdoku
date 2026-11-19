@@ -905,7 +905,7 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
         hidden={!cluesOpen}
       >
         <div className={styles.drawerHead}>
-          <strong>Clues</strong>
+          <h2 className={styles.drawerTitle}>Clues</h2>
           <span className={styles.drawerSub}>{unplaced} unplaced</span>
           <button
             type="button"
