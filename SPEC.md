@@ -43,7 +43,7 @@ Version 1 scope:
 | Heavy work | **Web Worker** (Vite `?worker` import) | Generation runs off the main thread, and the solution lives inside the worker (§7) |
 | Tests | **Vitest** for the engine, **Cypress** for end-to-end tests (one suite per feature milestone) | |
 | Lint / format | ESLint + Prettier | |
-| Deploy | `vite build` → static `dist/` (works on GitHub Pages, Netlify, or any static host) | |
+| Deploy | `vite build` → static `dist/` (deployed via Cloudflare Pages) | |
 
 The engine (`src/engine`) is **pure TypeScript with no DOM or React imports**, so it can be unit-tested and run inside the worker.
 

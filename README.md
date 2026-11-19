@@ -50,15 +50,9 @@ The solution exists only inside the worker. The worker posts the UI a `PuzzleVie
 
 ## Deployment
 
-`npm run build` produces a static `dist/`. Vite is configured with `base: './'`, so it works from any path (a domain root or a GitHub Pages sub-path) with no server configuration, and the worker loads relative to the page.
+`npm run build` produces a static `dist/`. Vite is configured with `base: './'`, so it works from any path with no server configuration, and the worker loads relative to the page.
 
-### Any static host
-
-Upload `dist/` to Netlify, S3, nginx, etc.
-
-### GitHub Pages
-
-`.github/workflows/deploy.yml` builds and deploys `dist/` on every push to `main` using `actions/upload-pages-artifact` and `actions/deploy-pages`. In the repository settings, set Pages > Source to **GitHub Actions**. `.github/workflows/ci.yml` runs typecheck, lint, tests, build and the Cypress suite on pushes and pull requests.
+The site is deployed only via Cloudflare Pages. `.github/workflows/ci.yml` runs typecheck, lint, tests, build and the Cypress suite on pushes and pull requests; it does not deploy.
 
 ### Deploy to Cloudflare Pages
 
