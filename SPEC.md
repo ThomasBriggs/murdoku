@@ -167,7 +167,8 @@ Placement (done **after** the solution placement, §5.3, so it can be shaped to 
 | `InRow(n)` / `InColumn(n)` | "…was in the 3rd row." |
 | `Alone` | "…was alone in the room." |
 | `SameRoomAs(person)` | "…was in the same room as Beatrice." |
-| `InCorner` / `OnEdge` / `AgainstWall` | "…was in a corner of the room." (room-relative) |
+| `InCorner` | "…was in a corner of the room." (room-relative: walls or the board edge on two sides that meet) |
+| `AgainstWall` | "…was against a wall of the room (not in a corner)." (room-relative: a wall on at least one side, corners excluded) |
 
 A **clue** is a conjunction of 1–3 atoms per person, rendered as one sentence: *"Charles was sitting on a chair in the Study, beside a bookshelf."*
 

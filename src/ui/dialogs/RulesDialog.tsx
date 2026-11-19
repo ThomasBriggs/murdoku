@@ -61,7 +61,7 @@ export function RulesDialog({ onClose }: { onClose(): void }) {
           </dd>
           <dt>In a corner</dt>
           <dd>A cell with a wall (or the board edge) on two sides that meet, within its room.</dd>
-          <dt>Against a wall</dt>
+          <dt>Against a wall (not in a corner)</dt>
           <dd>A cell with a wall on at least one side but not in a corner of its room.</dd>
           <dt>Alone in the room</dt>
           <dd>Nobody else, victim included, was in that room.</dd>

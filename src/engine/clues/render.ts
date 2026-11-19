@@ -100,7 +100,7 @@ function phraseOf(ctx: RenderContext, atom: Atom): Omit<Phrase, 'atom'> {
       return { slot: 4, lead: p, tail: p };
     }
     case 'roomEdge': {
-      const p = ['against a wall of the room'];
+      const p = ['against a wall of the room (not in a corner)'];
       return { slot: 4, lead: p, tail: p };
     }
     case 'alone':

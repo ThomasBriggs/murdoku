@@ -283,7 +283,18 @@ describe('render', () => {
       'Charles was in the same room as Beatrice.',
     );
     expect(text([{ kind: 'roomCorner' }])).toBe('Charles was in a corner of the room.');
-    expect(text([{ kind: 'roomEdge' }])).toBe('Charles was against a wall of the room.');
+    expect(text([{ kind: 'roomEdge' }])).toBe(
+      'Charles was against a wall of the room (not in a corner).',
+    );
+    expect(
+      text([
+        { kind: 'notBeside', furniture: 'rug' },
+        { kind: 'roomEdge' },
+        { kind: 'inRoom', room: 1 },
+      ]),
+    ).toBe(
+      'Charles was in the Library, against a wall of the room (not in a corner), but not beside any rug.',
+    );
     expect(
       text([
         { kind: 'beside', furniture: 'plant' },
