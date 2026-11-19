@@ -1,0 +1,57 @@
+import { cell, tid } from '../support/helpers';
+
+const URL = '/?seed=cy-people-hover&d=easy';
+const tool = (t: string) => tid(`tool-${t}`);
+
+/** Row-major [r, c] of cells a person can stand on. */
+function freeCells(): Cypress.Chainable<[number, number][]> {
+  return cy
+    .get('[data-testid="board-grid"] [data-blocked="false"]')
+    .then(($c) =>
+      $c.toArray().map((el) => [Number(el.dataset.r), Number(el.dataset.c)] as [number, number]),
+    );
+}
+
+describe('people panel: placed names and hover highlights', () => {
+  it('strikes through a placed name and lights up placed, pencilled and noted cells on hover', () => {
+    cy.visit(URL);
+    tid('board').should('be.visible');
+    freeCells().then((free) => {
+      const [a, b, c, d] = [free[0]!, free[10]!, free[20]!, free[30]!];
+
+      // Person 1 placed for real.
+      tid('person-card-1').click();
+      cell(...a).click();
+      tid('person-name-1').should('have.attr', 'data-placed', 'true');
+      tid('person-name-1').should('have.css', 'text-decoration-line', 'line-through');
+      tid('person-name-2').should('not.have.attr', 'data-placed');
+
+      // Person 2 pencilled in at b and noted as a candidate at c and d.
+      tool('pencil').click();
+      tid('person-card-2').click();
+      cell(...b).click();
+      tool('notes').click();
+      tid('person-card-2').click(); // pencil-placing deselects the person
+      cell(...c)
+        .click()
+        .should('have.attr', 'data-candidates', '2');
+      cell(...d)
+        .click()
+        .should('have.attr', 'data-candidates', '2');
+      tool('place').click();
+
+      tid('person-card-1').trigger('mouseover');
+      cell(...a).should('have.attr', 'data-person-mark', 'placed');
+      cy.get('[data-person-mark]').should('have.length', 1);
+      tid('person-card-1').trigger('mouseout');
+
+      tid('person-card-2').trigger('mouseover');
+      cell(...b).should('have.attr', 'data-person-mark', 'tentative');
+      cell(...c).should('have.attr', 'data-person-mark', 'candidate');
+      cell(...d).should('have.attr', 'data-person-mark', 'candidate');
+      cy.get('[data-person-mark]').should('have.length', 3);
+      tid('person-card-2').trigger('mouseout');
+      cy.get('[data-person-mark]').should('not.exist');
+    });
+  });
+});

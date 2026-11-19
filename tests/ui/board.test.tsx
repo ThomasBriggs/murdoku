@@ -214,6 +214,33 @@ describe('Board UI', () => {
     expect(document.querySelectorAll('[data-highlight="true"]')).toHaveLength(0);
   });
 
+  it('strikes through a placed name and lights up a hovered person on the board', async () => {
+    store = await setup();
+    const free = freeCells();
+    const [a, b, c2, d] = [free[0]!, free[10]!, free[20]!, free[30]!];
+    const key = ([r, c]: [number, number]) => r * 9 + c;
+    act(() => {
+      store.getState().place(1, key(a));
+      store.getState().placeTentative(2, key(b));
+      store.getState().applyCandidate([key(c2), key(d)], 2);
+    });
+    expect(screen.getByTestId('person-name-1')).toHaveAttribute('data-placed', 'true');
+    expect(screen.getByTestId('person-name-2')).not.toHaveAttribute('data-placed');
+
+    fireEvent.mouseEnter(card(1));
+    expect(cell(...a)).toHaveAttribute('data-person-mark', 'placed');
+    expect(document.querySelectorAll('[data-person-mark]')).toHaveLength(1);
+    fireEvent.mouseLeave(card(1));
+
+    fireEvent.mouseEnter(card(2));
+    expect(cell(...b)).toHaveAttribute('data-person-mark', 'tentative');
+    expect(cell(...c2)).toHaveAttribute('data-person-mark', 'candidate');
+    expect(cell(...d)).toHaveAttribute('data-person-mark', 'candidate');
+    expect(document.querySelectorAll('[data-person-mark]')).toHaveLength(3);
+    fireEvent.mouseLeave(card(2));
+    expect(document.querySelectorAll('[data-person-mark]')).toHaveLength(0);
+  });
+
   it('shows a room legend whose hover highlights the room', async () => {
     store = await setup();
     const puzzle = store.getState().puzzle!;

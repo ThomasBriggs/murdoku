@@ -229,6 +229,9 @@ export function PeoplePanel({
           const pend = pending?.person === person.id ? pending : null;
           const editingNote = noteOpen.has(person.id);
           const noteShown = editingNote || note !== '';
+          // Leaving a clue word falls back to lighting up this person, not nothing.
+          const showPerson: Highlight = { kind: 'person', id: person.id };
+          const highlightWithin = (h: Highlight | null) => onHighlight(h ?? showPerson);
           return (
             <li
               key={person.id}
@@ -238,19 +241,29 @@ export function PeoplePanel({
               data-placed={where ? 'true' : 'false'}
               data-struck={struck ? 'true' : 'false'}
               onClick={() => onSelect(selected ? null : person.id)}
+              onMouseEnter={() => onHighlight(showPerson)}
+              onMouseLeave={() => onHighlight(null)}
             >
               <div className={styles.top}>
                 <button
                   type="button"
                   className={styles.head}
                   aria-pressed={selected}
+                  onFocus={() => onHighlight(showPerson)}
+                  onBlur={() => onHighlight(null)}
                   aria-keyshortcuts={String(i + 1)}
                 >
                   <span className={styles.tokenBox}>
                     <Token person={person} scope="card-" />
                   </span>
                   <span className={styles.name}>
-                    {person.name}
+                    <span
+                      className={where ? styles.placedName : undefined}
+                      data-testid={`person-name-${person.id}`}
+                      data-placed={where ? 'true' : undefined}
+                    >
+                      {person.name}
+                    </span>
                     {person.isVictim && <span className={styles.victimTag}>Victim</span>}
                   </span>
                   <span className={styles.status} data-testid={`person-status-${person.id}`}>
@@ -307,7 +320,7 @@ export function PeoplePanel({
                     atomOfToken={rendered.atomOfToken}
                     highlights={marks}
                     ticks={annotations.clueTicks[person.id] ?? []}
-                    onHighlight={onHighlight}
+                    onHighlight={highlightWithin}
                     onTick={(atom) => actions().toggleClueTick(person.id, atom)}
                   />
                 ) : person.isVictim ? (

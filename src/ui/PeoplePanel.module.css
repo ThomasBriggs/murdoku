@@ -91,6 +91,11 @@
   align-items: center;
   flex-wrap: wrap;
 }
+.placedName {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  color: var(--text-muted);
+}
 .victimTag {
   font-size: 0.7rem;
   text-transform: uppercase;

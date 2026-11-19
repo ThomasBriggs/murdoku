@@ -10,7 +10,7 @@ import { CellMarks, type CandidateView } from './CellMarks';
 import { DrawingLayer, type DrawingProps } from './DrawingLayer';
 import { NoteInput } from './NoteInput';
 import type { RoomColor } from './roomColors';
-import { COLUMN_LETTERS, panelOrder, type Highlight } from './types';
+import { COLUMN_LETTERS, panelOrder, type Highlight, type PersonMark } from './types';
 import { computeWalls, firstCellOfRooms } from './walls';
 
 export interface BoardProps {
@@ -194,8 +194,20 @@ export function Board(p: BoardProps) {
 
   const matches = (r: number, c: number) => {
     const h = p.highlight;
-    if (!h) return false;
+    if (!h || h.kind === 'person') return false;
     return h.kind === 'room' ? puzzle.roomOf[r]![c] === h.id : puzzle.furniture[r]![c] === h.id;
+  };
+
+  // Where the hovered person card sits on the board: placed, pencilled in, or noted.
+  const personMark = (key: number): PersonMark | undefined => {
+    const h = p.highlight;
+    if (h?.kind !== 'person') return undefined;
+    if (p.placements[h.id] === key) return 'placed';
+    if (vis.tentative && p.tentative[h.id] === key) return 'tentative';
+    const slot = order.findIndex((x) => x.id === h.id);
+    const m = annotations.candidates[key];
+    if (vis.candidates && m && slot >= 0 && m.yes & (1 << slot)) return 'candidate';
+    return undefined;
   };
 
   const annFor = (key: number): CellAnn => {
@@ -324,6 +336,7 @@ export function Board(p: BoardProps) {
                   }
                   autoCross={crossed.has(key)}
                   highlighted={matches(r, c)}
+                  personMark={personMark(key)}
                   selected={occ !== undefined && occ === p.selectedPerson}
                   cursor={p.cursor.r === r && p.cursor.c === c}
                   shaking={p.shakeCell === key}

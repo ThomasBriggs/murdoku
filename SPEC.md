@@ -225,7 +225,8 @@ A **clue** is a conjunction of 1–3 atoms per person, rendered as one sentence:
 ### 6.3 People panel
 
 - 9 cards: the victim first (marked as victim), then the 8 suspects.
-- Each card shows the token (colour + initial), name, clue sentence and status (unplaced / placed / ✓ when confirmed by a check).
+- Each card shows the token (colour + initial), name, clue sentence and status (unplaced / placed / ✓ when confirmed by a check). Once a person is placed, their name is struck through.
+- Hovering (or focusing) a card lights up that person on the board: a solid ring where they are placed, a dashed ring where they are pencilled in (tentative), and a dotted ring on every cell holding their candidate initial.
 - Clicking a card **selects** that person. Words in the clue that name a room or furniture type highlight the matching cells on the board while hovered.
 - The player can strike through a clue they have finished using.
 

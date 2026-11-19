@@ -6,7 +6,7 @@ import styles from './Cell.module.css';
 import { FurnitureIcon } from './icons/FurnitureIcon';
 import type { RoomColor } from './roomColors';
 import { Token } from './Token';
-import { COLUMN_LETTERS } from './types';
+import { COLUMN_LETTERS, type PersonMark } from './types';
 import type { Walls } from './walls';
 
 export interface CellProps {
@@ -23,6 +23,8 @@ export interface CellProps {
   conflicts: readonly string[];
   autoCross: boolean;
   highlighted: boolean;
+  /** The hovered person card is placed, pencilled in, or noted as a candidate here. */
+  personMark?: PersonMark;
   /** The placed person here is the currently selected one. */
   selected: boolean;
   /** Roving-tabindex cursor is on this cell. */
@@ -138,6 +140,9 @@ export const Cell = memo(function Cell(p: CellProps) {
     walls.bottom && r === 8 && styles.wallB,
     blocked && styles.blocked,
     p.highlighted && styles.highlight,
+    p.personMark === 'placed' && styles.pmPlaced,
+    p.personMark === 'tentative' && styles.pmTentative,
+    p.personMark === 'candidate' && styles.pmCandidate,
     p.selected && styles.selected,
     p.ann?.inSelection && styles.inSel,
     (p.ann?.mark === 'cross' || p.ann?.tentative.length) && styles.crossed,
@@ -169,6 +174,7 @@ export const Cell = memo(function Cell(p: CellProps) {
       data-occupant={person ? person.id : ''}
       data-autocross={p.autoCross ? 'true' : undefined}
       data-highlight={p.highlighted ? 'true' : undefined}
+      data-person-mark={p.personMark}
       data-mark={p.ann?.mark || undefined}
       data-hl-color={p.ann?.color || undefined}
       data-dim={p.dimmed ? 'true' : undefined}
