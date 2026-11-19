@@ -8,7 +8,7 @@ describe('constants', () => {
   });
 
   it('has generator version and adjacency mode', () => {
-    expect(GENERATOR_VERSION).toBe(2);
+    expect(GENERATOR_VERSION).toBe(3);
     expect(ADJACENCY).toBe('orthogonal');
   });
 });

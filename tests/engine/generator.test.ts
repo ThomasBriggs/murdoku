@@ -55,7 +55,9 @@ describe('generatePuzzle', () => {
         });
         expect(inVictimRoom.map((p) => p.id)).toEqual([solution.murdererId]);
 
-        expect(puzzle.clues).toHaveLength(9);
+        // Only the 8 suspects get clues; the victim's card just states the murder rule.
+        expect(puzzle.clues).toHaveLength(8);
+        expect(puzzle.clues.map((c) => c.person)).not.toContain(victim.id);
         const rc = puzzle.clues
           .flatMap((c) => c.atoms)
           .filter((a) => a.kind === 'row' || a.kind === 'col').length;

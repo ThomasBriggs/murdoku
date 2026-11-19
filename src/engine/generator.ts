@@ -105,7 +105,10 @@ function buildLayout(root: Rng): Layout {
 }
 
 function makePuzzle(seed: string, difficulty: Difficulty, layout: Layout, atoms: Atom[][]): Puzzle {
-  const clues: Clue[] = atoms.map((a, person) => ({ person, atoms: a }));
+  // The victim has no atoms and so no clue: their card only states the murder rule.
+  const clues: Clue[] = atoms
+    .map((a, person) => ({ person, atoms: a }))
+    .filter((c) => c.atoms.length > 0);
   return {
     version: GENERATOR_VERSION,
     seed,
@@ -118,7 +121,7 @@ function makePuzzle(seed: string, difficulty: Difficulty, layout: Layout, atoms:
   };
 }
 
-/** True facts minus those the fairness rules forbid. */
+/** True facts minus those the fairness rules forbid. The victim gets none (§5.4). */
 function fairFacts(layout: Layout): Atom[][] {
   const { plan, people, solution, furniture } = layout;
   const facts = deriveFacts({ roomOf: plan.roomOf, rooms: plan.rooms, furniture }, solution);
@@ -127,11 +130,13 @@ function fairFacts(layout: Layout): Atom[][] {
   const vCell = solution.cellOf[victim]!;
   const victimRoom = plan.roomOf[vCell.r]![vCell.c]!;
   return facts.map((list, p) =>
-    list.filter((a) => {
-      if (a.kind === 'sameRoomAs') return a.person !== victim && a.person !== murderer;
-      if (a.kind === 'inRoom' && p === murderer) return a.room !== victimRoom;
-      return true;
-    }),
+    p === victim
+      ? []
+      : list.filter((a) => {
+          if (a.kind === 'sameRoomAs') return a.person !== victim && a.person !== murderer;
+          if (a.kind === 'inRoom' && p === murderer) return a.room !== victimRoom;
+          return true;
+        }),
   );
 }
 
@@ -194,6 +199,10 @@ function attempt(
   const cap = ROW_COL_CAP[difficulty];
   const chosen: Atom[][] = [];
   for (const list of facts) {
+    if (list.length === 0) {
+      chosen.push([]); // the victim
+      continue;
+    }
     const allowed = rowColCount(chosen) < cap ? list : list.filter((a) => !isRowCol(a));
     chosen.push([pickInitial(rng, allowed, difficulty)]);
   }
@@ -208,13 +217,15 @@ function attempt(
     if (step >= MAX_GROW_STEPS) return null;
     const open = chosen
       .map((atoms, p) => ({ p, atoms, n: setCount(result.candidates[p]!) }))
-      .filter((x) => x.n > 1 && x.atoms.length < MAX_ATOMS && !stuck.has(x.p));
+      .filter(
+        (x) => x.n > 1 && x.atoms.length < MAX_ATOMS && !stuck.has(x.p) && facts[x.p]!.length > 0,
+      );
     if (open.length === 0) {
       // Everyone left is at the atom limit or out of useful facts: rebuild the
       // widest-open person from their strongest facts, once each.
       const wide = chosen
         .map((_, p) => ({ p, n: setCount(result.candidates[p]!) }))
-        .filter((x) => x.n > 1 && !rebuilt.has(x.p))
+        .filter((x) => x.n > 1 && !rebuilt.has(x.p) && facts[x.p]!.length > 0)
         .sort((a, b) => b.n - a.n)[0];
       if (!wide) return null;
       rebuilt.add(wide.p);

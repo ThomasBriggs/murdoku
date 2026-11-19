@@ -175,16 +175,16 @@ A **clue** is a conjunction of 1–3 atoms per person, rendered as one sentence:
 **Fairness rules**:
 
 - No clue may name or imply the murderer directly.
-- The victim also gets a clue.
+- The victim gets **no** clue of their own: their card only restates the murder rule, "Was alone in the room with the murderer." Their cell has to be deduced from the suspects (once all 8 are placed, only one row/column crossing is left).
 - `SameRoomAs(victim)` is not allowed, because it would give away the murderer.
 
 **Selection algorithm**:
 
-1. Start each person with one random "weak" fact. Bias towards furniture and room facts; row and column facts are rare and mostly used on Easy.
+1. Start each suspect with one random "weak" fact. Bias towards furniture and room facts; row and column facts are rare and mostly used on Easy.
 2. Loop: run the logical solver (§5.5).
    - If it stalls, find a person whose candidate cells are still ambiguous and add a fact that cuts their candidates the most (ties broken at random).
    - If it solves, go to step 3.
-3. **Prune**: try removing each atom in random order. Keep the removal if the puzzle is still uniquely solvable *and* logically solvable at or below the target difficulty. Every person keeps at least one atom.
+3. **Prune**: try removing each atom in random order. Keep the removal if the puzzle is still uniquely solvable *and* logically solvable at or below the target difficulty. Every suspect keeps at least one atom.
 4. Final check: the brute-force solver confirms exactly one solution. Then grade difficulty.
 5. If the grade does not match the requested difficulty, retry with a new sub-seed (bounded attempts; then accept the closest result).
 
@@ -228,7 +228,7 @@ The "Focus" layout keeps the board as the centre of attention and tucks everythi
 
 ### 6.3 People panel (clue drawer)
 
-- 9 cards: the victim first (marked as victim), then the 8 suspects. The cards are split into an **Unplaced** section and a collapsible **Placed** section (collapsed state is remembered; hidden while nobody is placed). A pencil (tentative) guess still counts as unplaced. When everyone is placed, the Unplaced section says so. The Clues button shows the number of unplaced people.
+- 9 cards: the victim first (marked as victim, with the fixed text "Was alone in the room with the murderer." in place of a clue), then the 8 suspects. The cards are split into an **Unplaced** section and a collapsible **Placed** section (collapsed state is remembered; hidden while nobody is placed). A pencil (tentative) guess still counts as unplaced. When everyone is placed, the Unplaced section says so. The Clues button shows the number of unplaced people.
 - The `1`–`9` number keys keep their meaning: they address people by position in the full list (victim first), whichever section the card is in.
 - Each card shows the token (colour + initial), name, clue sentence and status (unplaced / placed / ✓ when confirmed by a check). Once a person is placed, their name is struck through.
 - Hovering (or focusing) a card lights up that person on the board: a solid ring where they are placed, a dashed ring where they are pencilled in (tentative), and a dotted ring on every cell holding their candidate initial.
