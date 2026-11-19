@@ -110,12 +110,74 @@
   pointer-events: none;
 }
 .person {
+  position: relative;
   grid-area: 1 / 1;
-  width: 58%;
-  align-self: end;
-  margin-bottom: 7%;
+  width: 56%;
   z-index: 1;
   pointer-events: none;
+}
+/* Under a person (or a pencil guess) the furniture shrinks to a corner badge so the token can sit centred. */
+.occupied .furniture {
+  position: absolute;
+  left: 3%;
+  bottom: 3%;
+  width: 28%;
+  opacity: 0.9;
+}
+/* Small ✕ on the token's top-left; the right-hand corners carry the warning and victim badges. */
+.unplace {
+  position: absolute;
+  top: -12%;
+  left: -12%;
+  width: 40%;
+  aspect-ratio: 1;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--text-muted);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  pointer-events: auto;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.unplace svg {
+  width: 70%;
+  height: 70%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+.unplace:hover {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--on-danger);
+}
+.cell:hover .unplace,
+.cell:focus-visible .unplace,
+.selected .unplace {
+  opacity: 1;
+}
+@media (hover: none) {
+  .unplace {
+    opacity: 1;
+  }
+}
+/* Fingers need a bigger target than the drawn circle on phone-sized cells. */
+@media (pointer: coarse) {
+  .unplace::before {
+    content: '';
+    position: absolute;
+    inset: -45%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .unplace {
+    transition: none;
+  }
 }
 .shake {
   animation: shake 0.35s ease-in-out;

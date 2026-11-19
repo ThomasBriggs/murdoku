@@ -76,6 +76,7 @@
   place-items: center;
   font-weight: 700;
   font-size: 58cqw;
+  line-height: 1;
   color: var(--accent);
   opacity: 0.8;
   pointer-events: none;
@@ -83,7 +84,7 @@
 
 .cands {
   position: absolute;
-  inset: 12% 6% 4%;
+  inset: 10% 8%;
   display: grid;
   grid-template: repeat(3, 1fr) / repeat(3, 1fr);
   place-items: center;
@@ -116,10 +117,10 @@
 .tentative {
   position: absolute;
   left: 50%;
-  bottom: 6%;
-  width: 66%;
+  top: 50%;
+  width: 56%;
   aspect-ratio: 1;
-  translate: -50% 0;
+  translate: -50% -50%;
   border-radius: 50%;
   border: 2px dashed var(--tc);
   background: color-mix(in srgb, var(--surface) 88%, transparent);
@@ -137,21 +138,25 @@
 }
 .promote {
   position: absolute;
-  top: -35%;
-  right: -35%;
-  width: 1.1rem;
-  height: 1.1rem;
+  top: -16%;
+  right: -16%;
+  width: 40%;
+  height: 40%;
   padding: 0;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  font-size: 0.7rem;
+  font-size: 14cqw;
   line-height: 1;
   pointer-events: auto;
   background: var(--surface);
   border: 1px solid var(--text-muted);
   cursor: pointer;
   opacity: 0;
+}
+.dropGuess {
+  right: auto;
+  left: -16%;
 }
 /* Shown on hover or keyboard focus, and always where there is no hover (touch). */
 [data-tentative]:hover .promote,
@@ -162,5 +167,12 @@
 @media (hover: none) {
   .promote {
     opacity: 1;
+  }
+}
+@media (pointer: coarse) {
+  .promote::before {
+    content: '';
+    position: absolute;
+    inset: -45%;
   }
 }

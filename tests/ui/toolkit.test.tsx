@@ -120,6 +120,37 @@ describe('cell tools by click', () => {
     expect(screen.queryByTestId('tentative-0')).toBeNull();
     expect(cell(r, c)).toHaveAttribute('data-occupant', '0');
   });
+
+  it('erase tool wipes a cell; tentative and placed tokens have a ✕ to remove them', async () => {
+    const store = await setup();
+    const free = [...document.querySelectorAll<HTMLElement>('[data-blocked="false"]')];
+    const at = (i: number) => [Number(free[i]!.dataset.r), Number(free[i]!.dataset.c)] as const;
+    const [r, c] = at(0);
+    fireEvent.click(tool('cross'));
+    fireEvent.click(cell(r, c));
+    fireEvent.click(tool('highlight'));
+    fireEvent.click(cell(r, c));
+    fireEvent.click(tool('erase'));
+    fireEvent.click(cell(r, c));
+    expect(cell(r, c)).not.toHaveAttribute('data-mark');
+    expect(cell(r, c)).not.toHaveAttribute('data-hl-color');
+
+    fireEvent.click(tool('pencil'));
+    fireEvent.click(card(0));
+    fireEvent.click(cell(r, c));
+    fireEvent.click(screen.getByTestId('untentative-0'));
+    expect(store.getState().tentativePlacements[0]).toBeNull();
+    expect(screen.queryByTestId('tentative-0')).toBeNull();
+
+    fireEvent.click(tool('place'));
+    fireEvent.click(card(1));
+    fireEvent.click(cell(r, c));
+    expect(cell(r, c)).toHaveAttribute('data-occupant', '1');
+    fireEvent.click(screen.getByTestId('unplace-1'));
+    expect(store.getState().placements[1]).toBeNull();
+    expect(cell(r, c)).toHaveAttribute('data-occupant', '');
+    expect(screen.queryByTestId('unplace-1')).toBeNull();
+  });
 });
 
 describe('keyboard shortcuts', () => {
@@ -151,6 +182,8 @@ describe('keyboard shortcuts', () => {
     expect(store.getState().tool).toBe('eliminate');
     press('s');
     expect(store.getState().tool).toBe('select');
+    press('r');
+    expect(store.getState().tool).toBe('erase');
     press('v');
     expect(store.getState().tool).toBe('place');
     press('c');

@@ -217,7 +217,7 @@ A **clue** is a conjunction of 1–3 atoms per person, rendered as one sentence:
 
 ### 6.2 Board
 
-- Each 9×9 cell shows its room colour, any furniture icon, any placed person token (coloured circle with initial), and pencil marks.
+- Each 9×9 cell shows its room colour, any furniture icon, any placed person token (coloured circle with initial), and pencil marks. Tokens sit centred in the cell; furniture under a person shrinks to a corner badge. A small ✕ on a placed token (shown on hover, always on touch screens) takes that person off the board.
 - Thick borders mark room walls. Room names appear as small labels in the first cell of each room.
 - Row numbers 1–9 and column letters A–I run along the edges. They match the wording of row and column clues.
 - Hovering over (or long-pressing) a furniture icon shows its name and whether it is occupiable.
@@ -259,7 +259,8 @@ A **tool palette** (beside the toolbar on desktop, a bottom sheet on mobile) hol
 | **? Unsure** | A reminder to come back. Small question mark. | `?` key |
 | **Candidate initials** | Up to 9 tiny initials in a 3×3 mini-grid inside the cell (like Sudoku pencil marks). Each person's initial always sits in the same slot, so patterns are easy to scan. | Notes mode (`N`), then tap a cell with a person selected, or type their number |
 | **Eliminated initial** | An initial with a slash through it: "*this* person is not here," while others still might be. | Notes mode plus `Shift`, or long-press the initial |
-| **Tentative placement** | A dashed outline token: "I think B goes here," without committing. It doesn't count towards row/column rules or Accuse. Can be promoted to a real placement with one click. | Pencil-place mode (`P`) |
+| **Tentative placement** | A dashed outline token: "I think B goes here," without committing. It doesn't count towards row/column rules or Accuse. Can be promoted to a real placement with one click (✓), or dropped with its ✕. | Pencil-place mode (`P`) |
+| **Erase** | Wipes one cell (or the selection) clean: marks, candidate initials, highlight and pencil guesses, as one undoable step. Real placements stay. | Erase tool (`R`), or `Delete` / `Backspace` |
 
 #### 6.5.2 Colours and highlights
 

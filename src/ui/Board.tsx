@@ -52,6 +52,10 @@ export interface BoardProps {
   onQuickSelect(cells: number[], additive: boolean): void;
   onRoomSelect(room: number): void;
   onPromote(person: PersonId): void;
+  /** Take a placed person off the board (the ✕ on their token). */
+  onRemove(person: PersonId): void;
+  /** Drop a pencil guess (the ✕ on a tentative token). */
+  onRemoveTentative(person: PersonId): void;
   onNote(kind: 'row' | 'col', index: number, text: string): void;
 }
 
@@ -221,6 +225,7 @@ export function Board(p: BoardProps) {
   };
 
   const additive = (e: { shiftKey: boolean }) => e.shiftKey;
+  const removePerson = (person: Person) => p.onRemove(person.id);
 
   return (
     <div
@@ -332,6 +337,8 @@ export function Board(p: BoardProps) {
                         : undefined
                   }
                   wrong={occ !== undefined && p.wrongPeople?.has(occ)}
+                  removable={!p.solved}
+                  onRemove={removePerson}
                   ann={ann}
                   annotations={
                     <CellMarks
@@ -342,6 +349,7 @@ export function Board(p: BoardProps) {
                       candidates={candidateViews(key)}
                       tentative={tentativeAt.get(key) ?? []}
                       onPromote={(person) => p.onPromote(person.id)}
+                      onRemove={p.solved ? undefined : (person) => p.onRemoveTentative(person.id)}
                     />
                   }
                   onActivate={p.onActivate}

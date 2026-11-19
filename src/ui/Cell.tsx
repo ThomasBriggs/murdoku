@@ -36,6 +36,9 @@ export interface CellProps {
   hint?: 'target' | 'involved';
   /** The placed person here was flagged wrong by a check or hint. */
   wrong?: boolean;
+  /** Show the small ✕ that takes the placed person off the board. */
+  removable?: boolean;
+  onRemove?(person: Person): void;
   onActivate(r: number, c: number, mods?: ActivateMods): void;
   onFocusCell(r: number, c: number): void;
   onContextMenu?(r: number, c: number): void;
@@ -138,6 +141,7 @@ export const Cell = memo(function Cell(p: CellProps) {
     p.selected && styles.selected,
     p.ann?.inSelection && styles.inSel,
     (p.ann?.mark === 'cross' || p.ann?.tentative.length) && styles.crossed,
+    (person || p.ann?.tentative.length) && styles.occupied,
     p.shaking && styles.shake,
     p.dimmed && styles.dim,
     p.possible && styles.possible,
@@ -223,6 +227,25 @@ export const Cell = memo(function Cell(p: CellProps) {
             wrong={p.wrong}
             describedBy={hasConflict ? descId : undefined}
           />
+          {p.removable && p.onRemove && (
+            <button
+              type="button"
+              className={styles.unplace}
+              tabIndex={-1}
+              data-testid={`unplace-${person.id}`}
+              title={`Take ${person.name} off the board`}
+              aria-label={`Take ${person.name} off the board`}
+              onClick={(e) => {
+                e.stopPropagation();
+                p.onRemove?.(person);
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <svg viewBox="0 0 10 10" aria-hidden="true">
+                <path d="M2.5 2.5l5 5M7.5 2.5l-5 5" />
+              </svg>
+            </button>
+          )}
         </span>
       )}
       {hasConflict && (

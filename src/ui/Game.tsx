@@ -365,6 +365,7 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
         if (k === 'x') toolKey('cross');
         else if (e.key === '.') toolKey('dot');
         else if (e.key === '?') toolKey('unsure');
+        else if (k === 'r') toolKey('erase');
         else if (k === 'n') s.setTool(s.tool === 'notes' ? 'place' : 'notes');
         else if (k === 'p') s.setTool(s.tool === 'pencil' ? 'place' : 'pencil');
         else if (k === 'e') s.setTool(s.tool === 'eliminate' ? 'place' : 'eliminate');
@@ -757,6 +758,8 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
           }
           onRoomSelect={(room) => actions.selectCells(roomCells(puzzle.roomOf, room), 'replace')}
           onPromote={(person) => actions.promoteTentative(person)}
+          onRemove={(person) => actions.remove(person)}
+          onRemoveTentative={(person) => actions.removeTentative(person)}
           onNote={(kind, index, text) =>
             kind === 'row' ? actions.setRowNote(index, text) : actions.setColNote(index, text)
           }

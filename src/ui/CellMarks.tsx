@@ -19,6 +19,8 @@ export interface CellMarksProps {
   candidates: readonly CandidateView[];
   tentative: readonly Person[];
   onPromote(person: Person): void;
+  /** Drop a pencil guess; no ✕ is shown without it. */
+  onRemove?(person: Person): void;
 }
 
 const MARK_LABEL: Record<MarkKind, string> = {
@@ -108,6 +110,22 @@ export function CellMarks(p: CellMarksProps) {
           >
             ✓
           </button>
+          {p.onRemove && (
+            <button
+              type="button"
+              className={`${styles.promote} ${styles.dropGuess}`}
+              data-testid={`untentative-${person.id}`}
+              title={`Remove the guess for ${person.name}`}
+              aria-label={`Remove the guess for ${person.name}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                p.onRemove?.(person);
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              ✕
+            </button>
+          )}
         </span>
       ))}
     </>
