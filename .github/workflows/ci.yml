@@ -29,7 +29,10 @@ jobs:
         with:
           node-version-file: .node-version
           cache: npm
-      - uses: cypress-io/github-action@v6.10.1
+      # v7+ runs on node24. v6 was built for node20; when the runner forces it onto
+      # node24, its got@11-based wait-on aborts on the first ECONNREFUSED with
+      # "Socket closed before the connection was established" instead of retrying.
+      - uses: cypress-io/github-action@v7.4.10
         with:
           build: npm run build
           start: npm run preview
