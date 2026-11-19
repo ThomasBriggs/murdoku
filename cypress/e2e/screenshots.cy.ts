@@ -1,7 +1,13 @@
 // Visual review shots. Cypress's Electron screenshot capture hangs in some headless
 // setups, so these only run on request:
 //   cypress run --browser firefox --expose SCREENSHOTS=1 --spec cypress/e2e/screenshots.cy.ts
-import { moreClick, setTheme as sharedSetTheme } from '../support/helpers';
+import {
+  closeClues,
+  moreClick,
+  openClues,
+  selectPerson,
+  setTheme as sharedSetTheme,
+} from '../support/helpers';
 
 const URL = '/?seed=cy-board&d=easy';
 const cell = (r: number, c: number) => cy.get(`[data-testid="cell-${r}-${c}"]`);
@@ -38,12 +44,14 @@ suite('board screenshots', () => {
             if (n >= 3) break;
             if (used.has(r)) continue;
             used.add(r);
-            cy.get(`[data-testid="person-card-${n}"]`).click();
+            selectPerson(n);
             cell(r, c).click();
             n++;
           }
         });
-        cy.get('[data-testid^="clue-room-"]').first().trigger('mouseover').trigger('mouseenter');
+        // (the clue drawer is closed on phones, so there is no clue word to hover there)
+        if (w >= 1200)
+          cy.get('[data-testid^="clue-room-"]').first().trigger('mouseover').trigger('mouseenter');
         cy.screenshot(`board-${name}-${theme}`, { capture: 'fullPage' });
       });
 });
@@ -103,7 +111,7 @@ suite('toolkit screenshots', () => {
       // candidates and an eliminated initial
       cy.get('[data-testid="tool-notes"]').click();
       for (const id of [1, 2, 3]) {
-        cy.get(`[data-testid="person-card-${id}"]`).click();
+        selectPerson(id);
         for (const [r, c] of [
           [2, 6],
           [2, 7],
@@ -112,15 +120,13 @@ suite('toolkit screenshots', () => {
           cell(r!, c!).click();
       }
       cell(2, 6).click({ shiftKey: true });
-      cy.get('[data-testid="person-card-2"]').click();
+      selectPerson(2);
       cell(7, 0).click({ shiftKey: true });
       // a tentative guess
       cy.get('[data-testid="tool-pencil"]').click();
-      cy.get('[data-testid="person-card-4"]').click();
+      selectPerson(4);
       cell(1, 7).click();
-      // margin notes
-      cy.get('[data-testid="row-note-3"]').type('B/D{enter}');
-      cy.get('[data-testid="col-note-1"]').type('C{enter}');
+      // a room note
       cy.get('[data-testid^="room-note-btn-"]').first().click();
       cy.get('[data-testid^="room-note-input-"]').type('victim + 1{enter}');
       cy.get('[data-testid="tool-place"]').click();
@@ -137,18 +143,65 @@ suite('tentative close-up', () => {
       const free = $cells
         .toArray()
         .map((el) => [Number(el.dataset.r), Number(el.dataset.c)] as [number, number]);
-      cy.get('[data-testid="person-card-0"]').click();
+      selectPerson(0);
       cell(free[0]![0], free[0]![1]).click();
       cy.get('[data-testid="tool-pencil"]').click();
-      cy.get('[data-testid="person-card-4"]').click();
+      selectPerson(4);
       cell(free[1]![0], free[1]![1]).click();
-      cy.get('[data-testid="person-card-5"]').click();
+      selectPerson(5);
       cell(free[2]![0], free[2]![1]).click();
     });
     cy.get('[data-testid="tool-place"]').click();
     cy.get('[data-testid^="tentative-"]').first().scrollIntoView();
     cy.get('[data-testid="board"]').screenshot('tentative-closeup', { capture: 'viewport' });
   });
+});
+
+suite('focus layout screenshots', () => {
+  const t = (id: string) => `[data-testid="${id}"]`;
+
+  /** Place the first `n` people (by card) on free cells in distinct rows. */
+  function placeSome(n: number) {
+    cy.get('[data-testid="board-grid"] [data-blocked="false"]').then(($cells) => {
+      const used = new Set<number>();
+      let k = 0;
+      for (const el of $cells.toArray()) {
+        const r = Number(el.dataset.r);
+        if (k >= n || used.has(r)) continue;
+        used.add(r);
+        selectPerson(k);
+        cell(r, Number(el.dataset.c)).click();
+        k++;
+      }
+    });
+  }
+
+  for (const [name, w, h] of [
+    ['desktop', 1280, 900],
+    ['mobile', 375, 740],
+  ] as const) {
+    it(`scratchpad open ${name}`, () => {
+      cy.viewport(w, h);
+      cy.visit(URL);
+      cy.get(t('board')).should('be.visible');
+      cy.get(t('scratchpad-toggle')).click();
+      cy.get(t('scratchpad-text')).type('If Margaret is in the Kitchen then Leonard is in row 3.');
+      cy.get(t('scratchpad-panel')).should('be.visible');
+      cy.screenshot(`scratchpad-open-${name}`, { capture: 'viewport' });
+    });
+
+    it(`clues drawer, Placed collapsed ${name}`, () => {
+      cy.viewport(w, h);
+      cy.visit(URL);
+      cy.get(t('board')).should('be.visible');
+      placeSome(3);
+      openClues();
+      cy.get(t('clues-placed-toggle')).click().should('have.attr', 'aria-expanded', 'false');
+      cy.get(t('clues-placed-list')).should('not.be.visible');
+      cy.screenshot(`clues-placed-collapsed-${name}`, { capture: 'viewport' });
+      if (w < 1200) closeClues();
+    });
+  }
 });
 
 function setTheme(_w: number, theme: 'light' | 'dark') {
@@ -188,7 +241,7 @@ suite('advanced toolkit screenshots', () => {
     cy.get('[data-testid="board"]').should('be.visible');
     setTheme(1280, 'dark');
     cy.get('body').type('w');
-    cy.get('[data-testid="person-card-1"]').click();
+    selectPerson(1);
     cy.get('[data-testid="board-grid"] [data-blocked="false"]').first().click();
     cy.get('body').type('d');
     const stroke = (pts: [number, number][]) =>
@@ -266,7 +319,7 @@ suite('game flow screenshots', () => {
         if (!$a.prop('disabled') || guard === 0) return;
         cy.get(t('hint-button')).click();
         cy.get(t('hint-panel')).then(($p) => {
-          cy.get(t(`person-card-${$p.attr('data-hint-person')}`)).click();
+          selectPerson($p.attr('data-hint-person')!);
           cell(Number($p.attr('data-hint-row')), Number($p.attr('data-hint-col'))).click();
           solve(guard - 1);
         });
