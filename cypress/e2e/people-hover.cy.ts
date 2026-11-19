@@ -1,6 +1,9 @@
 import { cell, tid } from '../support/helpers';
 
 const URL = '/?seed=cy-people-hover&d=easy';
+/** Mouse over/out on the card's name button (the card centre can land on a clue word instead). */
+const hover = (id: string, ev: 'mouseover' | 'mouseout') =>
+  tid(`person-card-${id}`).find('button').first().trigger(ev);
 const tool = (t: string) => tid(`tool-${t}`);
 
 /** Row-major [r, c] of cells a person can stand on. */
@@ -40,17 +43,17 @@ describe('people panel: placed names and hover highlights', () => {
         .should('have.attr', 'data-candidates', '2');
       tool('place').click();
 
-      tid('person-card-1').trigger('mouseover');
+      hover('1', 'mouseover');
       cell(...a).should('have.attr', 'data-person-mark', 'placed');
       cy.get('[data-person-mark]').should('have.length', 1);
-      tid('person-card-1').trigger('mouseout');
+      hover('1', 'mouseout');
 
-      tid('person-card-2').trigger('mouseover');
+      hover('2', 'mouseover');
       cell(...b).should('have.attr', 'data-person-mark', 'tentative');
       cell(...c).should('have.attr', 'data-person-mark', 'candidate');
       cell(...d).should('have.attr', 'data-person-mark', 'candidate');
       cy.get('[data-person-mark]').should('have.length', 3);
-      tid('person-card-2').trigger('mouseout');
+      hover('2', 'mouseout');
       cy.get('[data-person-mark]').should('not.exist');
     });
   });

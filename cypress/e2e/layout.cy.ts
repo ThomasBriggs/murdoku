@@ -1,4 +1,4 @@
-import { sel } from '../support/helpers';
+import { openKey, sel } from '../support/helpers';
 
 const URL = '/?seed=cy-layout&d=easy';
 
@@ -26,20 +26,62 @@ describe('layout', () => {
       expect(bottom, 'room legend fully visible').to.be.lessThan(901);
     });
     cy.window().its('scrollY').should('eq', 0);
+    // The furniture key is behind a toggle and opens inside the viewport.
+    cy.get(sel('furniture-legend')).should('not.exist');
+    openKey();
     cy.get(sel('furniture-legend')).then(($l) => {
       const bottom = $l[0]!.getBoundingClientRect().bottom;
       cy.log(`furniture legend ends at ${Math.round(bottom)}px`);
       expect(bottom).to.be.lessThan(901);
     });
-    // The tool palette is a vertical strip beside the board, in one column.
+    // The tool palette is a horizontal dock below the board, in one row.
     cy.get(sel('tool-place')).then(($a) => {
       cy.get(sel('tool-draw')).then(($b) => {
         const a = $a[0]!.getBoundingClientRect();
         const b = $b[0]!.getBoundingClientRect();
-        expect(Math.abs(a.left - b.left)).to.be.lessThan(2);
-        expect(b.top).to.be.greaterThan(a.top);
+        expect(Math.abs(a.top - b.top)).to.be.lessThan(2);
+        expect(b.left).to.be.greaterThan(a.left);
       });
     });
+    cy.get(sel('dock')).then(($d) => {
+      cy.get(sel('board')).then(($b) => {
+        expect($d[0]!.getBoundingClientRect().top).to.be.at.least(
+          $b[0]!.getBoundingClientRect().bottom - 1,
+        );
+      });
+    });
+  });
+
+  // Regression: the drawing layer used to claim an extra grid row, so the page scrolled into
+  // empty space. The document must never be taller than the window.
+  for (const [w, h] of [
+    [1280, 720],
+    [1920, 1080],
+    [375, 667],
+  ] as const) {
+    it(`${w}x${h}: the page does not scroll into empty space`, () => {
+      cy.viewport(w, h);
+      cy.visit(URL);
+      cy.get(sel('board')).should('be.visible');
+      cy.document().then((doc) => {
+        expect(doc.documentElement.scrollHeight, 'scrollHeight').to.be.at.most(
+          doc.defaultView!.innerHeight + 1,
+        );
+        expect(doc.documentElement.scrollWidth, 'scrollWidth').to.be.at.most(
+          doc.defaultView!.innerWidth,
+        );
+      });
+      cy.window().its('scrollY').should('eq', 0);
+    });
+  }
+
+  it('row and column note fields are gone; rooms keep their notes', () => {
+    cy.visit(URL);
+    cy.get(sel('board')).should('be.visible');
+    cy.get('[data-testid^="row-note"]').should('not.exist');
+    cy.get('[data-testid^="col-note"]').should('not.exist');
+    cy.get('[data-testid="row-notes"], [data-testid="col-notes"]').should('not.exist');
+    cy.get('[data-testid^="room-note-btn-"]').should('have.length.greaterThan', 2);
   });
 
   it('desktop colour swatches only show for the highlight and draw tools', () => {

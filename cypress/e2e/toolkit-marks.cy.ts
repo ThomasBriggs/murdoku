@@ -1,4 +1,4 @@
-import { moreClick } from '../support/helpers';
+import { moreClick, openKey } from '../support/helpers';
 
 const URL = '/?seed=cy-marks&d=easy';
 const cell = (r: number, c: number) => cy.get(`[data-testid="cell-${r}-${c}"]`);
@@ -168,6 +168,7 @@ describe('solving toolkit: marks, notes, highlights', () => {
 
     // all cells of a furniture type from the furniture legend
     cy.get('body').type('{esc}');
+    openKey();
     cy.get('[data-testid^="legend-furniture-"]')
       .first()
       .click()
@@ -180,22 +181,18 @@ describe('solving toolkit: marks, notes, highlights', () => {
       });
   });
 
-  it('writes margin notes beside rows, above columns and on rooms', () => {
+  it('writes a note on a room; row and column notes no longer exist', () => {
     load();
-    cy.get('[data-testid="row-note-3"]').type('B/D{enter}');
-    cy.get('[data-testid="row-note-3"]').should('have.value', 'B/D');
-    cy.get('[data-testid="col-note-1"]').type('C or F{enter}');
-    cy.get('[data-testid="col-note-1"]').should('have.value', 'C or F');
+    cy.get('[data-testid^="row-note-"]').should('not.exist');
+    cy.get('[data-testid^="col-note-"]').should('not.exist');
     cy.get('[data-testid^="room-note-btn-"]').first().click();
     cy.get('[data-testid^="room-note-input-"]').type('victim + 1{enter}');
-    cy.get('[data-testid^="room-note-"][data-testid$="-0"], [data-testid^="room-note-"]')
+    cy.get('[data-testid^="room-note-"]')
       .filter(':not([data-testid^="room-note-btn"]):not([data-testid^="room-note-input"])')
-      .should('contain.text', 'victim + 1');
+      .should('contain.text', 'victim + 1')
+      .and('be.visible');
     cy.get('[data-note="true"]').should('exist');
-    // the note slots are on screen next to the board
-    cy.get('[data-testid="row-note-3"]').should('be.visible');
-    cy.get('[data-testid="col-note-1"]').should('be.visible');
-    // undo takes the last note back
+    // undo takes the note back
     cy.get('[data-testid="undo"]').click();
     cy.get('[data-note="true"]').should('not.exist');
   });
@@ -301,7 +298,6 @@ describe('solving toolkit: marks, notes, highlights', () => {
       expect(doc.documentElement.scrollWidth).to.be.at.most(doc.documentElement.clientWidth);
     });
     cy.get('[data-testid="tool-palette"]').should('be.visible');
-    cy.get('[data-testid="row-note-0"]').should('be.visible');
     tool('cross').click();
     cell(4, 4).click().should('have.attr', 'data-mark', 'cross');
   });
@@ -324,7 +320,14 @@ describe('solving toolkit: marks, notes, highlights', () => {
     cy.get('[data-testid="more-button"]').click();
     cy.get('[data-testid="more-sheet"]').should('be.visible');
     for (const t of ['dot', 'unsure', 'eliminate', 'select']) tool(t).should('be.visible');
-    for (const id of ['redo', 'reset', 'layers-button', 'clear-button', 'settings-button'])
+    for (const id of [
+      'redo',
+      'reset',
+      'layers-button',
+      'clear-button',
+      'hint-button',
+      'check-button',
+    ])
       cy.get(`[data-testid="${id}"]`).should('be.visible');
     tool('dot').click();
     cy.get('[data-testid="more-sheet"]').should('not.exist');
