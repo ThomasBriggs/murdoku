@@ -377,6 +377,64 @@
   .logicOverlay {
     position: static;
   }
+  /* Transient pills (who you are placing, colours and pen) float above the bar, not in it. */
+  .floatStack {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: calc(100% + 0.4rem);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    pointer-events: none;
+  }
+  .floatStack:empty {
+    display: none;
+  }
+  .floatStack > * {
+    pointer-events: auto;
+  }
+  .pickChip,
+  .colorPill {
+    max-width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.28);
+  }
+  .pickChip {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.2rem 0.2rem 0.2rem 0.4rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+  .pickChip button {
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+    border-color: transparent;
+    color: var(--text-muted);
+  }
+  .pickDot {
+    display: inline-grid;
+    place-items: center;
+    width: 1.4rem;
+    height: 1.4rem;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #111;
+  }
+  .floatStack .colorPill {
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 0.35rem 0.6rem;
+  }
   .sheetBackdrop {
     position: fixed;
     inset: 0;
@@ -419,6 +477,11 @@
     height: 2.75rem;
   }
 }
+@media (max-width: 359px) {
+  .layout {
+    --side-pad: 6px;
+  }
+}
 @media (max-width: 349px) {
   .mobileStrip svg {
     display: none;
@@ -426,6 +489,7 @@
 }
 .drawerBody {
   overscroll-behavior: contain;
+  scrollbar-color: var(--border) transparent;
 }
 
 /* Landscape phones: too short for a bottom dock. The tools become a two-column strip at the

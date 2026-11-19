@@ -99,9 +99,8 @@ export function clampRect(r: Rect, vp: Viewport): Rect {
  */
 export function defaultFab(vp: Viewport, dockTop?: number): Pt {
   const narrow = vp.w <= 600;
-  // Landscape phones: the dock runs down the left edge, so the button lives bottom-right.
-  if (!narrow && vp.h <= 500)
-    return clampFab({ x: vp.w - FAB_SIZE - 20, y: vp.h - FAB_SIZE - 10 }, vp);
+  // Landscape phones: the dock runs down the left edge, so the button sits just right of it.
+  if (!narrow && vp.h <= 500) return clampFab({ x: 100, y: vp.h - FAB_SIZE - 8 }, vp);
   const above = narrow ? (dockTop === undefined ? 92 : vp.h - dockTop + 10) : 104;
   return clampFab({ x: narrow ? 10 : 16, y: vp.h - above - FAB_SIZE }, vp);
 }

@@ -157,7 +157,28 @@
   color: var(--hc-green);
   background: color-mix(in srgb, var(--hc-green) 16%, transparent);
 }
+.logicTable {
+  width: 100%;
+}
+.logicSheet .panelHead {
+  position: sticky;
+  top: -0.75rem;
+  z-index: 1;
+  margin: -0.75rem -12px 0.5rem;
+  padding: 0.5rem 12px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+@media (max-width: 360px) {
+  .logicTable thead th,
+  .logicCell {
+    min-width: 0;
+  }
+}
 @media (max-width: 600px) {
+  .logicSheet {
+    padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
+  }
   .logicCell {
     height: 2.1rem;
     min-width: 1.9rem;

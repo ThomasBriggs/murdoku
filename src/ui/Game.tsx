@@ -573,6 +573,7 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
     </Toolbar>
   );
 
+  const selectedPerson = puzzle.people.find((x) => x.id === selected) ?? null;
   const unplaced = puzzle.people.filter((x) => placements[x.id] == null).length;
   const cluesButton = (
     <button
@@ -772,10 +773,34 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
             className={`${styles.mobileDock} ${moreOpen ? styles.mobileDockOpen : ''}`}
             data-testid="mobile-dock"
           >
-            {(tool === 'highlight' || tool === 'draw') && !moreOpen && (
-              <div className={palette.slim} data-testid="color-row">
-                {tool === 'draw' && drawControls}
-                <ColorPicker color={color} onColor={onColor} />
+            {!moreOpen && (
+              <div className={styles.floatStack}>
+                {selectedPerson && (
+                  <div className={styles.pickChip} data-testid="selected-person-chip" role="status">
+                    <span
+                      className={styles.pickDot}
+                      style={{ background: selectedPerson.color }}
+                      aria-hidden="true"
+                    >
+                      {selectedPerson.initial}
+                    </span>
+                    <span>Placing {selectedPerson.name}</span>
+                    <button
+                      type="button"
+                      data-testid="selected-person-clear"
+                      aria-label="Stop placing"
+                      onClick={() => actions.selectPerson(null)}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+                {(tool === 'highlight' || tool === 'draw') && (
+                  <div className={`${palette.slim} ${styles.colorPill}`} data-testid="color-row">
+                    {tool === 'draw' && drawControls}
+                    <ColorPicker color={color} onColor={onColor} />
+                  </div>
+                )}
               </div>
             )}
             <div className={styles.mobileStrip} role="group" aria-label="Investigate">
