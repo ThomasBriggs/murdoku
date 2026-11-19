@@ -58,22 +58,53 @@
   box-shadow:
     0 14px 40px rgb(0 0 0 / 0.34),
     0 2px 8px rgb(0 0 0 / 0.18);
-  transform-origin: bottom left;
-  animation: drop 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+  /* transform-origin is set inline from the anchor corner */
+  animation: grow 0.2s cubic-bezier(0.2, 0.8, 0.3, 1);
 }
-@keyframes drop {
+.panel:has(.text:focus-visible) {
+  /* the ring follows the panel's rounded corners */
+  border-color: var(--focus);
+  box-shadow:
+    0 0 0 2px var(--focus),
+    0 14px 40px rgb(0 0 0 / 0.34),
+    0 2px 8px rgb(0 0 0 / 0.18);
+}
+.ghost {
+  pointer-events: none;
+  animation: shrink 0.18s cubic-bezier(0.4, 0, 0.8, 0.4) forwards;
+}
+.fabIn {
+  animation: fabin 0.12s 0.1s ease-out both;
+}
+@keyframes grow {
   from {
     opacity: 0;
-    transform: scale(0.82) translateY(8px);
+    transform: scale(0.1);
   }
   to {
     opacity: 1;
     transform: none;
   }
 }
+@keyframes shrink {
+  to {
+    opacity: 0;
+    transform: scale(0.1);
+  }
+}
+@keyframes fabin {
+  from {
+    opacity: 0;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
-  .panel {
+  .panel,
+  .ghost,
+  .fabIn {
     animation: none;
+  }
+  .ghost {
+    display: none;
   }
   .fab {
     transition: none;
@@ -134,9 +165,9 @@
   color: var(--text);
   background: transparent;
 }
+.text:focus,
 .text:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: -2px;
+  outline: none; /* focus is shown on the whole panel (.panel:has(.text:focus-visible)) */
 }
 .resize {
   position: absolute;

@@ -1,12 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { NotepadIcon } from './icons/glyphs';
 import {
+  CORNER_ORIGIN,
   clampFab,
   clampRect,
   defaultFab,
+  defaultSize,
+  fabAtCorner,
   loadLayout,
-  panelRect,
+  placePanel,
   saveLayout,
+  type Corner,
   type Pt,
   type Rect,
   type ScratchLayout,
@@ -25,6 +29,12 @@ export interface ScratchpadProps {
   /** Commit the text: one undo step per call (callers ignore unchanged text). */
   onCommit(text: string): void;
 }
+
+/** Safety net if `animationend` never fires (hidden tab, interrupted animation). */
+const CLOSE_MS = 260;
+const reducedMotion = () =>
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const viewport = (): Viewport => ({ w: window.innerWidth, h: window.innerHeight });
 
@@ -90,7 +100,19 @@ export function Scratchpad({ value, open, onToggle, onCommit }: ScratchpadProps)
   const gesture = useRef<Gesture | null>(null);
 
   const fab = clampFab(live?.fab ?? layout.fab ?? defaultFab(vp), vp);
-  const rect = live?.panel ?? panelRect(layout.panel, fab, vp);
+  const size = layout.size ?? defaultSize(vp);
+  const placed = placePanel(fab, size, vp);
+  const dragged = layout.pos !== null;
+  const rect =
+    live?.panel ?? (layout.pos ? clampRect({ ...layout.pos, ...size }, vp) : placed.rect);
+  const corner: Corner = dragged ? layout.corner : placed.corner;
+  // Ghost of the panel while it shrinks back into the button.
+  const [closing, setClosing] = useState<{ rect: Rect; corner: Corner } | null>(null);
+  useEffect(() => {
+    if (!closing) return;
+    const t = window.setTimeout(() => setClosing(null), CLOSE_MS);
+    return () => window.clearTimeout(t);
+  }, [closing]);
 
   const persist = (patch: Partial<ScratchLayout>) => {
     const next = { ...layoutRef.current, ...patch };
@@ -115,6 +137,9 @@ export function Scratchpad({ value, open, onToggle, onCommit }: ScratchpadProps)
 
   const minimise = () => {
     flush();
+    // Dragged panel: the button lands on the panel's anchor corner, where the panel is now.
+    if (dragged) persist({ fab: fabAtCorner(rect, corner, vp), pos: null });
+    if (!reducedMotion()) setClosing({ rect, corner });
     onToggle(false);
   };
 
@@ -157,8 +182,17 @@ export function Scratchpad({ value, open, onToggle, onCommit }: ScratchpadProps)
     }
     if (g.moved && g.last) {
       if (g.last.fab)
-        persist({ fab: g.last.fab, panel: null }); // the panel re-anchors to the button
-      else if (g.last.panel) persist({ panel: g.last.panel });
+        persist({ fab: g.last.fab, pos: null }); // the panel re-anchors to the button
+      else if (g.last.panel) {
+        // Resizing keeps the top-left fixed (the grip follows the pointer); the anchor corner
+        // stays as it was, so minimising still lands the button on that corner of the panel.
+        const r = g.last.panel;
+        persist({
+          pos: { x: r.x, y: r.y },
+          corner,
+          ...(g.kind === 'resize' ? { size: { w: r.w, h: r.h } } : {}),
+        });
+      }
     }
     setLive(null);
     // A drag must not also toggle the button.
@@ -173,7 +207,14 @@ export function Scratchpad({ value, open, onToggle, onCommit }: ScratchpadProps)
           className={styles.panel}
           data-testid="scratchpad-panel"
           aria-label="Scratchpad"
-          style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h }}
+          data-corner={corner}
+          style={{
+            left: rect.x,
+            top: rect.y,
+            width: rect.w,
+            height: rect.h,
+            transformOrigin: CORNER_ORIGIN[corner],
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Escape') {
               e.stopPropagation();
@@ -232,32 +273,53 @@ export function Scratchpad({ value, open, onToggle, onCommit }: ScratchpadProps)
           />
         </section>
       ) : (
-        <button
-          ref={fabRef}
-          type="button"
-          className={styles.fab}
-          data-testid="scratchpad-toggle"
-          data-has-text={value !== '' ? 'true' : undefined}
-          aria-label="Open scratchpad"
-          aria-expanded={false}
-          aria-controls="scratchpad-text"
-          title={value !== '' ? 'Scratchpad (has notes)' : 'Scratchpad'}
-          style={{ left: fab.x, top: fab.y }}
-          onPointerDown={(e) => begin(e, 'fab', { ...fab, w: 0, h: 0 })}
-          onPointerMove={move}
-          onPointerUp={end}
-          onPointerCancel={end}
-          onClick={() => {
-            if (suppressClick.current) {
-              suppressClick.current = false;
-              return;
-            }
-            onToggle(true);
-          }}
-        >
-          <NotepadIcon />
-          {value !== '' && <span className={styles.dot} aria-hidden="true" />}
-        </button>
+        <>
+          {closing && (
+            <div
+              className={`${styles.panel} ${styles.ghost}`}
+              aria-hidden="true"
+              style={{
+                left: closing.rect.x,
+                top: closing.rect.y,
+                width: closing.rect.w,
+                height: closing.rect.h,
+                transformOrigin: CORNER_ORIGIN[closing.corner],
+              }}
+              onAnimationEnd={() => setClosing(null)}
+            >
+              <div className={styles.head}>
+                <NotepadIcon className={styles.headIcon} />
+                <span className={styles.title}>Scratchpad</span>
+              </div>
+            </div>
+          )}
+          <button
+            ref={fabRef}
+            type="button"
+            className={`${styles.fab} ${closing ? styles.fabIn : ''}`}
+            data-testid="scratchpad-toggle"
+            data-has-text={value !== '' ? 'true' : undefined}
+            aria-label="Open scratchpad"
+            aria-expanded={false}
+            aria-controls="scratchpad-text"
+            title={value !== '' ? 'Scratchpad (has notes)' : 'Scratchpad'}
+            style={{ left: fab.x, top: fab.y }}
+            onPointerDown={(e) => begin(e, 'fab', { ...fab, w: 0, h: 0 })}
+            onPointerMove={move}
+            onPointerUp={end}
+            onPointerCancel={end}
+            onClick={() => {
+              if (suppressClick.current) {
+                suppressClick.current = false;
+                return;
+              }
+              onToggle(true);
+            }}
+          >
+            <NotepadIcon />
+            {value !== '' && <span className={styles.dot} aria-hidden="true" />}
+          </button>
+        </>
       )}
     </div>
   );
