@@ -1,4 +1,4 @@
-import { gesture, moreClick, openMore } from '../support/helpers';
+import { closeSettings, gesture, moreClick, openMore, openSettings } from '../support/helpers';
 
 const URL = '/?seed=cy-adv&d=easy';
 const cell = (r: number, c: number) => cy.get(`[data-testid="cell-${r}-${c}"]`);
@@ -173,9 +173,9 @@ describe('solving toolkit: logic grid, pen, scratchpad, what-if, helpers, print'
 
   it('"show where this clue allows" dims cells for the selected person', () => {
     load();
-    moreClick('settings-button');
+    openSettings();
     tid('setting-clueallows').should('not.be.checked').check();
-    moreClick('settings-button');
+    closeSettings();
     cy.get('[data-dim="true"]').should('not.exist');
     tid('person-card-2').click();
     cy.get('[data-dim="true"]').should('exist');

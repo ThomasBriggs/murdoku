@@ -1,4 +1,4 @@
-import { gesture, moreClick, playToWin, sel, tid } from '../support/helpers';
+import { gesture, openSettings, playToWin, sel, tid } from '../support/helpers';
 
 const A = '/?seed=cy-persist-a&d=easy';
 const B = '/?seed=cy-persist-b&d=medium';
@@ -102,13 +102,13 @@ describe('persistence', () => {
 
   it('keeps settings across a reload', () => {
     load();
-    moreClick('settings-button');
+    openSettings();
     tid('theme-dark').check();
     tid('setting-autocross').uncheck();
     cy.reload();
     cy.get(sel('board')).should('be.visible');
     cy.get('html').should('have.attr', 'data-theme', 'dark');
-    moreClick('settings-button');
+    openSettings();
     tid('theme-dark').should('be.checked');
     tid('setting-autocross').should('not.be.checked');
   });
