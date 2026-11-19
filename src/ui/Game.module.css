@@ -63,7 +63,7 @@
   margin-top: 0;
 }
 
-/* Logic grid and scratchpad float over the page instead of taking space. */
+/* Logic grid floats over the page instead of taking space. */
 .logicOverlay {
   position: fixed;
   z-index: 40;
@@ -77,24 +77,6 @@
   box-shadow: 0 12px 40px rgb(0 0 0 / 0.4);
 }
 .logicOverlay > * {
-  margin-top: 0 !important;
-}
-.scratchFloat {
-  position: fixed;
-  z-index: 35;
-  left: 1rem;
-  bottom: 6rem;
-  width: 11rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: 0 6px 22px rgb(0 0 0 / 0.25);
-  padding: 0.25rem;
-}
-.scratchFloat[data-open='true'] {
-  width: min(22rem, calc(100vw - 2rem));
-}
-.scratchFloat > * {
   margin-top: 0 !important;
 }
 
@@ -341,14 +323,6 @@
     box-shadow: 0 4px 14px rgb(0 0 0 / 0.3);
     padding-left: 0.9rem;
     height: 2.4rem;
-  }
-  .scratchFloat {
-    left: 10px;
-    bottom: 4.9rem;
-    width: 9.5rem;
-  }
-  .scratchFloat[data-open='true'] {
-    width: calc(100vw - 20px);
   }
   .logicOverlay {
     position: static;

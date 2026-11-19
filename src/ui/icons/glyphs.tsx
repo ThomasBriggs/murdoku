@@ -144,3 +144,10 @@ export const StatsIcon = (p: P) => (
     <path d="M5 20V11M12 20V4M19 20v-6" />
   </svg>
 );
+
+export const NotepadIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M6 3h9l4 4v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" />
+    <path d="M15 3v4h4M8.5 12h7M8.5 16h5" strokeWidth={1.7} />
+  </svg>
+);

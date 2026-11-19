@@ -36,6 +36,7 @@ import { DrawControls } from './DrawControls';
 import { LogicGrid } from './LogicGrid';
 import { PrintSheet } from './PrintSheet';
 import { Scratchpad } from './Scratchpad';
+import { loadLayout } from './scratchLayout';
 import { WhatIfBanner, WhatIfEndDialog, type WhatIfEnd } from './WhatIf';
 import { FurnitureLegend } from './FurnitureLegend';
 import { ClearMenu, describeClear, LayersMenu, type ClearChoice } from './ToolkitMenus';
@@ -132,7 +133,7 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
   }, [moreOpen]);
   const [clearChoice, setClearChoice] = useState<ClearChoice | null>(null);
   const [logicOpen, setLogicOpen] = useState(false);
-  const [scratchOpen, setScratchOpen] = useState(false);
+  const [scratchOpen, setScratchOpen] = useState(() => loadLayout().open);
   // The clue drawer starts open on wide screens only.
   const [cluesOpen, setCluesOpen] = useState(
     () => window.matchMedia?.('(min-width: 1200px)').matches ?? false,
@@ -741,14 +742,12 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
           />
         </div>
       )}
-      <div className={styles.scratchFloat} data-open={scratchOpen}>
-        <Scratchpad
-          value={annotations.scratchpad}
-          open={scratchOpen}
-          onToggle={setScratchOpen}
-          onCommit={(text) => actions.setScratchpad(text)}
-        />
-      </div>
+      <Scratchpad
+        value={annotations.scratchpad}
+        open={scratchOpen}
+        onToggle={setScratchOpen}
+        onCommit={(text) => actions.setScratchpad(text)}
+      />
       {!mobile && (
         <div className={styles.actions} role="group" aria-label="Investigate">
           {investigate}

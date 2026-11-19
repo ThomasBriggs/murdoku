@@ -179,34 +179,6 @@
   }
 }
 
-/* Scratchpad ------------------------------------------------------------------ */
-.scratch {
-  margin-top: 0.75rem;
-}
-.scratchToggle {
-  width: 100%;
-  justify-content: flex-start;
-  font-weight: 600;
-}
-.scratchText {
-  display: block;
-  width: 100%;
-  margin-top: 0.35rem;
-  box-sizing: border-box;
-  min-height: 6rem;
-  resize: vertical;
-  font: inherit;
-  color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 0.5rem;
-}
-.scratchText:focus-visible {
-  outline: 3px solid var(--focus);
-  outline-offset: 1px;
-}
-
 /* What-if ------------------------------------------------------------------ */
 .whatIfBanner {
   display: flex;

@@ -1,0 +1,161 @@
+.fab,
+.panel {
+  position: fixed;
+  z-index: 35; /* above the board and dock, below menus (50+), the drawer sheet and dialogs */
+}
+.fab {
+  width: 3rem;
+  height: 3rem;
+  padding: 0;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow:
+    0 6px 18px rgb(0 0 0 / 0.28),
+    0 1px 4px rgb(0 0 0 / 0.16);
+  touch-action: none;
+  cursor: grab;
+  transition:
+    background-color 0.14s ease,
+    transform 0.14s ease;
+}
+.fab svg {
+  width: 1.4rem;
+  height: 1.4rem;
+}
+.fab:hover {
+  background: color-mix(in srgb, var(--selected) 10%, var(--surface));
+}
+.fab:active {
+  cursor: grabbing;
+}
+.dot {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--surface);
+  box-sizing: content-box;
+  translate: 25% -25%;
+}
+.fab {
+  /* the dot is positioned against the button */
+  position: fixed;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow:
+    0 14px 40px rgb(0 0 0 / 0.34),
+    0 2px 8px rgb(0 0 0 / 0.18);
+  transform-origin: bottom left;
+  animation: drop 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+}
+@keyframes drop {
+  from {
+    opacity: 0;
+    transform: scale(0.82) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    animation: none;
+  }
+  .fab {
+    transition: none;
+  }
+}
+.head {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex: none;
+  padding: 0.25rem 0.3rem 0.25rem 0.7rem;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--text) 5%, var(--surface));
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.head:active {
+  cursor: grabbing;
+}
+.headIcon {
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--text-muted);
+}
+.title {
+  flex: 1;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.min {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  justify-content: center;
+  border-color: transparent;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 1.3rem;
+  line-height: 1;
+}
+.min:hover {
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+  border-color: transparent;
+}
+.text {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  box-sizing: border-box;
+  resize: none;
+  border: 0;
+  border-radius: 0;
+  margin: 0;
+  padding: 0.6rem 0.7rem 1.4rem;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--text);
+  background: transparent;
+}
+.text:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+.resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  cursor: nwse-resize;
+  touch-action: none;
+  /* three diagonal grip lines */
+  background: linear-gradient(
+    135deg,
+    transparent 0 50%,
+    var(--text-muted) 50% 56%,
+    transparent 56% 66%,
+    var(--text-muted) 66% 72%,
+    transparent 72% 82%,
+    var(--text-muted) 82% 88%,
+    transparent 88%
+  );
+  opacity: 0.7;
+}
