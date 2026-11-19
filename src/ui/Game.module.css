@@ -3,8 +3,9 @@
   --hdr-h: 3rem;
   --drawer-w: 22rem;
   --side-pad: 1rem;
-  --board-reserve: 11rem;
-  padding: 0.5rem var(--side-pad) 6rem;
+  /* Vertical budget for the board: header + top pad + two-row legend + gutter + dock clearance. */
+  --board-reserve: 13.75rem;
+  padding: 0.5rem var(--side-pad) 4.75rem;
   min-height: calc(100dvh - var(--hdr-h));
 }
 @media (min-width: 1200px) {
