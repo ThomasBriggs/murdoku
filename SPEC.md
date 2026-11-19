@@ -91,7 +91,7 @@ murdoku/
       People/PeoplePanel.tsx, PersonCard.tsx
       Toolbar/Toolbar.tsx   # mode, undo/redo, hint, check, reset
       Tools/ToolPalette.tsx, LayersMenu.tsx, WhatIfBar.tsx
-      Notes/MarginNotes.tsx, Scratchpad.tsx, LogicGrid.tsx
+      Notes/RoomLegend.tsx, Scratchpad.tsx, LogicGrid.tsx
       Draw/PenLayer.tsx     # pointer-event canvas/SVG overlay
       print.css             # print / PDF stylesheet
       Dialogs/NewGame.tsx, Accuse.tsx, Win.tsx, Rules.tsx, Settings.tsx
@@ -211,9 +211,12 @@ A **clue** is a conjunction of 1–3 atoms per person, rendered as one sentence:
 
 ### 6.1 Layout
 
-- **Desktop**: the board on the left and the people panel on the right. A toolbar sits above the board.
-- **Mobile**: the board on top and a scrollable people panel below. A sticky toolbar sits at the bottom. The layout works down to 360 px wide.
-- The header shows the title, a New Game button, difficulty, timer, a Rules (?) button and Settings.
+The "Focus" layout keeps the board as the centre of attention and tucks everything else away; the page itself never scrolls.
+
+- **Desktop**: a slim header, the board, and a floating **dock** below it (tools, undo/redo, a Clues button and a "⋯" overflow menu holding Reset, Layers, Clear, What-if, Logic grid and Print). Hint, Check and Accuse float beside the board. The **clue drawer** opens on the right: docked beside the board at 1200 px and wider (open by default), an overlay below that (closed by default).
+- **Mobile (600 px and narrower)**: the board with a bottom bar (primary tools, undo, "⋯"). The "⋯" opens a **More** sheet with the remaining tools, Hint/Check/Accuse and the menu items above. Clues open as a bottom sheet from a Clues button. The layout works down to 360 px wide.
+- The header shows the title, difficulty, timer and seed, with icon buttons for New game, Share, Statistics, Rules (?) and Settings.
+- The room legend sits above the board; the furniture legend is behind a **Key** toggle.
 
 ### 6.2 Board
 
@@ -222,9 +225,10 @@ A **clue** is a conjunction of 1–3 atoms per person, rendered as one sentence:
 - Row numbers 1–9 and column letters A–I run along the edges. They match the wording of row and column clues.
 - Hovering over (or long-pressing) a furniture icon shows its name and whether it is occupiable.
 
-### 6.3 People panel
+### 6.3 People panel (clue drawer)
 
-- 9 cards: the victim first (marked as victim), then the 8 suspects.
+- 9 cards: the victim first (marked as victim), then the 8 suspects. The cards are split into an **Unplaced** section and a collapsible **Placed** section (collapsed state is remembered; hidden while nobody is placed). A pencil (tentative) guess still counts as unplaced. When everyone is placed, the Unplaced section says so. The Clues button shows the number of unplaced people.
+- The `1`–`9` number keys keep their meaning: they address people by position in the full list (victim first), whichever section the card is in.
 - Each card shows the token (colour + initial), name, clue sentence and status (unplaced / placed / ✓ when confirmed by a check). Once a person is placed, their name is struck through.
 - Hovering (or focusing) a card lights up that person on the board: a solid ring where they are placed, a dashed ring where they are pencilled in (tentative), and a dotted ring on every cell holding their candidate initial.
 - Clicking a card **selects** that person. Words in the clue that name a room or furniture type highlight the matching cells on the board while hovered.
@@ -249,7 +253,7 @@ A **clue** is a conjunction of 1–3 atoms per person, rendered as one sentence:
 
 The aim is that anything a player would scribble on a printed Murdoku, they can do on screen, plus a few things paper can't do (undo, what-if branches). Everything here is **player-authored only**: none of it reads the solution. All of it is covered by undo/redo, saved with the game (§8), and can be shown or hidden layer by layer.
 
-A **tool palette** (beside the toolbar on desktop, a bottom sheet on mobile) holds the active tool and colour. The tools are below.
+A **tool palette** (the dock on desktop, the bottom bar and More sheet on mobile) holds the active tool and colour. The tools are below.
 
 #### 6.5.1 Cell marks
 
@@ -267,12 +271,12 @@ A **tool palette** (beside the toolbar on desktop, a bottom sheet on mobile) hol
 
 - **Cell fill highlight** in 6 colours. Each colour is also drawn with a distinct pattern edge, so it doesn't depend on colour vision. Typical use: shade every cell where B could still be.
 - **Multi-select**: drag (or Shift-click) to select many cells, then apply a mark, colour or candidate to all of them at once.
-- **Quick-selects**: whole row, whole column, whole room (double-click a room label), or "all cells with this furniture type" (click a furniture entry in the legend). Useful for things like crossing out a whole room in one go.
+- **Quick-selects**: whole row, whole column, whole room (double-click a room label), or "all cells with this furniture type" (click a furniture entry in the Key). Useful for things like crossing out a whole room in one go.
 
-#### 6.5.3 Margin notes
+#### 6.5.3 Room notes
 
-- Beside every **row** and above every **column** is a small margin slot where the player can write initials or short text (e.g. "B/D" next to row 4), just like jotting in a book's margin.
-- Each **room** has a note badge on its label for initials or short text (e.g. "victim + 1 here," "only C or F").
+- Each **room** has a note badge in the room legend for initials or short text (e.g. "victim + 1 here," "only C or F").
+- Per-row and per-column margin notes were **removed** in the Focus layout in favour of room notes and the scratchpad (the old fields remain in the save format only for compatibility).
 
 #### 6.5.4 Clue annotations
 
@@ -298,7 +302,7 @@ An optional panel, opened by a toggle, with a classic logic-puzzle grid. Players
 
 #### 6.5.7 Scratchpad
 
-A free-text notepad for the whole puzzle (collapsible panel), for longer reasoning ("If C is in the Kitchen then…").
+A free-text notepad for the whole puzzle, for longer reasoning ("If C is in the Kitchen then…"). Minimised it is a round button (with a dot when it holds text); open it is a floating panel that can be dragged by its header and resized by its corner handle, and stays inside the window. Position, size and open state are remembered per browser.
 
 #### 6.5.8 What-if branches ("try in pencil")
 
@@ -318,7 +322,7 @@ All are in Settings and all are **off by default**, except where marked. They ac
 
 #### 6.5.10 Layers, clearing and printing
 
-- A **layers menu** toggles visibility for: crosses, candidates, highlights, drawing, margin notes and tentative placements.
+- A **layers menu** toggles visibility for: crosses, candidates, highlights, drawing, room notes and tentative placements.
 - **Clear…** offers a choice: clear one layer, clear all annotations but keep placements, or reset everything (each with confirmation; all undoable).
 - **Print / PDF**: a print stylesheet renders a clean black-and-white board, legend and clue list on one A4/Letter page. An option includes the player's current marks. Useful for people who want to finish on real paper.
 
@@ -414,7 +418,7 @@ Future attributes (jobs, motives, weapons, times) become extra `Person` fields a
 3. **Clues and solvers**: facts, evaluation, rendering, brute-force and logical solvers, generator loop, difficulty grading, plus tests.
 4. **Worker**: generate/check/hint/accuse protocol and client wrapper.
 5. **UI**: board, people panel, place, undo/redo, conflicts, auto-cross.
-5b. **Solving toolkit** (§6.5): cell marks, candidates, tentative placements, highlights and multi-select, margin/room notes, clue annotations, logic grid, pen layer, scratchpad, what-if branches, layers, print view.
+5b. **Solving toolkit** (§6.5): cell marks, candidates, tentative placements, highlights and multi-select, room notes, clue annotations, logic grid, pen layer, scratchpad, what-if branches, layers, print view.
 6. **Game flow**: new game dialog, timer, hint, check, accuse, win, rules dialog.
 7. **Persistence and sharing**: localStorage, seed URLs, stats.
 8. **Polish**: themes, responsive layout, keyboard and accessibility, furniture SVG art, animations.
@@ -441,7 +445,7 @@ Future attributes (jobs, motives, weapons, times) become extra `Person` fields a
   - Annotations survive a save/load round trip.
   - Auto-crosses disappear when the person is removed, while player crosses stay.
   - No annotation code path imports anything from the worker or reads the solution.
-- **E2E toolkit check (Cypress)**: add candidates, a highlight, a margin note and a pen stroke, reload the page, and assert they are all restored.
+- **E2E toolkit check (Cypress)**: add candidates, a highlight, a room note and a pen stroke, reload the page, and assert they are all restored.
 - **Manual**: `npm run dev`, then play a few games of each difficulty on desktop and at mobile width, and check light and dark themes.
 - **Build**: `npm run build && npm run preview`. Confirm the static output works with no server.
 
