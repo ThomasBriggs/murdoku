@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createRng } from '../../src/engine/rng';
-import { NAME_POOL, pickPeople } from '../../src/engine/names';
+import { ELLIE, ELLIE_COLOR, NAME_POOL, TOKEN_COLORS, pickPeople } from '../../src/engine/names';
 import { SEEDS } from './helpers';
 
 describe('pickPeople', () => {
@@ -27,5 +27,20 @@ describe('pickPeople', () => {
         expect(p.initial).toBe(p.name[0]);
       });
     }
+  });
+
+  it('always makes Ellie orange (easter egg)', () => {
+    expect(TOKEN_COLORS).toContain(ELLIE_COLOR);
+    expect(NAME_POOL.some((n) => n.startsWith(ELLIE))).toBe(true);
+    let seen = 0;
+    for (let i = 0; i < 2000; i++) {
+      const people = pickPeople(createRng(`ellie-${i}`));
+      const ellie = people.find((p) => p.name.startsWith(ELLIE));
+      if (!ellie) continue;
+      seen++;
+      expect(ellie.color).toBe(ELLIE_COLOR);
+      expect(people.filter((p) => p.color === ELLIE_COLOR)).toHaveLength(1);
+    }
+    expect(seen).toBeGreaterThan(50);
   });
 });

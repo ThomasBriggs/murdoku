@@ -12,7 +12,7 @@ export const NAME_POOL: readonly string[] = [
   'Daphne',
   'Douglas',
   'Edmund',
-  'Eleanor',
+  'Ellie 🐸',
   'Florence',
   'Frederick',
   'Gerald',
@@ -66,6 +66,10 @@ export const TOKEN_COLORS: readonly string[] = [
   '#d81b60',
 ];
 
+/** Easter egg: the person whose name starts with this is always {@link ELLIE_COLOR}. */
+export const ELLIE = 'Ellie';
+export const ELLIE_COLOR = '#f58231';
+
 export function pickPeople(rng: Rng): Person[] {
   const names: string[] = [];
   const initials = new Set<string>();
@@ -77,6 +81,13 @@ export function pickPeople(rng: Rng): Person[] {
     if (names.length === PEOPLE) break;
   }
   const colors = rng.shuffle(TOKEN_COLORS);
+  // Easter egg: Ellie is always orange. Swap after the shuffle so no extra
+  // randomness is drawn and every seed still yields the same puzzle.
+  const ellie = names.findIndex((n) => n.startsWith(ELLIE));
+  if (ellie >= 0) {
+    const orange = colors.indexOf(ELLIE_COLOR);
+    [colors[ellie], colors[orange]] = [colors[orange]!, colors[ellie]!];
+  }
   const victim = rng.int(0, PEOPLE - 1);
   return names.map((name, id) => ({
     id,
