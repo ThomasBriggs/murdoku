@@ -1,70 +1,15 @@
 .frame {
   --gutter: 1.4rem;
-  --note-w: 2.6rem;
-  --note-h: 1.15rem;
   display: grid;
-  grid-template-columns: var(--gutter) minmax(0, 1fr) var(--note-w);
-  grid-template-rows: var(--note-h) var(--gutter) minmax(0, 1fr);
+  grid-template-columns: var(--gutter) minmax(0, 1fr);
+  grid-template-rows: var(--gutter) minmax(0, 1fr);
   width: 100%;
   max-width: min(100%, 1000px, calc(100dvh - var(--board-reserve, 9.5rem)));
   margin-inline: auto;
   container-type: inline-size;
 }
-.noMargins {
-  --note-w: 0rem;
-  --note-h: 0rem;
-}
 .corner {
-  grid-area: 2 / 1;
-}
-.colNotes,
-.rowNotes {
-  display: grid;
-  min-width: 0;
-  min-height: 0;
-}
-.colNotes {
-  grid-area: 1 / 2;
-  grid-template-columns: repeat(9, 1fr);
-}
-.rowNotes {
-  grid-area: 3 / 3;
-  grid-template-rows: repeat(9, 1fr);
-}
-.note {
-  all: unset;
-  box-sizing: border-box;
-  min-width: 0;
-  width: calc(100% - 4px);
-  height: calc(100% - 3px);
-  margin: auto;
-  text-align: center;
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: var(--accent);
-  background: transparent;
-  border: 1px dashed transparent;
-  border-radius: 999px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  padding: 0 3px;
-}
-.note[data-filled] {
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-  border: 1px solid var(--accent);
-}
-/* Empty slots are nearly invisible; a faint dashed outline appears when the board is hovered. */
-.frame:hover .note:not([data-filled]) {
-  border-color: color-mix(in srgb, var(--border) 70%, transparent);
-}
-.note:hover {
-  border-color: var(--text-muted) !important;
-}
-.note:focus {
-  outline: 2px solid var(--focus);
-  background: var(--surface);
-  text-overflow: clip;
+  grid-area: 1 / 1;
 }
 .edgeLabel {
   all: unset;
@@ -92,15 +37,15 @@
   place-items: center;
 }
 .colLabels {
-  grid-area: 2 / 2;
+  grid-area: 1 / 2;
   grid-template-columns: repeat(9, 1fr);
 }
 .rowLabels {
-  grid-area: 3 / 1;
+  grid-area: 2 / 1;
   grid-template-rows: repeat(9, 1fr);
 }
 .grid {
-  grid-area: 3 / 2;
+  grid-area: 2 / 2;
   display: grid;
   grid-template-rows: repeat(9, minmax(0, 1fr));
   aspect-ratio: 1;
@@ -121,13 +66,6 @@
 }
 @media (max-width: 480px) {
   .frame {
-    --note-w: 2rem;
     --gutter: 1.2rem;
-  }
-  .noMargins {
-    --note-w: 0rem;
-  }
-  .note {
-    font-size: 0.6rem;
   }
 }

@@ -727,9 +727,6 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
           onPromote={(person) => actions.promoteTentative(person)}
           onRemove={(person) => actions.remove(person)}
           onRemoveTentative={(person) => actions.removeTentative(person)}
-          onNote={(kind, index, text) =>
-            kind === 'row' ? actions.setRowNote(index, text) : actions.setColNote(index, text)
-          }
         />
       </div>
       {logicOpen && (

@@ -7,7 +7,7 @@ export const LAYER_LABELS: Record<LayerId, string> = {
   candidates: 'Candidate initials',
   highlights: 'Highlights',
   drawing: 'Drawing',
-  margins: 'Margin notes',
+  margins: 'Room notes',
   tentative: 'Tentative placements',
 };
 

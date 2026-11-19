@@ -55,13 +55,6 @@ export function PrintSheet({ puzzle, placements, annotations, includeMarks }: Pr
         exactly one per row and column, and satisfy every clue.
       </p>
       <div className={`ps-frame ${includeMarks ? 'ps-with-notes' : ''}`}>
-        {includeMarks && (
-          <div className="ps-colnotes">
-            {Array.from({ length: GRID_SIZE }, (_, c) => (
-              <span key={c}>{annotations.colNotes[c]}</span>
-            ))}
-          </div>
-        )}
         <div className="ps-collabels">
           {Array.from({ length: GRID_SIZE }, (_, c) => (
             <span key={c}>{COLUMN_LETTERS[c]}</span>
@@ -128,13 +121,6 @@ export function PrintSheet({ puzzle, placements, annotations, includeMarks }: Pr
             }),
           )}
         </div>
-        {includeMarks && (
-          <div className="ps-rownotes">
-            {Array.from({ length: GRID_SIZE }, (_, r) => (
-              <span key={r}>{annotations.rowNotes[r]}</span>
-            ))}
-          </div>
-        )}
       </div>
       <div className="ps-lists">
         <section>

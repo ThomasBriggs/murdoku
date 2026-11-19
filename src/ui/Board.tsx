@@ -8,7 +8,6 @@ import styles from './Board.module.css';
 import { Cell, type ActivateMods, type CellAnn } from './Cell';
 import { CellMarks, type CandidateView } from './CellMarks';
 import { DrawingLayer, type DrawingProps } from './DrawingLayer';
-import { NoteInput } from './NoteInput';
 import type { RoomColor } from './roomColors';
 import { COLUMN_LETTERS, panelOrder, type Highlight, type PersonMark } from './types';
 import { computeWalls, firstCellOfRooms } from './walls';
@@ -56,7 +55,6 @@ export interface BoardProps {
   onRemove(person: PersonId): void;
   /** Drop a pencil guess (the ✕ on a tentative token). */
   onRemoveTentative(person: PersonId): void;
-  onNote(kind: 'row' | 'col', index: number, text: string): void;
 }
 
 const ARROWS: Record<string, [number, number]> = {
@@ -241,25 +239,12 @@ export function Board(p: BoardProps) {
 
   return (
     <div
-      className={`${styles.frame} ${vis.margins ? '' : styles.noMargins}`}
+      className={styles.frame}
       data-testid="board"
       data-tool={p.tool}
       data-solved={p.solved ? 'true' : undefined}
       data-whatif={p.whatIfLevel ? p.whatIfLevel : undefined}
     >
-      <div className={styles.colNotes} data-testid="col-notes">
-        {vis.margins &&
-          Array.from({ length: GRID_SIZE }, (_, c) => (
-            <NoteInput
-              key={c}
-              className={styles.note}
-              value={annotations.colNotes[c] ?? ''}
-              label={`Column ${COLUMN_LETTERS[c]} note`}
-              testId={`col-note-${c}`}
-              onCommit={(t) => p.onNote('col', c, t)}
-            />
-          ))}
-      </div>
       <div className={styles.corner} aria-hidden="true" />
       <div className={styles.colLabels} role="group" aria-label="Columns">
         {Array.from({ length: GRID_SIZE }, (_, c) => (
@@ -376,19 +361,6 @@ export function Board(p: BoardProps) {
         ))}
       </div>
       <DrawingLayer strokes={annotations.strokes} visible={vis.drawing} {...p.draw} />
-      <div className={styles.rowNotes} data-testid="row-notes">
-        {vis.margins &&
-          Array.from({ length: GRID_SIZE }, (_, r) => (
-            <NoteInput
-              key={r}
-              className={styles.note}
-              value={annotations.rowNotes[r] ?? ''}
-              label={`Row ${r + 1} note`}
-              testId={`row-note-${r}`}
-              onCommit={(t) => p.onNote('row', r, t)}
-            />
-          ))}
-      </div>
     </div>
   );
 }

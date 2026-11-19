@@ -54,49 +54,29 @@
 
   .ps-frame {
     --lab: 5mm;
-    --note: 0mm;
     display: grid;
-    grid-template-columns: var(--lab) 140mm var(--note);
+    grid-template-columns: var(--lab) 140mm;
     grid-template-rows: var(--lab) 140mm;
     width: max-content;
     margin-bottom: 0.6em;
   }
-  .ps-with-notes {
-    --note: 16mm;
-    grid-template-rows: 5mm var(--lab) 140mm;
-  }
-  .ps-colnotes,
   .ps-collabels,
-  .ps-rowlabels,
-  .ps-rownotes {
+  .ps-rowlabels {
     display: grid;
     font-size: 8pt;
     font-weight: 700;
     text-align: center;
     align-items: center;
   }
-  .ps-colnotes,
   .ps-collabels {
     grid-template-columns: repeat(9, 1fr);
     grid-column: 2;
   }
-  .ps-rowlabels,
-  .ps-rownotes {
+  .ps-rowlabels {
     grid-template-rows: repeat(9, 1fr);
   }
   .ps-rowlabels {
     grid-column: 1;
-  }
-  .ps-rownotes {
-    grid-column: 3;
-    text-align: left;
-    padding-left: 1mm;
-    font-weight: 400;
-  }
-  .ps-colnotes {
-    font-weight: 400;
-    font-size: 7pt;
-    overflow: hidden;
   }
   .ps-grid {
     grid-column: 2;
