@@ -27,7 +27,7 @@ Version 1 scope:
 6. Every generated puzzle has **exactly one valid placement** of all 9 people. It can also be solved by deduction alone, with no guessing (see §5.5).
 7. The player wins by placing everyone correctly and **accusing** the right suspect.
 
-"Beside" means **orthogonally adjacent** (up, down, left or right). Adjacency is a single constant in the engine, so it can be switched to 8-neighbour later.
+"Beside" means **orthogonally adjacent** (up, down, left or right) **within the same room**: furniture on the other side of a wall does not count. Adjacency is a single constant in the engine, so it can be switched to 8-neighbour later.
 
 ---
 
@@ -455,7 +455,7 @@ Future attributes (jobs, motives, weapons, times) become extra `Person` fields a
 
 These are the defaults I picked. Tell me if you want any changed.
 
-- **"Beside" = orthogonal adjacency.** Switchable to include diagonals.
+- **"Beside" = orthogonal adjacency within the same room.** Switchable to include diagonals.
 - **Furniture you can stand on**: chair, armchair, sofa, bed, rug. Everything else blocks.
 - **Windows and doors** as clue targets are **not** in v1 (could be added as wall features later).
 - **Row/column labels**: rows 1–9, columns A–I.

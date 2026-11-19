@@ -3,7 +3,7 @@ import { checkPlacement, personCandidates } from '../../src/engine/clues/evaluat
 import { allStaticAtoms } from '../../src/engine/clues/facts';
 import { getBoard } from '../../src/engine/clues/board';
 import { renderClue } from '../../src/engine/clues/render';
-import { setHas, setCount } from '../../src/engine/cellset';
+import { newCellSet, setHas, setCount } from '../../src/engine/cellset';
 import { neighbours } from '../../src/engine/types';
 import type { Cell, Person, Room } from '../../src/engine/types';
 import { randomCluePuzzle } from './helpers';
@@ -31,12 +31,16 @@ describe('facts', () => {
               break;
             case 'beside':
               expect(
-                neighbours(cell.r, cell.c).some((n) => furniture[n.r]![n.c] === a.furniture),
+                neighbours(cell.r, cell.c).some(
+                  (n) => furniture[n.r]![n.c] === a.furniture && roomAt(n) === roomAt(cell),
+                ),
               ).toBe(true);
               break;
             case 'notBeside':
               expect(
-                neighbours(cell.r, cell.c).some((n) => furniture[n.r]![n.c] === a.furniture),
+                neighbours(cell.r, cell.c).some(
+                  (n) => furniture[n.r]![n.c] === a.furniture && roomAt(n) === roomAt(cell),
+                ),
               ).toBe(false);
               break;
             case 'row':
@@ -80,6 +84,24 @@ describe('facts', () => {
           expect((board.edge[r]! >> c) & 1).toBe(any && !corner ? 1 : 0);
         }
     }
+  });
+
+  it('beside ignores furniture on the other side of a wall', () => {
+    let crossWall = 0;
+    for (const seed of seeds.slice(0, 30)) {
+      const { plan, furniture } = randomCluePuzzle(seed);
+      const board = getBoard({ roomOf: plan.roomOf, rooms: plan.rooms, furniture });
+      for (let r = 0; r < 9; r++)
+        for (let c = 0; c < 9; c++)
+          for (const t of board.present) {
+            const ns = neighbours(r, c).filter((n) => furniture[n.r]![n.c] === t);
+            const same = ns.some((n) => plan.roomOf[n.r]![n.c] === plan.roomOf[r]![c]);
+            if (ns.length > 0 && !same) crossWall++;
+            expect(setHas(board.besideSets[t] ?? newCellSet(), r, c)).toBe(same);
+          }
+    }
+    // The case actually occurs, so the assertion above is exercised.
+    expect(crossWall).toBeGreaterThan(0);
   });
 });
 

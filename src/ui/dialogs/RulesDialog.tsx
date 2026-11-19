@@ -55,7 +55,10 @@ export function RulesDialog({ onClose }: { onClose(): void }) {
         <h3>Reading the clues</h3>
         <dl>
           <dt>Beside</dt>
-          <dd>Directly up, down, left or right of it. Diagonals do not count.</dd>
+          <dd>
+            Directly up, down, left or right of it, in the same room. Diagonals and furniture on
+            the other side of a wall do not count.
+          </dd>
           <dt>In a corner</dt>
           <dd>A cell with a wall (or the board edge) on two sides that meet, within its room.</dd>
           <dt>Against a wall</dt>

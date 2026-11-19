@@ -83,7 +83,10 @@ export function buildBoard(source: BoardSource): Board {
       if (f !== null) {
         presentSet.add(f);
         setAdd((onSets[f] ??= newCellSet()), r, c);
-        for (const n of neighbours(r, c)) setAdd((besideSets[f] ??= newCellSet()), n.r, n.c);
+        // Beside counts only within the same room: walls separate.
+        for (const n of neighbours(r, c))
+          if (roomOf[n.r]![n.c] === roomOf[r]![c])
+            setAdd((besideSets[f] ??= newCellSet()), n.r, n.c);
       }
       const vert = wall(r, c, -1, 0) || wall(r, c, 1, 0);
       const horiz = wall(r, c, 0, -1) || wall(r, c, 0, 1);
