@@ -128,3 +128,19 @@ export const StrikeIcon = (p: P) => (
     <path d="M4 7h10M4 17h14M3 12h18" />
   </svg>
 );
+
+export const PlusIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M12 5v14M5 12h14" />
+  </svg>
+);
+export const ShareIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M12 15V3M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" />
+  </svg>
+);
+export const StatsIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M5 20V11M12 20V4M19 20v-6" />
+  </svg>
+);

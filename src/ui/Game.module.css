@@ -2,9 +2,9 @@
 .layout {
   --hdr-h: 3rem;
   --drawer-w: 22rem;
-  --side-pad: 4.75rem;
-  --board-reserve: 13.5rem;
-  padding: 0.6rem var(--side-pad) 7rem;
+  --side-pad: 1rem;
+  --board-reserve: 11rem;
+  padding: 0.5rem var(--side-pad) 6rem;
   min-height: calc(100dvh - var(--hdr-h));
 }
 @media (min-width: 1200px) {
@@ -24,13 +24,19 @@
 .legendRow {
   position: relative;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: flex-start;
   justify-content: center;
   gap: 0.3rem 0.5rem;
   margin-bottom: 0.45rem;
 }
+.legendRow > :first-child {
+  flex: 1 1 0;
+  min-width: 0;
+}
 .keyBtn {
+  flex: none;
+  align-self: center;
   padding: 0.1rem 0.6rem;
   font-size: 0.75rem;
   border-radius: 999px;
@@ -273,6 +279,12 @@
   padding: 0.5rem 0.5rem 1rem;
 }
 
+/* Narrower screens: keep clear of the floating actions on both sides. */
+@media (max-width: 1000px) {
+  .layout {
+    --side-pad: 4.75rem;
+  }
+}
 /* Tablet-ish widths: slimmer dock. */
 @media (max-width: 760px) {
   .layout {
@@ -308,6 +320,10 @@
     background: var(--surface);
     border-top: 1px solid var(--border);
     box-shadow: 0 -4px 18px rgb(0 0 0 / 0.18);
+  }
+  /* The More sheet lives inside the dock's stacking context; lift it above the floating bits. */
+  .mobileDockOpen {
+    z-index: 65;
   }
   .peek {
     position: fixed;

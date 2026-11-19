@@ -760,7 +760,7 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
       {mobile ? (
         <>
           <div className={styles.peek}>{cluesButton}</div>
-          <div className={styles.mobileDock}>
+          <div className={`${styles.mobileDock} ${moreOpen ? styles.mobileDockOpen : ''}`}>
             {(tool === 'highlight' || tool === 'draw') && !moreOpen && (
               <div className={palette.slim} data-testid="color-row">
                 {tool === 'draw' && drawControls}

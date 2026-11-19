@@ -4,6 +4,7 @@ import { copyText, shareUrl } from './url';
 import styles from '../App.module.css';
 import { formatTime } from './time';
 import { SettingsMenu } from './Toolbar';
+import { CheckIcon, PlusIcon, ShareIcon, StatsIcon } from './icons/glyphs';
 
 /** Slim one-line header: title, difficulty + timer, and icon buttons for the app-level actions. */
 export function Header({
@@ -70,7 +71,7 @@ export function Header({
           title="New game"
           onClick={onNewGame}
         >
-          <span aria-hidden="true">＋</span>
+          <PlusIcon />
         </button>
         <button
           type="button"
@@ -87,7 +88,7 @@ export function Header({
           }
           onClick={() => void share()}
         >
-          <span aria-hidden="true">{shared === 'ok' ? '✓' : '⤴'}</span>
+          {shared === 'ok' ? <CheckIcon /> : <ShareIcon />}
         </button>
         <button
           type="button"
@@ -97,7 +98,7 @@ export function Header({
           title="Statistics"
           onClick={onStats}
         >
-          <span aria-hidden="true">▥</span>
+          <StatsIcon />
         </button>
         <button
           type="button"
