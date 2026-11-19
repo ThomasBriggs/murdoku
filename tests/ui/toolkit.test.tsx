@@ -198,8 +198,13 @@ describe('keyboard shortcuts', () => {
 
   it('ignores shortcuts while typing in a note field', async () => {
     const store = await setup();
-    const input = screen.getByTestId('row-note-0');
+    const room = store.getState().puzzle!.rooms[0]!;
+    fireEvent.click(screen.getByTestId(`room-note-btn-${room.id}`));
+    const input = screen.getByTestId(`room-note-input-${room.id}`);
     fireEvent.keyDown(input, { key: 'n' });
+    expect(store.getState().tool).toBe('place');
+    fireEvent.click(screen.getByTestId('scratchpad-toggle'));
+    fireEvent.keyDown(screen.getByTestId('scratchpad-text'), { key: 'n' });
     expect(store.getState().tool).toBe('place');
   });
 
@@ -302,6 +307,7 @@ describe('multi-select', () => {
     fireEvent.doubleClick(screen.getByTestId(`legend-room-${other.id}`));
     expect(store.getState().selection).toHaveLength(other.cells.length);
 
+    fireEvent.click(screen.getByTestId('key-toggle'));
     const legend = within(screen.getByTestId('furniture-legend'));
     const btn = legend.getAllByRole('button')[0]!;
     const type = btn.dataset.testid!.replace('legend-furniture-', '');
@@ -313,19 +319,14 @@ describe('multi-select', () => {
 });
 
 describe('margin notes', () => {
-  it('row, column and room notes are edited in place and survive undo/redo', async () => {
-    const store = await setup();
-    const row = screen.getByTestId('row-note-3') as HTMLInputElement;
-    fireEvent.change(row, { target: { value: 'B/D' } });
-    fireEvent.blur(row);
-    expect(store.getState().annotations.rowNotes[3]).toBe('B/D');
-    expect((screen.getByTestId('row-note-3') as HTMLInputElement).value).toBe('B/D');
-    const col = screen.getByTestId('col-note-2') as HTMLInputElement;
-    fireEvent.change(col, { target: { value: 'C' } });
-    fireEvent.keyDown(col, { key: 'Enter' });
-    fireEvent.blur(col);
-    expect(store.getState().annotations.colNotes[2]).toBe('C');
+  it('row and column notes no longer exist', async () => {
+    await setup();
+    expect(screen.queryByTestId('row-note-0')).toBeNull();
+    expect(screen.queryByTestId('col-note-0')).toBeNull();
+  });
 
+  it('room notes are edited in place and survive undo/redo', async () => {
+    const store = await setup();
     const room = store.getState().puzzle!.rooms[0]!;
     fireEvent.click(screen.getByTestId(`room-note-btn-${room.id}`));
     const input = screen.getByTestId(`room-note-input-${room.id}`) as HTMLInputElement;
@@ -364,10 +365,13 @@ describe('layers, clearing and settings', () => {
       fireEvent.click(screen.getByTestId(`layer-${layer}`));
       expect(gone(), layer).toBeTruthy();
     }
+    const noted = store.getState().puzzle!.rooms[0]!.id;
+    act(() => store.getState().setRoomNote(noted, 'hidden soon'));
+    expect(screen.getByTestId(`room-note-${noted}`)).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('layer-margins'));
-    expect(screen.queryByTestId('row-note-0')).toBeNull();
+    expect(screen.queryByTestId(`room-note-${noted}`)).toBeNull();
     expect(screen.getByTestId('layer-drawing')).not.toBeDisabled();
-    expect(store.getState().history.past).toHaveLength(4); // visibility never enters history
+    expect(store.getState().history.past).toHaveLength(5); // visibility never enters history
   });
 
   it('Clear… asks for confirmation and each clear is undoable', async () => {
