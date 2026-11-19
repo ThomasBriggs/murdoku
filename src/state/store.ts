@@ -115,6 +115,7 @@ export type Tool =
   | 'notes'
   | 'eliminate'
   | 'highlight'
+  | 'erase'
   | 'select'
   | 'draw';
 
@@ -200,10 +201,13 @@ export interface GameActions {
   /** Toggle a person's candidate (or, with `eliminate`, eliminated) initial on cells. */
   applyCandidate(cells: readonly CellKey[], person: PersonId, eliminate?: boolean): boolean;
   applyHighlight(cells: readonly CellKey[], color: ColorId | null): boolean;
-  /** Remove marks, candidates and highlights from cells. */
+  /**
+   * Wipe cells clean: marks, candidate initials, highlights and pencil guesses
+   * (one undo step). Real placements stay; they have their own remove action.
+   */
   clearCellAnnotations(cells: readonly CellKey[]): boolean;
   /**
-   * Apply the ACTIVE tool to cells (cross/dot/unsure/notes/eliminate/highlight;
+   * Apply the ACTIVE tool to cells (cross/dot/unsure/notes/eliminate/highlight/erase;
    * pencil uses the first cell). `eliminate` forces elimination in notes mode.
    */
   applyTool(cells: readonly CellKey[], eliminate?: boolean): boolean;
@@ -651,7 +655,21 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
 
         applyHighlight: (cells, color) => annotate((a) => setHighlight(a, cells, color)),
 
-        clearCellAnnotations: (cells) => annotate((a) => clearCells(a, cells)),
+        clearCellAnnotations(cells) {
+          if (!playing()) return false;
+          const s = get();
+          const next = clearCells(s.annotations, cells);
+          const inCells = new Set(cells);
+          const guesses = Object.entries(s.tentativePlacements).flatMap(([id, key]) =>
+            key != null && inCells.has(key) ? [Number(id)] : [],
+          );
+          if (next === s.annotations && guesses.length === 0) return false;
+          commit((d) => {
+            d.annotations = next;
+            for (const id of guesses) d.tentativePlacements[id] = null;
+          });
+          return true;
+        },
 
         applyTool(cells, eliminate = false) {
           const s = get();
@@ -662,6 +680,8 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
               return s.applyMark(cells, s.tool);
             case 'highlight':
               return s.applyHighlight(cells, s.color);
+            case 'erase':
+              return s.clearCellAnnotations(cells);
             case 'notes':
             case 'eliminate':
               return s.selectedPerson === null

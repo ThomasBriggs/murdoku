@@ -22,7 +22,12 @@ const FIXED: readonly Shortcut[] = [
   { id: 'undo', keys: 'Ctrl+Z', label: 'Undo', group: 'Playing' },
   { id: 'redo', keys: 'Ctrl+Shift+Z', label: 'Redo', group: 'Playing' },
   { id: 'hint', keys: 'H', label: 'Ask for a hint', group: 'Playing' },
-  { id: 'clear', keys: 'Delete', label: 'Clear marks on the cell or selection', group: 'Playing' },
+  {
+    id: 'clear',
+    keys: 'Delete',
+    label: 'Wipe marks, initials, highlights and guesses from the cell or selection',
+    group: 'Playing',
+  },
   { id: 'logic', keys: 'G', label: 'Show or hide the logic grid', group: 'Panels' },
   { id: 'whatif', keys: 'W', label: 'Start or end a what-if (Shift+W nests)', group: 'Panels' },
 ];

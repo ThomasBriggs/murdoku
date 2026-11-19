@@ -96,6 +96,39 @@ describe('toolkit store', () => {
     expect(s().history.past.length).toBe(before);
   });
 
+  it('clearCellAnnotations wipes marks, initials, highlights and guesses in one undo step', () => {
+    const [a, b] = free as [CellKey, CellKey];
+    const [p0, p1, p2] = s().puzzle!.people.map((x) => x.id) as [number, number, number];
+    s().applyMark([a], 'unsure');
+    s().applyCandidate([a, b], p0);
+    s().applyCandidate([a], p1, true);
+    s().applyHighlight([a], 'green');
+    s().placeTentative(p2, a);
+    s().place(p1, b);
+    const before = s().history.past.length;
+    expect(s().clearCellAnnotations([a])).toBe(true);
+    expect(s().history.past.length).toBe(before + 1);
+    expect(s().annotations.cellMarks[a]).toBeUndefined();
+    expect(s().annotations.candidates[a]).toBeUndefined();
+    expect(s().annotations.highlights[a]).toBeUndefined();
+    expect(s().tentativePlacements[p2]).toBeNull();
+    // other cells and real placements are untouched
+    expect(s().annotations.candidates[b]).toBeDefined();
+    expect(s().placements[p1]).toBe(b);
+    s().undo();
+    expect(s().tentativePlacements[p2]).toBe(a);
+    expect(s().annotations.cellMarks[a]).toBe('unsure');
+  });
+
+  it('the erase tool clears the cells it is applied to', () => {
+    const [a, b] = free as [CellKey, CellKey];
+    s().applyMark([a, b], 'cross');
+    s().setTool('erase');
+    expect(s().applyTool([a])).toBe(true);
+    expect(s().annotations.cellMarks).toEqual({ [b]: 'cross' });
+    expect(s().applyTool([a])).toBe(false); // nothing left to erase
+  });
+
   it('layer visibility is a view setting: not undoable and not rewound by undo', () => {
     s().applyMark([free[0]!], 'cross');
     s().setLayerVisible('crosses', false);

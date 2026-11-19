@@ -93,6 +93,11 @@ export const HighlightIcon = (p: P) => (
     <path d="M14 4l6 6-8 8H8l-4-4v-3zM12 6l6 6M4 21h8" />
   </svg>
 );
+export const EraseIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M21 5H9l-6 7 6 7h12zM12 9l6 6M18 9l-6 6" />
+  </svg>
+);
 export const SelectIcon = (p: P) => (
   <svg {...base} {...p}>
     <rect x="4" y="4" width="16" height="16" rx="1.5" strokeDasharray="3 3" />

@@ -6,6 +6,7 @@ import {
   DotIcon,
   DrawIcon,
   EliminateIcon,
+  EraseIcon,
   HighlightIcon,
   NotesIcon,
   PencilIcon,
@@ -84,6 +85,14 @@ export const TOOLS: readonly ToolDef[] = [
     help: 'Slash a person’s initial: they are not in this cell (same as Shift in Notes)',
   },
   {
+    id: 'erase',
+    label: 'Erase',
+    Icon: EraseIcon,
+    shortcut: 'R',
+    key: 'r',
+    help: 'Wipe a cell clean: marks, initials, highlight and pencil guesses (also Delete)',
+  },
+  {
     id: 'highlight',
     label: 'Highlight',
     Icon: HighlightIcon,
@@ -110,7 +119,14 @@ export const TOOLS: readonly ToolDef[] = [
 ];
 
 /** Tools on the compact mobile bar; the rest live in its "More" sheet. */
-export const PRIMARY_TOOLS: readonly Tool[] = ['place', 'pencil', 'cross', 'notes', 'highlight'];
+export const PRIMARY_TOOLS: readonly Tool[] = [
+  'place',
+  'pencil',
+  'cross',
+  'notes',
+  'highlight',
+  'erase',
+];
 
 /** Tools that start a new visual group in the strip. */
 const GROUP_START = new Set<Tool>(['cross', 'notes', 'highlight']);

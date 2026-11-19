@@ -29,7 +29,7 @@ function drag(cells: [number, number][]) {
 describe('solving toolkit: marks, notes, highlights', () => {
   it('has a tooltip with the shortcut on every tool', () => {
     load();
-    cy.get('button[data-testid^="tool-"]').should('have.length', 10);
+    cy.get('button[data-testid^="tool-"]').should('have.length', 11);
     tool('cross').should('have.attr', 'title').and('contain', 'X');
     tool('pencil').should('have.attr', 'title').and('contain', 'P');
     tool('notes').should('have.attr', 'title').and('contain', 'N');
@@ -310,7 +310,7 @@ describe('solving toolkit: marks, notes, highlights', () => {
     cy.viewport(375, 740);
     load();
     // the bar is one slim row with the common tools only
-    cy.get('[data-testid="tool-palette"] button').should('have.length', 5);
+    cy.get('[data-testid="tool-palette"] button').should('have.length', 6);
     cy.get('[data-testid="tool-dot"]').should('not.exist');
     cy.get('[data-testid="more-button"]').parent().invoke('height').should('be.lessThan', 70);
     cy.get('[data-testid="color-row"]').should('not.exist');
