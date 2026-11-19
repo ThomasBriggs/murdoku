@@ -1,4 +1,16 @@
-import { checkA11y, moreClick, openMore, playToWin, sel, setTheme } from '../support/helpers';
+import {
+  checkA11y,
+  closeClues,
+  moreClick,
+  openClues,
+  openKey,
+  openMore,
+  openSettings,
+  playToWin,
+  sel,
+  selectPerson,
+  setTheme,
+} from '../support/helpers';
 
 const URL = '/?seed=cy-a11y&d=easy';
 const cell = (r: number, c: number) => cy.get(sel(`cell-${r}-${c}`));
@@ -20,7 +32,7 @@ function populate() {
       if (n >= 3) break;
       if (used.has(r)) continue;
       used.add(r);
-      cy.get(sel(`person-card-${n}`)).click();
+      selectPerson(n);
       cell(r, c).click();
       n++;
     }
@@ -30,7 +42,7 @@ function populate() {
   cy.get(sel('tool-highlight')).click();
   cell(7, 0).click();
   cy.get(sel('tool-notes')).click();
-  cy.get(sel('person-card-5')).click();
+  selectPerson(5);
   cell(6, 6).click();
   cy.get(sel('tool-place')).click();
 }
@@ -58,8 +70,8 @@ describe('accessibility (axe)', () => {
     load();
     openMore();
     checkA11y();
-    cy.get(sel('settings-button')).click();
     cy.get(sel('layers-button')).click();
+    openSettings();
     checkA11y();
   });
 
@@ -67,6 +79,30 @@ describe('accessibility (axe)', () => {
     cy.viewport(375, 740);
     load();
     cy.get(sel('more-button')).click();
+    checkA11y();
+  });
+
+  it('clues drawer as an overlay (1000px) and as a phone bottom sheet', () => {
+    cy.viewport(1000, 700);
+    load();
+    openClues();
+    checkA11y();
+    closeClues();
+    cy.viewport(375, 740);
+    openClues();
+    checkA11y();
+  });
+
+  it('scratchpad panel and furniture key', () => {
+    cy.viewport(1280, 900);
+    load();
+    cy.get(sel('scratchpad-toggle')).click();
+    cy.get(sel('scratchpad-text')).type('If C then F').blur();
+    cy.get(sel('scratchpad-panel')).should('be.visible');
+    openKey();
+    checkA11y();
+    cy.get(sel('scratchpad-toggle')).click();
+    cy.get(sel('scratchpad-toggle')).should('have.attr', 'data-has-text', 'true');
     checkA11y();
   });
 
@@ -119,7 +155,7 @@ describe('accessibility (axe)', () => {
       cy.viewport(1280, 900);
       load();
       setTheme(theme);
-      cy.get(sel('person-card-0')).click();
+      selectPerson(0);
       cy.get('[data-testid="board-grid"] [data-blocked="false"]').first().click();
       moreClick('reset');
       checkA11y();

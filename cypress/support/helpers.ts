@@ -16,7 +16,7 @@ export function solveByHints(used: { n: number }, guard = 20) {
     cy.get(sel('hint-panel')).then(($panel) => {
       if ($panel.attr('data-hint-kind') === 'place') {
         const id = $panel.attr('data-hint-person');
-        cy.get(sel(`person-card-${id}`)).click();
+        selectPerson(id!);
         cell(Number($panel.attr('data-hint-row')), Number($panel.attr('data-hint-col'))).click();
       } else {
         cy.get(sel('hint-apply')).click(); // eliminate-only step: cross the cells out
@@ -78,14 +78,91 @@ export function openMore() {
   });
 }
 
-/** Click a secondary action (Reset, Layers, Clear, What-if, Logic grid, Print, Settings), opening the menu first. */
+/** Click a secondary action (Reset, Layers, Clear, What-if, Logic grid, Print), opening the menu first. */
 export function moreClick(id: string) {
   openMore();
   cy.get(sel(id)).click();
 }
 
+/** Is the clue drawer showing (it is `hidden` when closed)? */
+const cluesShown = ($b: JQuery<HTMLElement>) => $b.find(sel('clues-drawer')).is(':visible');
+
+/** Open the clue drawer (open by default at >=1200px, closed below), unless it already is. */
+export function openClues() {
+  cy.get('body').then(($b) => {
+    if (!cluesShown($b)) cy.get(sel('clues-toggle')).click();
+  });
+  cy.get(sel('clues-drawer')).should('be.visible');
+}
+
+/** Close the clue drawer when it is showing. */
+export function closeClues() {
+  cy.get('body').then(($b) => {
+    if (cluesShown($b)) cy.get(sel('clues-close')).click();
+  });
+  cy.get(sel('clues-drawer')).should('not.be.visible');
+}
+
+/**
+ * Select a person by clicking their clue card. Opens the drawer if needed and, where the drawer
+ * is an overlay that would cover the board (below 1200px), closes it again afterwards.
+ */
+export function selectPerson(id: number | string) {
+  openClues();
+  cy.get(sel(`person-card-${id}`)).click();
+  cy.window().then((win) => {
+    if (win.innerWidth < 1200) closeClues();
+  });
+}
+
+/** Place a person by selecting their card and clicking a cell. */
+export function placePerson(id: number | string, r: number, c: number) {
+  selectPerson(id);
+  cy.get(sel(`cell-${r}-${c}`)).click();
+}
+
+/** Open the Settings popover in the header (idempotent). */
+export function openSettings() {
+  cy.get('body').then(($b) => {
+    if (!$b.find(sel('settings-popover')).length) cy.get(sel('settings-button')).click();
+  });
+  cy.get(sel('settings-popover')).should('be.visible');
+}
+
+/** Close the Settings popover if it is open. */
+export function closeSettings() {
+  cy.get('body').then(($b) => {
+    if ($b.find(sel('settings-popover')).length) cy.get(sel('settings-button')).click();
+  });
+  cy.get(sel('settings-popover')).should('not.exist');
+}
+
+/** Toggle a Settings checkbox to the wanted state (opens and closes the popover). */
+export function setSetting(id: string, on: boolean) {
+  openSettings();
+  cy.get(sel(id))[on ? 'check' : 'uncheck']();
+  closeSettings();
+}
+
+/** Open the furniture key (behind the Key toggle), unless it already is. */
+export function openKey() {
+  cy.get('body').then(($b) => {
+    if (!$b.find(sel('furniture-legend')).length) cy.get(sel('key-toggle')).click();
+  });
+  cy.get(sel('furniture-legend')).should('be.visible');
+}
+
 /** Run axe on the page (or a context) and fail with a readable list of violations. */
 export function checkA11y(context?: string) {
+  // Entrance animations (e.g. a card fading in) make colours transient; axe must see the settled page.
+  cy.window().should((win) => {
+    const running = win.document
+      .getAnimations()
+      .filter(
+        (a) => a.playState === 'running' && a.effect?.getComputedTiming().iterations !== Infinity,
+      );
+    expect(running, 'running animations').to.have.length(0);
+  });
   cy.injectAxe();
   cy.checkA11y(
     context ?? undefined,
@@ -114,13 +191,9 @@ export function checkA11y(context?: string) {
   );
 }
 
-/** Pick a theme through the Settings popover (desktop menu or mobile sheet), then close it again. */
+/** Pick a theme through the header's Settings popover, then close it again. */
 export function setTheme(theme: 'light' | 'dark') {
-  moreClick('settings-button');
+  openSettings();
   cy.get(sel(`theme-${theme}`)).check();
-  cy.get(sel('settings-button')).click();
-  cy.get('body').then(($b) => {
-    if ($b.find(sel('more-close')).length) cy.get(sel('more-close')).click();
-    else if ($b.find(sel('overflow-menu')).length) cy.get('body').type('{esc}');
-  });
+  closeSettings();
 }

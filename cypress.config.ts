@@ -2,6 +2,8 @@ import { defineConfig } from 'cypress';
 
 export default defineConfig({
   video: false,
+  viewportWidth: 1280,
+  viewportHeight: 800,
   screenshotOnRunFailure: true,
   e2e: {
     baseUrl: 'http://localhost:4173',
