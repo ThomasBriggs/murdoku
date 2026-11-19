@@ -109,7 +109,8 @@ export function closeClues() {
  */
 export function selectPerson(id: number | string) {
   openClues();
-  cy.get(sel(`person-card-${id}`)).click();
+  // Click the name button: the card centre can land on a clue word, which doesn't select.
+  cy.get(sel(`person-card-${id}`)).find('button').first().click();
   cy.window().then((win) => {
     if (win.innerWidth < 1200) closeClues();
   });

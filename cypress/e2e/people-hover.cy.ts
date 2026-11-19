@@ -5,6 +5,8 @@ const URL = '/?seed=cy-people-hover&d=easy';
 const hover = (id: string, ev: 'mouseover' | 'mouseout') =>
   tid(`person-card-${id}`).find('button').first().trigger(ev);
 const tool = (t: string) => tid(`tool-${t}`);
+/** Select a person via the card's name button (see `hover`). */
+const pick = (id: string) => tid(`person-card-${id}`).find('button').first().click();
 
 /** Row-major [r, c] of cells a person can stand on. */
 function freeCells(): Cypress.Chainable<[number, number][]> {
@@ -23,7 +25,7 @@ describe('people panel: placed names and hover highlights', () => {
       const [a, b, c, d] = [free[0]!, free[10]!, free[20]!, free[30]!];
 
       // Person 1 placed for real.
-      tid('person-card-1').click();
+      pick('1');
       cell(...a).click();
       tid('person-name-1').should('have.attr', 'data-placed', 'true');
       tid('person-name-1').should('have.css', 'text-decoration-line', 'line-through');
@@ -31,10 +33,10 @@ describe('people panel: placed names and hover highlights', () => {
 
       // Person 2 pencilled in at b and noted as a candidate at c and d.
       tool('pencil').click();
-      tid('person-card-2').click();
+      pick('2');
       cell(...b).click();
       tool('notes').click();
-      tid('person-card-2').click(); // pencil-placing deselects the person
+      pick('2'); // pencil-placing deselects the person
       cell(...c)
         .click()
         .should('have.attr', 'data-candidates', '2');
