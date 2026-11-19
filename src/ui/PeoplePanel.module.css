@@ -257,3 +257,79 @@
   outline: 2px solid var(--focus);
   background: var(--surface);
 }
+
+/* Unplaced / Placed sections. */
+.panel {
+  display: grid;
+  gap: 0.6rem;
+}
+.group {
+  min-width: 0;
+}
+.groupHead {
+  display: flex;
+  align-items: center;
+  margin: 0 0 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.groupHead > span {
+  margin-right: 0.35rem;
+}
+.groupCount {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.groupToggle {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.3rem;
+  margin-left: -0.3rem;
+  border-radius: 6px;
+  cursor: pointer;
+  text-transform: inherit;
+}
+.groupToggle:hover {
+  background: color-mix(in srgb, var(--text) 9%, transparent);
+  color: var(--text);
+}
+.groupToggle:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+.chevron {
+  font-size: 0.95rem;
+  line-height: 1;
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+.groupToggle[aria-expanded='false'] .chevron {
+  transform: rotate(-90deg);
+}
+.list[hidden] {
+  display: none;
+}
+.allPlaced {
+  margin: 0;
+  padding: 0.6rem 0.7rem;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+/* A card arriving in a section fades in (reduced-motion is neutralised globally). */
+.card {
+  animation: cardIn 0.18s ease-out;
+}
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
