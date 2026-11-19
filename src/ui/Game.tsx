@@ -48,6 +48,7 @@ import styles from './Game.module.css';
 import { PeoplePanel } from './PeoplePanel';
 import { RoomLegend } from './RoomLegend';
 import { assignRoomColors } from './roomColors';
+import { shouldDismissSheet } from './sheetGesture';
 import { OverflowMenu, Toolbar } from './Toolbar';
 import { conflictsByPerson, type Highlight } from './types';
 
@@ -139,6 +140,18 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
     () => window.matchMedia?.('(min-width: 1200px)').matches ?? false,
   );
   const [keyOpen, setKeyOpen] = useState(false);
+  const drawerRef = useRef<HTMLElement>(null);
+  const grab = useRef<{ id: number; y: number } | null>(null);
+  // The phone sheet is modal-ish: focus moves in when it opens, the page behind does not scroll.
+  useEffect(() => {
+    if (!mobile || !cluesOpen) return;
+    drawerRef.current?.focus({ preventScroll: true });
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobile, cluesOpen]);
   const [whatIfEnd, setWhatIfEnd] = useState<WhatIfEnd | null>(null);
   const [printOpen, setPrintOpen] = useState(false);
   const [printMarks, setPrintMarks] = useState(false);
@@ -556,7 +569,7 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
       onRedo={() => actions.redo()}
       secondary={secondary}
     >
-      {investigate}
+      {compact ? null : investigate}
     </Toolbar>
   );
 
@@ -755,14 +768,20 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
       )}
       {mobile ? (
         <>
-          <div className={styles.peek}>{cluesButton}</div>
-          <div className={`${styles.mobileDock} ${moreOpen ? styles.mobileDockOpen : ''}`}>
+          <div
+            className={`${styles.mobileDock} ${moreOpen ? styles.mobileDockOpen : ''}`}
+            data-testid="mobile-dock"
+          >
             {(tool === 'highlight' || tool === 'draw') && !moreOpen && (
               <div className={palette.slim} data-testid="color-row">
                 {tool === 'draw' && drawControls}
                 <ColorPicker color={color} onColor={onColor} />
               </div>
             )}
+            <div className={styles.mobileStrip} role="group" aria-label="Investigate">
+              {investigate}
+              {cluesButton}
+            </div>
             <div className={palette.bar}>
               <ToolPalette
                 only={PRIMARY_TOOLS}
@@ -897,13 +916,55 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
           </div>
         </div>
       )}
+      {mobile && cluesOpen && (
+        <div
+          className={styles.sheetBackdrop}
+          data-testid="clues-backdrop"
+          onClick={() => setCluesOpen(false)}
+        />
+      )}
       <aside
         className={styles.drawer}
         id="clues-drawer"
         data-testid="clues-drawer"
         aria-label="Clues"
         hidden={!cluesOpen}
+        ref={drawerRef}
+        tabIndex={-1}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape' && !e.defaultPrevented) {
+            e.stopPropagation();
+            setCluesOpen(false);
+          }
+        }}
       >
+        {mobile && (
+          <div
+            className={styles.grabber}
+            data-testid="clues-grabber"
+            aria-hidden="true"
+            onPointerDown={(e) => {
+              grab.current = { id: e.pointerId, y: e.clientY };
+              e.currentTarget.setPointerCapture?.(e.pointerId);
+            }}
+            onPointerMove={(e) => {
+              const g = grab.current;
+              if (g && g.id === e.pointerId && shouldDismissSheet(e.clientY - g.y)) {
+                grab.current = null;
+                setCluesOpen(false);
+              }
+            }}
+            onPointerUp={() => {
+              grab.current = null;
+            }}
+            onPointerCancel={() => {
+              grab.current = null;
+            }}
+            onClick={() => setCluesOpen(false)}
+          >
+            <span />
+          </div>
+        )}
         <div className={styles.drawerHead}>
           <strong>Clues</strong>
           <span className={styles.drawerSub}>{unplaced} unplaced</span>
@@ -924,7 +985,11 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
             tentative={tentative}
             annotations={annotations}
             selectedPerson={selected}
-            onSelect={(id) => actions.selectPerson(id)}
+            onSelect={(id) => {
+              actions.selectPerson(id);
+              // On phones the sheet covers the board: step aside once someone is picked.
+              if (mobile && id !== null) setCluesOpen(false);
+            }}
             onHighlight={setHighlight}
           />
         </div>

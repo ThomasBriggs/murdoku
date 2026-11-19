@@ -30,8 +30,64 @@
   background: light-dark(var(--room-l), var(--room-d));
   border: 1px solid var(--wall);
 }
+.item {
+  touch-action: manipulation;
+}
 .wrap {
   min-width: 0;
+}
+/* Phones: one compact, horizontally scrollable row so the board keeps the height. */
+@media (max-width: 600px), (max-height: 500px) {
+  .legend {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-block: 1px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .legend::-webkit-scrollbar {
+    display: none;
+  }
+  .item {
+    flex: none;
+    min-height: 1.75rem;
+    font-size: 0.78rem;
+    white-space: nowrap;
+  }
+  .noteBtn {
+    min-width: 1.5rem;
+    min-height: 1.5rem;
+    justify-content: center;
+  }
+  .wrap {
+    position: static;
+  }
+  .editor {
+    position: absolute;
+    z-index: 35;
+    left: 0;
+    right: 0;
+    top: 100%;
+    margin-top: 0.2rem;
+    padding: 0.5rem 0.6rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 8px 28px rgb(0 0 0 / 0.3);
+  }
+  .editor label {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    align-items: center;
+  }
+  .input {
+    flex: 1;
+    min-width: 8rem;
+    width: auto;
+    font-size: 16px; /* no iOS focus-zoom */
+  }
 }
 .noteBtn {
   padding: 0 0.3rem;

@@ -190,3 +190,18 @@
   );
   opacity: 0.7;
 }
+
+/* Touch screens: roomier handles. */
+@media (pointer: coarse) {
+  .min {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+  .resize {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+  .text {
+    font-size: 16px; /* no iOS focus-zoom */
+  }
+}

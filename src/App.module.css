@@ -9,7 +9,7 @@
   align-items: center;
   gap: 0.5rem;
   height: var(--hdr-h);
-  padding: 0 12px;
+  padding: 0 max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
   border-bottom: 1px solid var(--border);
   background: var(--surface);
 }
@@ -80,6 +80,12 @@
   height: 1.15rem;
 }
 
+@media (min-width: 601px) and (max-height: 500px) {
+  .header {
+    --hdr-h: 2.5rem;
+  }
+}
+
 @media (max-width: 600px) {
   .header {
     grid-template-columns: auto minmax(0, 1fr) auto;
@@ -100,7 +106,22 @@
     gap: 0;
   }
   .hBtn {
-    width: 1.95rem;
-    height: 2.2rem;
+    width: 2.4rem;
+    height: 2.75rem;
+  }
+}
+/* 320-wide phones: the difficulty word makes way for the timer. */
+@media (max-width: 359px) {
+  .header {
+    padding-left: 8px;
+  }
+  .header h1 {
+    font-size: 1rem;
+  }
+  .difficulty {
+    display: none;
+  }
+  .hBtn {
+    width: 2.25rem;
   }
 }

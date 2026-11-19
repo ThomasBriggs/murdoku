@@ -151,4 +151,7 @@
   top: calc(100% + 0.4rem);
   bottom: auto;
   z-index: 80;
+  max-height: calc(100dvh - var(--hdr-h, 3rem) - 1rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
