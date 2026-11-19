@@ -148,8 +148,11 @@ export function PrintSheet({ puzzle, placements, annotations, includeMarks }: Pr
           <ol>
             {order.map((p) => (
               <li key={p.id}>
-                <strong>{p.initial}</strong> {clues.get(p.id) ?? p.name}
-                {p.isVictim ? ' (the victim)' : ''}
+                <strong>{p.initial}</strong>{' '}
+                {clues.get(p.id) ??
+                  (p.isVictim
+                    ? `${p.name} (the victim) was alone in the room with the murderer.`
+                    : p.name)}
               </li>
             ))}
           </ol>

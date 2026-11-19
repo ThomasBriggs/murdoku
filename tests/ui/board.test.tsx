@@ -73,6 +73,10 @@ describe('Board UI', () => {
     expect(items[0]).toHaveTextContent('Victim');
     const suspect = puzzle.people.find((p) => !p.isVictim)!;
     expect(screen.getByTestId(`person-clue-${suspect.id}`).textContent).toMatch(/was /);
+    // The victim has no clue of their own, only the murder rule.
+    expect(screen.getByTestId(`person-clue-${victim.id}`)).toHaveTextContent(
+      'Was alone in the room with the murderer.',
+    );
   });
 
   it('selects a person, places by click, then removes via own cell', async () => {

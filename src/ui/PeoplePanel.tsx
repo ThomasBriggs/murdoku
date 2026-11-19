@@ -340,7 +340,7 @@ export function PeoplePanel({
               onTick={(atom) => actions().toggleClueTick(person.id, atom)}
             />
           ) : person.isVictim ? (
-            'The victim. Only the murderer shared a room with them.'
+            'Was alone in the room with the murderer.'
           ) : null}
         </p>
         {(marks.length > 0 || pend) && (

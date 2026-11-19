@@ -164,6 +164,10 @@ describe('clue-allows dimming and print', () => {
     });
     expect(screen.getByTestId('print-sheet')).toHaveAttribute('data-marks', 'false');
     expect(document.querySelectorAll('.ps-mark')).toHaveLength(0);
+    const victim = store.getState().puzzle!.people.find((p) => p.isVictim)!;
+    expect(screen.getByTestId('print-sheet')).toHaveTextContent(
+      `${victim.name} (the victim) was alone in the room with the murderer.`,
+    );
     clickMore('print-button');
     fireEvent.click(screen.getByTestId('print-include-marks'));
     expect(screen.getByTestId('print-sheet')).toHaveAttribute('data-marks', 'true');

@@ -35,6 +35,21 @@ function freeCells(n: number): Cypress.Chainable<[number, number][]> {
 }
 
 describe('clues drawer', () => {
+  it('shows the victim with only the murder rule, not a clue of their own', () => {
+    load();
+    openClues();
+    cy.get(`${sel('clues-unplaced')} [data-testid^="person-card-"]`)
+      .first()
+      .then(($card) => {
+        const id = $card.attr('data-testid')!.replace('person-card-', '');
+        cy.get(sel(`person-clue-${id}`)).should(
+          'have.text',
+          'Was alone in the room with the murderer.',
+        );
+        cy.get(`[data-testid^="clue-tick-${id}-"]`).should('not.exist');
+      });
+  });
+
   it('is open beside the board at 1280px and toggles with the Clues button and the close button', () => {
     load();
     cy.get(sel('clues-drawer')).should('be.visible');
