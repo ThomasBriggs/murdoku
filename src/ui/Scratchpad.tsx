@@ -36,7 +36,14 @@ const reducedMotion = () =>
   typeof window.matchMedia === 'function' &&
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-const viewport = (): Viewport => ({ w: window.innerWidth, h: window.innerHeight });
+/** The visible area: shrinks with the on-screen keyboard where the browser reports it. */
+const viewport = (): Viewport => ({
+  w: window.innerWidth,
+  h: Math.round(Math.min(window.innerHeight, window.visualViewport?.height ?? Infinity)),
+});
+/** Top edge of the phone bottom bar (null when the desktop dock is showing). */
+const phoneDockTop = (): number | undefined =>
+  document.querySelector('[data-testid="mobile-dock"]')?.getBoundingClientRect().top;
 
 interface Gesture {
   kind: 'fab' | 'panel' | 'resize';
@@ -85,10 +92,19 @@ export function Scratchpad({ value, open, onToggle, onCommit }: ScratchpadProps)
 
   // ---- layout -----------------------------------------------------------
   const [vp, setVp] = useState<Viewport>(viewport);
+  const [dockTop, setDockTop] = useState<number | undefined>(undefined);
   useEffect(() => {
-    const onResize = () => setVp(viewport());
+    const onResize = () => {
+      setVp(viewport());
+      setDockTop(phoneDockTop());
+    };
+    onResize();
     window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    window.visualViewport?.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.visualViewport?.removeEventListener('resize', onResize);
+    };
   }, []);
   const [layout, setLayout] = useState<ScratchLayout>(() => loadLayout());
   const layoutRef = useRef(layout);
@@ -99,7 +115,7 @@ export function Scratchpad({ value, open, onToggle, onCommit }: ScratchpadProps)
   const [live, setLive] = useState<{ fab?: Pt; panel?: Rect } | null>(null);
   const gesture = useRef<Gesture | null>(null);
 
-  const fab = clampFab(live?.fab ?? layout.fab ?? defaultFab(vp), vp);
+  const fab = clampFab(live?.fab ?? layout.fab ?? defaultFab(vp, dockTop), vp);
   const size = layout.size ?? defaultSize(vp);
   const placed = placePanel(fab, size, vp);
   const dragged = layout.pos !== null;

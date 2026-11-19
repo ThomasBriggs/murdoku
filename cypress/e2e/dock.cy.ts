@@ -184,17 +184,30 @@ describe('furniture key', () => {
 });
 
 describe('phone bottom bar', () => {
-  it('has the primary tools, undo and ⋯; the More sheet holds the rest incl. Hint/Check/Accuse', () => {
+  it('has an always-visible Hint/Check/Accuse/Clues strip above the tools', () => {
     cy.viewport(375, 740);
     load();
     cy.get(sel('dock')).should('not.exist');
+    cy.get(sel('mobile-dock')).within(() => {
+      for (const id of ['hint-button', 'check-button', 'accuse-button', 'clues-toggle'])
+        cy.get(sel(id)).should('be.visible');
+    });
+    cy.get(sel('more-sheet')).should('not.exist');
+    cy.get(sel('hint-button')).click();
+    cy.get(sel('hint-panel')).should('be.visible');
+  });
+
+  it('has the primary tools, undo and ⋯; the More sheet holds the rest', () => {
+    cy.viewport(375, 740);
+    load();
     cy.get(sel('more-button')).should('have.attr', 'aria-expanded', 'false').click();
     cy.get(sel('more-sheet')).should('be.visible');
     cy.get(sel('more-button')).should('have.attr', 'aria-expanded', 'true');
+    cy.get(sel('more-sheet')).within(() => {
+      cy.get(sel('hint-button')).should('not.exist');
+      cy.get(sel('accuse-button')).should('not.exist');
+    });
     for (const id of [
-      'hint-button',
-      'check-button',
-      'accuse-button',
       'reset',
       'layers-button',
       'clear-button',
@@ -203,9 +216,8 @@ describe('phone bottom bar', () => {
       'print-button',
     ])
       cy.get(sel(id)).should('exist');
-    cy.get(sel('hint-button')).click();
+    cy.get(sel('logic-toggle')).click();
     cy.get(sel('more-sheet')).should('not.exist');
-    cy.get(sel('hint-panel')).should('be.visible');
   });
 
   it('the sheet closes with Escape and returns focus to the ⋯ button', () => {

@@ -93,10 +93,16 @@ export function clampRect(r: Rect, vp: Viewport): Rect {
   };
 }
 
-/** Default button spot: bottom-left, above the dock area (phones: above the bottom bar). */
-export function defaultFab(vp: Viewport): Pt {
+/**
+ * Default button spot: bottom-left, above the dock area. On phones it sits just above the
+ * bottom bar: `dockTop` is that bar's measured top edge (falls back to a fixed inset).
+ */
+export function defaultFab(vp: Viewport, dockTop?: number): Pt {
   const narrow = vp.w <= 600;
-  return clampFab({ x: narrow ? 10 : 16, y: vp.h - (narrow ? 92 : 104) - FAB_SIZE }, vp);
+  // Landscape phones: the dock runs down the left edge, so the button sits just right of it.
+  if (!narrow && vp.h <= 500) return clampFab({ x: 100, y: vp.h - FAB_SIZE - 8 }, vp);
+  const above = narrow ? (dockTop === undefined ? 92 : vp.h - dockTop + 10) : 104;
+  return clampFab({ x: narrow ? 10 : 16, y: vp.h - above - FAB_SIZE }, vp);
 }
 
 export function defaultSize(vp: Viewport): Size {
