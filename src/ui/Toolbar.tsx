@@ -131,6 +131,125 @@ export function OverflowMenu({ children, up }: { children: ReactNode; up?: boole
   );
 }
 
+/** The settings controls (helpers, quick bar, theme), shared by the header popover and the phone menu. */
+export function SettingsPanel({
+  settings,
+  onSettings,
+  inline,
+  className = '',
+  onEscape,
+}: {
+  settings: Settings;
+  onSettings(patch: Partial<Settings>): void;
+  /** Sits in the flow (inside the phone menu) instead of floating as a popover. */
+  inline?: boolean;
+  className?: string;
+  onEscape?(): void;
+}) {
+  const p = { settings, onSettings };
+  return (
+    <div
+      id="settings-popover"
+      className={`${styles.popover} ${inline ? styles.popoverInline : ''} ${className}`}
+      role="group"
+      aria-label="Settings"
+      data-testid="settings-popover"
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') onEscape?.();
+      }}
+    >
+      <label>
+        <input
+          type="checkbox"
+          data-testid="setting-autocross"
+          checked={p.settings.autoCross}
+          onChange={(e) => p.onSettings({ autoCross: e.target.checked })}
+        />
+        Auto-cross row and column
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          data-testid="setting-conflicts"
+          checked={p.settings.conflictHighlight}
+          onChange={(e) => p.onSettings({ conflictHighlight: e.target.checked })}
+        />
+        Highlight conflicts
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          data-testid="setting-autoclear"
+          checked={p.settings.autoClearCandidates}
+          onChange={(e) => p.onSettings({ autoClearCandidates: e.target.checked })}
+        />
+        Clear a person’s candidate initials once placed
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          data-testid="setting-linklogic"
+          checked={p.settings.linkLogicGrid}
+          onChange={(e) => p.onSettings({ linkLogicGrid: e.target.checked })}
+        />
+        Logic grid ticks shade the selected person’s cells
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          data-testid="setting-clueallows"
+          checked={p.settings.showClueAllows}
+          onChange={(e) => p.onSettings({ showClueAllows: e.target.checked })}
+        />
+        Show where the selected person’s clue allows (counts as an assist)
+      </label>
+      <fieldset className={styles.quick} data-testid="quickbar-settings">
+        <legend>Quick bar</legend>
+        <p className={styles.hint}>
+          Place is always there. A tool’s keyboard shortcut only works while it is on the bar; the
+          rest are in the tray.
+        </p>
+        {QUICK_ITEMS.map((q) => {
+          const { label, key } = quickItemInfo(q);
+          const on = p.settings.quickBar.includes(q);
+          return (
+            <label key={q}>
+              <input
+                type="checkbox"
+                data-testid={`quickbar-${q}`}
+                checked={on}
+                onChange={(e) =>
+                  p.onSettings({
+                    quickBar: QUICK_ITEMS.filter((x) =>
+                      x === q ? e.target.checked : p.settings.quickBar.includes(x),
+                    ),
+                  })
+                }
+              />
+              {label} <kbd>{key}</kbd>
+            </label>
+          );
+        })}
+      </fieldset>
+      <fieldset className={styles.theme}>
+        <legend>Theme</legend>
+        {THEMES.map((t) => (
+          <label key={t}>
+            <input
+              type="radio"
+              name="theme"
+              data-testid={`theme-${t}`}
+              checked={p.settings.theme === t}
+              onChange={() => p.onSettings({ theme: t })}
+            />
+            {t[0]!.toUpperCase() + t.slice(1)}
+          </label>
+        ))}
+      </fieldset>
+    </div>
+  );
+}
+
 /** Settings button with its popover (theme and helper toggles). */
 export function SettingsMenu({
   settings,
@@ -146,7 +265,6 @@ export function SettingsMenu({
   iconOnly?: boolean;
   className?: string;
 }) {
-  const p = { settings, onSettings, compact };
   const [open, setOpen] = useState(false);
   return (
     <div className={styles.settingsWrap}>
@@ -164,105 +282,12 @@ export function SettingsMenu({
         {!iconOnly && <span>Settings</span>}
       </button>
       {open && (
-        <div
-          id="settings-popover"
-          className={`${styles.popover} ${p.compact ? styles.popoverLeft : ''} ${iconOnly ? styles.popoverRight : ''}`}
-          role="group"
-          aria-label="Settings"
-          data-testid="settings-popover"
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') setOpen(false);
-          }}
-        >
-          <label>
-            <input
-              type="checkbox"
-              data-testid="setting-autocross"
-              checked={p.settings.autoCross}
-              onChange={(e) => p.onSettings({ autoCross: e.target.checked })}
-            />
-            Auto-cross row and column
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              data-testid="setting-conflicts"
-              checked={p.settings.conflictHighlight}
-              onChange={(e) => p.onSettings({ conflictHighlight: e.target.checked })}
-            />
-            Highlight conflicts
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              data-testid="setting-autoclear"
-              checked={p.settings.autoClearCandidates}
-              onChange={(e) => p.onSettings({ autoClearCandidates: e.target.checked })}
-            />
-            Clear a person’s candidate initials once placed
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              data-testid="setting-linklogic"
-              checked={p.settings.linkLogicGrid}
-              onChange={(e) => p.onSettings({ linkLogicGrid: e.target.checked })}
-            />
-            Logic grid ticks shade the selected person’s cells
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              data-testid="setting-clueallows"
-              checked={p.settings.showClueAllows}
-              onChange={(e) => p.onSettings({ showClueAllows: e.target.checked })}
-            />
-            Show where the selected person’s clue allows (counts as an assist)
-          </label>
-          <fieldset className={styles.quick} data-testid="quickbar-settings">
-            <legend>Quick bar</legend>
-            <p className={styles.hint}>
-              Place is always there. A tool’s keyboard shortcut only works while it is on the bar;
-              the rest are in the tray.
-            </p>
-            {QUICK_ITEMS.map((q) => {
-              const { label, key } = quickItemInfo(q);
-              const on = p.settings.quickBar.includes(q);
-              return (
-                <label key={q}>
-                  <input
-                    type="checkbox"
-                    data-testid={`quickbar-${q}`}
-                    checked={on}
-                    onChange={(e) =>
-                      p.onSettings({
-                        quickBar: QUICK_ITEMS.filter((x) =>
-                          x === q ? e.target.checked : p.settings.quickBar.includes(x),
-                        ),
-                      })
-                    }
-                  />
-                  {label} <kbd>{key}</kbd>
-                </label>
-              );
-            })}
-          </fieldset>
-          <fieldset className={styles.theme}>
-            <legend>Theme</legend>
-            {THEMES.map((t) => (
-              <label key={t}>
-                <input
-                  type="radio"
-                  name="theme"
-                  data-testid={`theme-${t}`}
-                  checked={p.settings.theme === t}
-                  onChange={() => p.onSettings({ theme: t })}
-                />
-                {t[0]!.toUpperCase() + t.slice(1)}
-              </label>
-            ))}
-          </fieldset>
-        </div>
+        <SettingsPanel
+          settings={settings}
+          onSettings={onSettings}
+          className={`${compact ? styles.popoverLeft : ''} ${iconOnly ? styles.popoverRight : ''}`}
+          onEscape={() => setOpen(false)}
+        />
       )}
     </div>
   );
