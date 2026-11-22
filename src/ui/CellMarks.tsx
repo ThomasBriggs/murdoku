@@ -23,13 +23,21 @@ export interface CellMarksProps {
   onRemove?(person: Person): void;
 }
 
-const MARK_LABEL: Record<MarkKind, string> = {
+export const MARK_LABEL: Record<MarkKind, string> = {
   cross: 'Nobody here',
   dot: 'Someone could be here',
   unsure: 'Unsure',
 };
 
-/** Visuals the annotation toolkit draws inside a board cell. */
+/**
+ * Visuals the annotation toolkit draws inside a board cell.
+ *
+ * Glyph text (initials, ?, check, cross) is drawn with CSS `content: attr(data-glyph)` rather than
+ * as DOM text. axe's `label-content-name-mismatch` concatenates every on-screen text node of a
+ * gridcell (it ignores aria-hidden) without separators ("kitchen" + "A" + "B" -> "kitchenab") and
+ * requires that string to be a run of whole words in the aria-label, which can never hold. The cell's
+ * aria-label (see `cellLabel`) carries the same information in words instead.
+ */
 export function CellMarks(p: CellMarksProps) {
   return (
     <>
@@ -67,10 +75,9 @@ export function CellMarks(p: CellMarksProps) {
           className={styles.unsure}
           role="img"
           aria-label={MARK_LABEL.unsure}
+          data-glyph="?"
           data-testid={`mark-${p.r}-${p.c}`}
-        >
-          ?
-        </span>
+        ></span>
       )}
       {p.candidates.length > 0 && (
         <span className={styles.cands} data-testid={`cands-${p.r}-${p.c}`}>
@@ -80,11 +87,10 @@ export function CellMarks(p: CellMarksProps) {
               className={styles.cand}
               style={{ gridRow: Math.floor(cd.slot / 3) + 1, gridColumn: (cd.slot % 3) + 1 }}
               data-state={cd.state}
+              data-glyph={cd.person.initial}
               data-testid={`cand-${p.r}-${p.c}-${cd.person.id}`}
               title={`${cd.person.name}${cd.state === 'no' ? ' is not here' : ' might be here'}`}
-            >
-              {cd.person.initial}
-            </span>
+            />
           ))}
         </span>
       )}
@@ -95,10 +101,11 @@ export function CellMarks(p: CellMarksProps) {
           style={{ '--tc': person.color } as CSSProperties}
           data-testid={`tentative-${person.id}`}
         >
-          <span className={styles.tentInitial}>{person.initial}</span>
+          <span className={styles.tentInitial} data-glyph={person.initial} />
           <button
             type="button"
             className={styles.promote}
+            data-glyph="✓"
             data-testid={`promote-${person.id}`}
             title={`Place ${person.name} here for real`}
             aria-label={`Place ${person.name} here for real`}
@@ -107,13 +114,12 @@ export function CellMarks(p: CellMarksProps) {
               p.onPromote(person);
             }}
             onPointerDown={(e) => e.stopPropagation()}
-          >
-            ✓
-          </button>
+          ></button>
           {p.onRemove && (
             <button
               type="button"
               className={`${styles.promote} ${styles.dropGuess}`}
+              data-glyph="✕"
               data-testid={`untentative-${person.id}`}
               title={`Remove the guess for ${person.name}`}
               aria-label={`Remove the guess for ${person.name}`}
@@ -122,9 +128,7 @@ export function CellMarks(p: CellMarksProps) {
                 p.onRemove?.(person);
               }}
               onPointerDown={(e) => e.stopPropagation()}
-            >
-              ✕
-            </button>
+            ></button>
           )}
         </span>
       ))}

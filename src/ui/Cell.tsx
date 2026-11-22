@@ -44,6 +44,8 @@ export interface CellProps {
   onRoomLabelDouble?(room: number): void;
   /** Toolkit state, exposed as data attributes for tests and styling. */
   ann?: CellAnn;
+  /** Spoken summary of the toolkit's notes on this cell (part of the aria-label). */
+  notes?: string;
   /** Visuals of the annotation toolkit (marks, candidates, highlight, tentative tokens). */
   annotations?: ReactNode;
 }
@@ -74,11 +76,16 @@ export function cellLabel(
   roomName: string,
   furniture: FurnitureType | null,
   person: Person | null,
+  notes = '',
 ): string {
   const f = furniture ? FURNITURE[furniture].label.toLowerCase() : 'no furniture';
   const blocked = furniture !== null && !isOccupiable(furniture);
   const state = person ? person.name : blocked ? 'blocked' : 'empty';
-  return `Row ${r + 1}, column ${COLUMN_LETTERS[c]}, ${roomName}, ${f}, ${state}`;
+  const base = `Row ${r + 1}, column ${COLUMN_LETTERS[c]}, ${roomName}, ${f}, ${state}`;
+  // Notes (mark, noted candidates, pencil guesses) are spoken after the state. The initials drawn
+  // on the cell are CSS-only (see CellMarks), so this is what a screen reader hears instead of
+  // a run of bare letters.
+  return notes ? `${base}, ${notes}` : base;
 }
 
 let renderProbe: ((r: number, c: number) => void) | null = null;
@@ -153,7 +160,7 @@ export const Cell = memo(function Cell(p: CellProps) {
       className={cls}
       style={{ '--room-l': p.color.light, '--room-d': p.color.dark } as CSSProperties}
       tabIndex={p.cursor ? 0 : -1}
-      aria-label={cellLabel(r, c, room.name, furniture, person)}
+      aria-label={cellLabel(r, c, room.name, furniture, person, p.notes)}
       aria-describedby={hasConflict ? descId : undefined}
       aria-selected={p.selected || undefined}
       title={title}
@@ -220,6 +227,7 @@ export const Cell = memo(function Cell(p: CellProps) {
             person={person}
             conflict={hasConflict}
             wrong={p.wrong}
+            cssInitial
             describedBy={hasConflict ? descId : undefined}
           />
           {p.removable && p.onRemove && (

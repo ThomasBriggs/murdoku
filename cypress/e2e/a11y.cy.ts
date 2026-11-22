@@ -132,15 +132,13 @@ describe('accessibility (axe)', () => {
     cy.viewport(1280, 900);
     load();
     cy.get('[data-testid="board-grid"] [data-blocked="false"]').then(($cells) => {
-      // a cell without a room label (axe: label-content-name-mismatch)
-      const el = $cells
-        .toArray()
-        .filter((x) => !x.querySelector('[data-testid^="room-label-"]'))[20]!;
+      // a cell that shows the room-name label, with three noted candidates
+      const el = $cells.toArray().find((x) => x.querySelector('[data-testid^="room-label-"]'))!;
       const [r, c] = [Number(el.dataset.r), Number(el.dataset.c)];
-      selectPerson(1);
-      cell(r, c).click();
-      selectPerson(2);
-      cell(r, c).click();
+      for (const id of [1, 2, 3]) {
+        selectPerson(id);
+        cell(r, c).click();
+      }
       cy.get('body').type('{esc}');
       cell(r, c).trigger('pointerdown', {
         button: 0,
@@ -149,10 +147,50 @@ describe('accessibility (axe)', () => {
         force: true,
       });
       cy.get(sel('radial-pick-1')).should('be.visible');
-      // the menu itself (the noted cell's multi-letter initials are a separate, existing matter)
-      checkA11y(sel('radial-pick'));
+      checkA11y();
     });
   });
+
+  for (const theme of ['light', 'dark'] as const) {
+    it(`cells with several noted candidates and a pencil guess, ${theme}`, () => {
+      cy.viewport(1280, 900);
+      load();
+      setTheme(theme);
+      cy.get('[data-testid="board-grid"] [data-blocked="false"]').then(($cells) => {
+        const free = $cells.toArray();
+        const labelled = free.filter((x) => x.querySelector('[data-testid^="room-label-"]'));
+        const plain = free.filter((x) => !x.querySelector('[data-testid^="room-label-"]'));
+        const pos = (el: HTMLElement) => [Number(el.dataset.r), Number(el.dataset.c)] as const;
+        const [lr, lc] = pos(labelled[0]!);
+        const [pr, pc] = pos(plain[10]!);
+        const [tr, tc] = pos(labelled[1]!);
+        // candidates: three on a room-label cell, two on a plain one
+        for (const id of [0, 1, 2]) {
+          selectPerson(id);
+          cell(lr, lc).click();
+        }
+        for (const id of [3, 4]) {
+          selectPerson(id);
+          cell(pr, pc).click();
+        }
+        // a pencil guess on another room-label cell, plus a candidate on the same cell
+        selectPerson(5);
+        cell(tr, tc).click();
+        pickTool('pencil');
+        selectPerson(6);
+        cell(tr, tc).click();
+        cy.get(sel('tentative-6')).should('exist');
+        cy.get(sel(`cands-${lr}-${lc}`)).should('exist');
+        cell(lr, lc)
+          .invoke('attr', 'aria-label')
+          .should('match', /might be .+ and .+ and .+/);
+        cell(tr, tc)
+          .invoke('attr', 'aria-label')
+          .should('match', /pencilled in/);
+        checkA11y();
+      });
+    });
+  }
 
   it('draw controls, what-if banner and check panel', () => {
     cy.viewport(1280, 900);

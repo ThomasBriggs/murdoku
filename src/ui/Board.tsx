@@ -16,7 +16,7 @@ import styles from './Board.module.css';
 import { holdCandidates } from './candidatePick';
 import { RadialPick } from './RadialPick';
 import { Cell, type ActivateMods, type CellAnn } from './Cell';
-import { CellMarks, type CandidateView } from './CellMarks';
+import { CellMarks, MARK_LABEL, type CandidateView } from './CellMarks';
 import { DrawingLayer, type DrawingProps } from './DrawingLayer';
 import type { RoomColor } from './roomColors';
 import { COLUMN_LETTERS, panelOrder, type Highlight, type PersonMark } from './types';
@@ -311,6 +311,19 @@ export function Board(p: BoardProps) {
     );
   };
 
+  /** Spoken form of a cell's marks, noted candidates and pencil guesses (see `cellLabel`). */
+  const notesFor = (key: number, ann: CellAnn): string => {
+    const names = (ids: readonly number[]) => ids.map((id) => people.get(id)!.name).join(' and ');
+    const parts: string[] = [];
+    if (ann.mark) parts.push(MARK_LABEL[ann.mark].toLowerCase());
+    if (!occupantAt.has(key)) {
+      if (ann.candidates.length) parts.push(`might be ${names(ann.candidates)}`);
+      if (ann.eliminated.length) parts.push(`not ${names(ann.eliminated)}`);
+    }
+    if (ann.tentative.length) parts.push(`pencilled in ${names(ann.tentative)}`);
+    return parts.join(', ');
+  };
+
   const { pick, onPickClose } = p;
   const closePick = useCallback(
     (refocus: boolean) => {
@@ -423,6 +436,7 @@ export function Board(p: BoardProps) {
                   removable={!p.solved}
                   onRemove={removePerson}
                   ann={ann}
+                  notes={notesFor(key, ann)}
                   annotations={
                     <CellMarks
                       r={r}

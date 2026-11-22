@@ -194,6 +194,38 @@ describe('cell tools by click', () => {
     expect(cell(r, c)).toHaveAttribute('data-occupant', '0');
   });
 
+  it('speaks a cell’s marks, candidates and guesses in its label; initials are CSS-only', async () => {
+    const store = await setup();
+    const people = store.getState().puzzle!.people;
+    const [r, c] = freeCell();
+    expect(cell(r, c).getAttribute('aria-label')).toMatch(/, empty$/);
+    for (const id of [0, 1]) {
+      fireEvent.click(card(id));
+      fireEvent.click(cell(r, c));
+    }
+    fireEvent.click(tool('eliminate'));
+    fireEvent.click(card(2));
+    fireEvent.click(cell(r, c));
+    fireEvent.click(tool('pencil'));
+    fireEvent.click(card(3));
+    fireEvent.click(cell(r, c));
+    fireEvent.click(tool('unsure'));
+    fireEvent.click(cell(r, c));
+    const name = (id: number) => people.find((x) => x.id === id)!.name;
+    const label = cell(r, c).getAttribute('aria-label')!;
+    expect(label).toContain(', empty, unsure, ');
+    expect(label).toContain(`might be ${name(0)} and ${name(1)}`);
+    expect(label).toContain(`not ${name(2)}`);
+    expect(label).toContain(`pencilled in ${name(3)}`);
+    // the letters are drawn by CSS (data-glyph), so no bare text nodes sit in the cell
+    expect(screen.getByTestId(`cand-${r}-${c}-0`)).toHaveAttribute(
+      'data-glyph',
+      people.find((x) => x.id === 0)!.initial,
+    );
+    expect(screen.getByTestId(`cands-${r}-${c}`)).toHaveTextContent('');
+    expect(screen.getByTestId(`tentative-3`)).toHaveTextContent('');
+  });
+
   it('erase tool wipes a cell; tentative and placed tokens have a ✕ to remove them', async () => {
     const store = await setup();
     const free = [...document.querySelectorAll<HTMLElement>('[data-blocked="false"]')];

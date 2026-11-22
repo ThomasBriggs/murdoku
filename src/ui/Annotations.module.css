@@ -176,3 +176,12 @@
     inset: -45%;
   }
 }
+
+/* Glyph text lives in CSS, not the DOM (see CellMarks): axe's label-content-name-mismatch
+   would otherwise glue the letters together and flag the cell's aria-label. */
+.unsure::before,
+.cand::before,
+.tentInitial::before,
+.promote::before {
+  content: attr(data-glyph);
+}

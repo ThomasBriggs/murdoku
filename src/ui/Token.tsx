@@ -9,6 +9,7 @@ export function Token({
   wrong = false,
   describedBy,
   scope = '',
+  cssInitial = false,
 }: {
   person: Person;
   conflict?: boolean;
@@ -17,6 +18,8 @@ export function Token({
   describedBy?: string;
   /** Prefix for test ids so the board and the panel can both show a token. */
   scope?: string;
+  /** Draw the initial with CSS content (cells: keeps it out of the text axe compares to the label). */
+  cssInitial?: boolean;
 }) {
   return (
     <span
@@ -28,8 +31,12 @@ export function Token({
       data-wrong={wrong ? 'true' : undefined}
       aria-describedby={describedBy}
     >
-      <span className={styles.initial} aria-hidden="true">
-        {person.initial}
+      <span
+        className={`${styles.initial} ${cssInitial ? styles.cssInitial : ''}`}
+        aria-hidden="true"
+        data-initial={cssInitial ? person.initial : undefined}
+      >
+        {cssInitial ? null : person.initial}
       </span>
       {person.isVictim && (
         <span

@@ -50,3 +50,7 @@
     0 0 0 2px var(--danger),
     0 0 0 4px var(--surface);
 }
+
+.cssInitial::before {
+  content: attr(data-initial);
+}
