@@ -215,6 +215,17 @@ suite('mobile layout screenshots', () => {
       cy.screenshot(`mobile-header-menu-settings-${theme}`, { capture: 'viewport' });
     });
 
+  it('update banner on a phone', () => {
+    cy.viewport(375, 740);
+    cy.visit(URL);
+    cy.get(t('board')).should('be.visible');
+    cy.window().then((win) =>
+      (win as unknown as { __murdokuShowUpdate(): void }).__murdokuShowUpdate(),
+    );
+    cy.get(t('update-banner')).should('be.visible');
+    cy.screenshot('mobile-update-banner', { capture: 'viewport' });
+  });
+
   it('header menu open (collapsed settings)', () => {
     cy.viewport(375, 740);
     cy.visit(URL);

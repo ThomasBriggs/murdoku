@@ -19,6 +19,8 @@ import { NewGameDialog } from './ui/dialogs/NewGameDialog';
 import { RulesDialog } from './ui/dialogs/RulesDialog';
 import { StatsDialog } from './ui/dialogs/StatsDialog';
 import { ChooseGameDialog, OutdatedSaveDialog } from './ui/dialogs/StartupDialogs';
+import { UpdateBanner } from './ui/UpdateBanner';
+import { onBeforeUpdate } from './pwa/register';
 import { puzzleSearch } from './ui/url';
 import { useGameTimer } from './ui/useGameTimer';
 import styles from './App.module.css';
@@ -105,7 +107,12 @@ export default function App({ store, showRulesOnLoad = false, storage }: AppProp
   useEffect(() => {
     if (storage === undefined) return;
     const p = connectPersistence(s, { storage });
-    return () => p.dispose();
+    // Save the game right before an update reloads the page.
+    const off = onBeforeUpdate(p.flush);
+    return () => {
+      off();
+      p.dispose();
+    };
   }, [s, storage]);
 
   const startUrlPuzzle = (save: SavedGame | null, url: UrlPuzzle | null, abandon: boolean) => {
@@ -127,6 +134,7 @@ export default function App({ store, showRulesOnLoad = false, storage }: AppProp
         onRules={() => setDialog('rules')}
         onStats={() => setDialog('stats')}
       />
+      <UpdateBanner />
       <main data-testid="app-main">
         <p className="sr-only" role="status" data-testid="puzzle-status">
           {status}

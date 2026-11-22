@@ -1,4 +1,4 @@
-import { sel } from '../support/helpers';
+import { checkA11y, sel, setTheme } from '../support/helpers';
 
 interface Icon {
   src: string;
@@ -43,9 +43,52 @@ describe('PWA: manifest and service worker', () => {
 
   it('links the manifest and the apple touch icon from the page', () => {
     cy.visit('/?seed=cy-pwa&d=easy');
-    cy.get('link[rel="manifest"]').should('have.attr', 'href').and('match', /manifest\.webmanifest/);
+    cy.get('link[rel="manifest"]')
+      .should('have.attr', 'href')
+      .and('match', /manifest\.webmanifest/);
     cy.get('link[rel="apple-touch-icon"]').should('have.attr', 'href');
     cy.get('meta[name="apple-mobile-web-app-title"]').should('have.attr', 'content', 'Murdoku');
     cy.get(sel('board')).should('be.visible');
   });
+});
+
+interface PwaWindow extends Window {
+  __murdokuShowUpdate?: () => void;
+}
+
+describe('PWA: update banner', () => {
+  const show = () => cy.window().then((win) => (win as PwaWindow).__murdokuShowUpdate?.());
+
+  const load = () => {
+    cy.visit('/?seed=cy-pwa&d=easy');
+    cy.get(sel('board')).should('be.visible');
+  };
+
+  it('is hidden by default, appears non-modally, and Later hides it', () => {
+    load();
+    cy.get(sel('update-banner')).should('not.exist');
+    show();
+    cy.get(sel('update-banner'))
+      .should('be.visible')
+      .and('have.attr', 'role', 'status')
+      .and('contain.text', 'A new version of Murdoku is available.');
+    // Still playable underneath.
+    cy.get(sel('cell-0-0')).should('be.visible');
+    cy.get(sel('update-dismiss')).click();
+    cy.get(sel('update-banner')).should('not.exist');
+  });
+
+  for (const theme of ['light', 'dark'] as const)
+    for (const [w, h] of [
+      [1280, 900],
+      [375, 740],
+    ] as const)
+      it(`has no accessibility violations (${theme}, ${w}x${h})`, () => {
+        cy.viewport(w, h);
+        load();
+        setTheme(theme);
+        show();
+        cy.get(sel('update-banner')).should('be.visible');
+        checkA11y();
+      });
 });

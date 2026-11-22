@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import { browserStorage, hasSeenRules, hydrateStore, markRulesSeen } from './state/persistence';
 import { getGameStore } from './state/store';
+import { initPwa } from './pwa/register';
 import './ui/theme.css';
 
 const root = document.getElementById('root');
@@ -22,3 +23,5 @@ createRoot(root).render(
     <App store={store} storage={storage} showRulesOnLoad={firstVisit} />
   </StrictMode>,
 );
+
+initPwa();
