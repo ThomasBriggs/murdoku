@@ -13,6 +13,10 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.browser, ...globals.node } },
   },
   {
+    files: ['scripts/**/*.mjs'],
+    languageOptions: { globals: { ...globals.node } },
+  },
+  {
     // SPEC §7 / CLAUDE.md: the solution must never reach the main thread. UI and
     // state code may only use pure, solution-free engine modules (types, clue
     // checking/rendering, furniture/room catalogues, hashPlacement) and must talk
