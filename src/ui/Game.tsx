@@ -509,38 +509,47 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
       </button>
     </>
   );
+  const checkDisabled = status !== 'playing' || !anyPlaced;
+  const checkTitle = 'Check: how many placements are right or wrong';
+  const onCheck = () => {
+    void runCheck();
+    closeMore();
+  };
+  const checkButton = (
+    <button
+      type="button"
+      data-testid="check-button"
+      disabled={checkDisabled}
+      title={checkTitle}
+      onClick={onCheck}
+    >
+      <CheckIcon className={palette.menuIcon} />
+      <span>Check</span>
+    </button>
+  );
+  const accuseButton = (
+    <button
+      type="button"
+      data-testid="accuse-button"
+      disabled={status !== 'playing' || !complete}
+      title={
+        complete
+          ? 'Accuse a suspect of the murder'
+          : 'Place all 9 people on the board before you can accuse'
+      }
+      onClick={() => {
+        setAccuseOpen(true);
+        closeMore();
+      }}
+    >
+      <FlagIcon className={palette.menuIcon} />
+      <span>Accuse</span>
+    </button>
+  );
   const investigate = (
     <>
-      <button
-        type="button"
-        data-testid="check-button"
-        disabled={status !== 'playing' || !anyPlaced}
-        title="Check: how many placements are right or wrong"
-        onClick={() => {
-          void runCheck();
-          closeMore();
-        }}
-      >
-        <CheckIcon className={palette.menuIcon} />
-        <span>Check</span>
-      </button>
-      <button
-        type="button"
-        data-testid="accuse-button"
-        disabled={status !== 'playing' || !complete}
-        title={
-          complete
-            ? 'Accuse a suspect of the murder'
-            : 'Place all 9 people on the board before you can accuse'
-        }
-        onClick={() => {
-          setAccuseOpen(true);
-          closeMore();
-        }}
-      >
-        <FlagIcon className={palette.menuIcon} />
-        <span>Accuse</span>
-      </button>
+      {checkButton}
+      {accuseButton}
     </>
   );
   const toolbar = (compact: boolean) => (
@@ -742,9 +751,11 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
                 )}
               </div>
             )}
-            <div className={styles.mobileStrip} role="group" aria-label="Investigate">
-              {investigate}
-            </div>
+            {complete && (
+              <div className={styles.mobileStrip} role="group" aria-label="Investigate">
+                {accuseButton}
+              </div>
+            )}
             <div className={palette.bar}>
               <ToolPalette
                 only={barTools}
@@ -755,6 +766,18 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
                 onColor={onColor}
               />
               {quickActions(palette.barBtn)}
+              <span className={palette.barSep} aria-hidden="true" />
+              <button
+                type="button"
+                className={palette.barBtn}
+                data-testid="check-button"
+                disabled={checkDisabled}
+                title={checkTitle}
+                aria-label="Check"
+                onClick={onCheck}
+              >
+                <CheckIcon style={{ width: '1.2rem', height: '1.2rem' }} />
+              </button>
               <span className={palette.barSep} aria-hidden="true" />
               <button
                 type="button"

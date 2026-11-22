@@ -1,4 +1,11 @@
-import { closeSettings, openKey, openSettings, pickTool, sel } from '../support/helpers';
+import {
+  closeSettings,
+  openKey,
+  openSettings,
+  pickTool,
+  sel,
+  solveFromSeed,
+} from '../support/helpers';
 
 const URL = '/?seed=cy-dock&d=easy';
 const cell = (r: number, c: number) => cy.get(sel(`cell-${r}-${c}`));
@@ -233,13 +240,37 @@ describe('furniture key', () => {
 });
 
 describe('phone bottom bar', () => {
-  it('has an always-visible Check/Accuse strip above the tools', () => {
-    cy.viewport(375, 740);
+  it('has Check on the quick bar, between the quick actions and undo; Accuse is hidden until everyone is placed', () => {
+    cy.viewport(390, 844);
     load();
     cy.get(sel('dock')).should('not.exist');
     cy.get(sel('mobile-dock')).within(() => {
-      for (const id of ['check-button', 'accuse-button']) cy.get(sel(id)).should('be.visible');
+      cy.get(sel('check-button')).should('be.visible');
+      cy.get(sel('accuse-button')).should('not.exist');
     });
+    cy.get(sel('check-button')).then(($c) => {
+      cy.get(sel('undo')).then(($u) => {
+        const c = $c[0]!.getBoundingClientRect();
+        const u = $u[0]!.getBoundingClientRect();
+        expect(c.right, 'Check is left of undo').to.be.at.most(u.left);
+        expect(Math.abs(c.top - u.top), 'same row').to.be.lessThan(4);
+      });
+    });
+    cy.get(sel('board')).then(($b) => {
+      const before = $b[0]!.getBoundingClientRect();
+      solveFromSeed();
+      cy.get(sel('accuse-button')).should('be.visible').and('be.enabled');
+      cy.get(sel('board')).then(($a) => {
+        const after = $a[0]!.getBoundingClientRect();
+        expect(Math.round(after.width), 'board size unchanged').to.eq(Math.round(before.width));
+        cy.get(sel('accuse-button')).then(($x) => {
+          expect($x[0]!.getBoundingClientRect().top, 'strip clear of the board').to.be.at.least(
+            after.bottom,
+          );
+        });
+      });
+    });
+    cy.get(sel('mobile-dock')).within(() => cy.get(sel('check-button')).should('be.visible'));
     cy.get(sel('more-sheet')).should('not.exist');
     cy.get(sel('hint-button')).should('not.exist');
   });

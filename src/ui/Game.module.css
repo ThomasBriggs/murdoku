@@ -288,7 +288,7 @@
   .mobileDockOpen {
     z-index: 65;
   }
-  /* Check and Accuse: always one tap away. */
+  /* Accuse strip: only rendered once everyone is placed (Check lives on the bar). */
   .mobileStrip {
     display: flex;
     gap: 0.3rem;

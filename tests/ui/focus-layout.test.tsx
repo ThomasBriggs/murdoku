@@ -264,6 +264,30 @@ describe('dock and overflow menu', () => {
     expect(screen.queryByTestId('hint-button')).toBeNull();
   });
 
+  it('on a phone Check sits on the quick bar between the quick actions and undo; Accuse waits for everyone', async () => {
+    stubWidth(375);
+    const store = await setup();
+    const checks = screen.getAllByTestId('check-button');
+    expect(checks).toHaveLength(1);
+    const check = checks[0]!;
+    const undo = screen.getByTestId('undo');
+    expect(check.parentElement).toBe(undo.parentElement);
+    expect(check.compareDocumentPosition(undo) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // a divider on each side of Check
+    expect(check.previousElementSibling).toHaveAttribute('aria-hidden', 'true');
+    expect(check.nextElementSibling).toHaveAttribute('aria-hidden', 'true');
+    expect(check.previousElementSibling?.previousElementSibling).not.toBeNull();
+    expect(check).toHaveAccessibleName('Check');
+    expect(screen.queryByTestId('accuse-button')).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Investigate' })).toBeNull();
+    place(store, ids().slice(0, -1));
+    expect(screen.queryByTestId('accuse-button')).toBeNull();
+    place(store, ids().slice(-1));
+    const group = within(screen.getByRole('group', { name: 'Investigate' }));
+    expect(group.getByTestId('accuse-button')).toBeEnabled();
+    expect(group.queryByTestId('check-button')).toBeNull();
+  });
+
   it('the furniture key is a collapsible section at the foot of the clue drawer', async () => {
     await setup();
     const section = screen.getByTestId('furniture-key');
