@@ -81,7 +81,7 @@ murdoku/
       names.ts              # suspect name pool (distinct initials)
       secure.ts             # solution hashing / encoding (§7)
     worker/
-      engine.worker.ts      # owns the solution; answers generate/check/hint messages
+      engine.worker.ts      # owns the solution; answers generate/check/accuse messages
       client.ts             # typed promise wrapper around postMessage
     state/
       store.ts              # Zustand store: puzzle view, player marks, history, settings
@@ -89,7 +89,7 @@ murdoku/
     ui/
       Board/Board.tsx, Cell.tsx, RoomWalls.tsx, FurnitureIcon.tsx
       People/PeoplePanel.tsx, PersonCard.tsx
-      Toolbar/Toolbar.tsx   # mode, undo/redo, hint, check, reset
+      Toolbar/Toolbar.tsx   # mode, undo/redo, check, reset
       Tools/ToolPalette.tsx, LayersMenu.tsx, WhatIfBar.tsx
       Notes/RoomLegend.tsx, Scratchpad.tsx, LogicGrid.tsx
       Draw/PenLayer.tsx     # pointer-event canvas/SVG overlay
@@ -204,7 +204,7 @@ A **clue** is a conjunction of 1–3 atoms per person, rendered as one sentence:
   - **Easy**: techniques 1–3.
   - **Medium**: up to technique 4.
   - **Hard**: up to technique 5–6.
-- The logical solver also powers **hints** (§6.4).
+- The logical solver also has `nextDeduction` for **hints**, which are currently removed from the game (§6.4).
 
 ---
 
@@ -214,8 +214,8 @@ A **clue** is a conjunction of 1–3 atoms per person, rendered as one sentence:
 
 The "Focus" layout keeps the board as the centre of attention and tucks everything else away; the page itself never scrolls.
 
-- **Desktop**: a slim header, the board, and a floating **dock** below it (tools, undo/redo, a Clues button and a "⋯" overflow menu holding Reset, Layers, Clear, What-if, Logic grid and Print). Hint, Check and Accuse float beside the board. The **clue drawer** opens on the right: docked beside the board at 1200 px and wider (open by default), an overlay below that (closed by default).
-- **Mobile (600 px and narrower)**: the board with a bottom bar (primary tools, undo, "⋯"). The "⋯" opens a **More** sheet with the remaining tools, Hint/Check/Accuse and the menu items above. Clues open as a bottom sheet from a Clues button. The layout works down to 360 px wide.
+- **Desktop**: a slim header, the board, and a floating **dock** below it (tools, undo/redo, a Clues button and a "⋯" overflow menu holding Reset, Layers, Clear, What-if, Logic grid and Print). Check and Accuse float beside the board. The **clue drawer** opens on the right: docked beside the board at 1200 px and wider (open by default), an overlay below that (closed by default).
+- **Mobile (600 px and narrower)**: the board with a bottom bar (primary tools, undo, "⋯"). The "⋯" opens a **More** sheet with the remaining tools, Check/Accuse and the menu items above. Clues open as a bottom sheet from a Clues button. The layout works down to 360 px wide.
 - The header shows the title, difficulty, timer and seed, with icon buttons for New game, Share, Statistics, Rules (?) and Settings.
 - The room legend sits above the board; the furniture legend is behind a **Key** toggle.
 
@@ -244,10 +244,10 @@ The "Focus" layout keeps the board as the centre of attention and tucks everythi
 | **Auto-cross** (setting, on by default) | After placing someone, faintly cross out the rest of their row and column. These automatic crosses look different from crosses the player draws, and they disappear if the person is removed. |
 | **Conflict highlight** (setting) | Shows rule breaks in red: two people in one row/column, or a placement contradicting that person's clue. Rule checks only, so it never reveals the solution. |
 | **Undo / Redo** | Covers every board change (Ctrl+Z / Ctrl+Shift+Z). |
-| **Hint** | The worker's logical solver finds the next deduction from the player's *current correct* state and explains it, e.g. *"Only the Study has a chair beside a bookshelf, so Charles must be in the Study."* It highlights the cells involved. If any placement is wrong, the hint says *"Something on the board is wrong"* and offers to highlight one wrong placement. Hints used are counted. |
+| **Hint** | *Removed for now.* Hint explanations were misleading, so the Hint button, the `H` key and the worker's `hint` message are gone until the hint text is reworked. The logical solver (§5.5) still grades puzzles, and `nextDeduction` stays in the engine for that rework. |
 | **Check** | Reports how many placements are correct or wrong, optionally highlighting wrong ones. Counted. |
 | **Reset** | Clears the board after a confirmation prompt. |
-| **Accuse** | Becomes available when all 9 are placed. Pick a suspect. The worker checks the placement and the murderer. A correct accusation opens the Win dialog (time, hints, checks, a share link to the seed). A wrong one says what is wrong (placement vs. accusation) without giving away the answer. |
+| **Accuse** | Becomes available when all 9 are placed. Pick a suspect. The worker checks the placement and the murderer. A correct accusation opens the Win dialog (time, checks, a share link to the seed). A wrong one says what is wrong (placement vs. accusation) without giving away the answer. |
 | **New game** | Dialog with difficulty (Easy/Medium/Hard) and an optional seed field. Shows "Generating…" while the worker runs. |
 
 ### 6.5 Solving aids: the "paper" toolkit
@@ -330,7 +330,7 @@ All are in Settings and all are **off by default**, except where marked. They ac
 ### 6.6 Keyboard and accessibility
 
 - Arrow keys move a cell cursor. `1`–`9` select a person. `Enter`/`Space` places.
-- Marks: `X` (cross), `.` (possible), `?` (unsure), `N` (notes mode), `P` (pencil/tentative placement), `D` (draw tool), `C` (cycle highlight colour), `W` (start/end what-if), `G` (logic grid), `H` (hint).
+- Marks: `X` (cross), `.` (possible), `?` (unsure), `N` (notes mode), `P` (pencil/tentative placement), `D` (draw tool), `C` (cycle highlight colour), `W` (start/end what-if), `G` (logic grid).
 - Every tool has a palette button with a tooltip showing its shortcut.
 - Every cell has an `aria-label`, e.g. "Row 3, column D, Kitchen, chair, empty".
 - Colour is never the only signal: tokens show initials and conflicts also use an icon.
@@ -347,7 +347,7 @@ Light and dark themes via CSS variables, following the system setting by default
 The goal is to make casual cheating impractical, not impossible.
 
 1. **The solution lives only inside the Web Worker.** The worker generates the puzzle and posts back a `PuzzleView`: grid, rooms, furniture, people, clues, seed, difficulty. That object has **no solution field**. React state and DevTools component inspectors never see the solution.
-2. **Checks and hints are worker messages.** `check(placement)`, `hint(boardState)` and `accuse(placement, suspectId)` all run in the worker. The replies only report correct/incorrect or the next deduction.
+2. **Checks are worker messages.** `check(placement)` and `accuse(placement, suspectId)` run in the worker. The replies only report correct/incorrect. Any other message type gets a `bad-request` error.
 3. **Nothing is persisted in plaintext.** localStorage holds only the seed, generator version and player progress. On reload the worker regenerates the puzzle from the seed, so no solution is ever written to storage.
 4. **Win verification without the worker** (fallback / sanity check): the `PuzzleView` carries `solutionHash = SHA-256(seed + canonical placement)` (Web Crypto). The UI can confirm a win by hashing the player's board, without knowing the answer.
 5. A determined person can still solve it by running the generator with the seed, reading worker memory, or simply using the solver. That is acceptable, as agreed.
@@ -356,7 +356,7 @@ The goal is to make casual cheating impractical, not impossible.
 
 ## 8. Persistence
 
-- `localStorage["murdoku:v1:current"]` → `{ generatorVersion, seed, difficulty, placements, tentativePlacements, annotations, whatIfStack, history (capped at 500 steps), elapsedMs, hintsUsed, checksUsed, assistsUsed, startedAt }`, where `annotations` is:
+- `localStorage["murdoku:v1:current"]` → `{ generatorVersion, seed, difficulty, placements, tentativePlacements, annotations, whatIfStack, history (capped at 500 steps), elapsedMs, checksUsed, assistsUsed, startedAt }`, where `annotations` is:
   ```ts
   interface Annotations {
     cellMarks: Record<CellKey, 'cross' | 'dot' | 'unsure'>;
@@ -417,10 +417,10 @@ Future attributes (jobs, motives, weapons, times) become extra `Person` fields a
 1. **Scaffold**: Vite React-TS template, ESLint/Prettier, Vitest, Zustand, folder layout.
 2. **Engine core**: rng, types, floor plan, placement, furniture, plus unit tests.
 3. **Clues and solvers**: facts, evaluation, rendering, brute-force and logical solvers, generator loop, difficulty grading, plus tests.
-4. **Worker**: generate/check/hint/accuse protocol and client wrapper.
+4. **Worker**: generate/check/accuse protocol and client wrapper.
 5. **UI**: board, people panel, place, undo/redo, conflicts, auto-cross.
 5b. **Solving toolkit** (§6.5): cell marks, candidates, tentative placements, highlights and multi-select, room notes, clue annotations, logic grid, pen layer, scratchpad, what-if branches, layers, print view.
-6. **Game flow**: new game dialog, timer, hint, check, accuse, win, rules dialog.
+6. **Game flow**: new game dialog, timer, check, accuse, win, rules dialog.
 7. **Persistence and sharing**: localStorage, seed URLs, stats.
 8. **Polish**: themes, responsive layout, keyboard and accessibility, furniture SVG art, animations.
 
