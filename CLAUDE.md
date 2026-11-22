@@ -5,9 +5,23 @@
   `export PATH=$HOME/.nvm/versions/node/v26.13.1/bin:$PATH`
 - Display: no Xvfb is installed, but `DISPLAY=:0` (XWayland) is available, so `cypress run` works headless using it.
 - Package manager: npm.
-- Scripts: `npm run dev`, `npm run build`, `npm test` (Vitest, run once), `npm run lint`, `npm run typecheck`, `npm run typecheck:e2e` (type-checks the Cypress specs), `npm run e2e` (build, Vite preview server, Cypress headless in **Firefox**), `npm run e2e:electron` (same in Electron), `npm run e2e:open`.
+- Scripts: `npm run dev`, `npm run build`, `npm test` (Vitest, run once), `npm run lint`, `npm run typecheck`, `npm run typecheck:e2e` (type-checks the Cypress specs), `npm run e2e` (build, one Vite preview server, Cypress headless in **Firefox** split into 4 parallel shards; ~80 s vs ~210 s serial), `npm run e2e:run` (same without the build; `-- --shards N` or `E2E_SHARDS=N` to change the split), `npm run e2e:serial` (old one-process run), `npm run e2e:electron` (parallel in Electron), `npm run e2e:open`.
+- Sharding is balanced by a spec timing table in `scripts/e2e-shards.mjs`; refresh it when specs are added or change a lot. CI (`.github/workflows/ci.yml`) uses the same script with 3 shards.
 - Use `timeout` on long commands (e.g. `timeout 900 npm run e2e`) and leave no background processes running.
 - Screenshots for visual review (run last, after a build): `npx start-server-and-test preview http://localhost:4173 'cypress run --browser firefox --expose SCREENSHOTS=1 --spec cypress/e2e/screenshots.cy.ts'`; images land in `cypress/screenshots/` (git-ignored).
+
+## Model delegation workflow (mandatory)
+
+This standing instruction from the user explicitly authorises spawning subagents via the Agent tool for every task in this repo. The main session (Opus) orchestrates; it does not write code or run test suites itself.
+
+1. **Plan: Opus (main session).** Read the code and `SPEC.md`, work out the approach, and write a concrete plan: files to touch, behaviour, tests to add, commit boundaries.
+2. **Code: Sonnet.** Hand the plan to a subagent with `model: "sonnet"` (e.g. `subagent_type: "general-purpose"`). Sonnet does all code edits (source, tests, Cypress specs) and commits per the rules below. Give it the full plan and the relevant rules from this file; it starts with no context.
+3. **Review: Opus.** When Sonnet finishes, Opus reviews the diff (`git diff` / `git show`) against the plan, `SPEC.md` and the quality bar. Send fixes back to Sonnet (prefer `SendMessage` to the same agent so it keeps its context) rather than editing directly.
+4. **Test: Haiku.** Run checks (typecheck, lint, Vitest, build, Cypress, screenshot spec) through a subagent with `model: "haiku"`. It runs the commands (with `timeout`), waits for them to finish, cleans up background processes, and reports back: pass/fail per command, failing test names, and the exact error output. It must not edit code or attempt fixes.
+5. **Feedback loop: Opus.** Haiku's results come back to Opus, which diagnoses the failures and sends a fix plan to Sonnet (step 2), then review (3) and re-test (4) until green.
+6. **UI review: Opus.** For user-facing/visual changes, have Haiku run the screenshot spec (command above) and report the image paths in `cypress/screenshots/`; Opus then opens the PNGs with the Read tool and reviews them visually (plus any Cypress failure screenshots). Visual issues go back to Sonnet as a fix plan.
+
+Small exceptions: Opus may make trivial non-code edits (e.g. docs/notes like this file) directly.
 
 ## E2E browser choice
 
