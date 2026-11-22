@@ -151,6 +151,11 @@ export const ShareIcon = (p: P) => (
     <path d="M12 15V3M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" />
   </svg>
 );
+export const InstallIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M12 3v12M7 10l5 5 5-5M5 19h14" />
+  </svg>
+);
 export const StatsIcon = (p: P) => (
   <svg {...base} {...p}>
     <path d="M5 20V11M12 20V4M19 20v-6" />

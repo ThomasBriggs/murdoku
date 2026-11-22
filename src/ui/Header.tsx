@@ -5,7 +5,16 @@ import styles from '../App.module.css';
 import { formatTime } from './time';
 import { SettingsMenu, SettingsPanel } from './Toolbar';
 import { useMediaQuery } from './useMediaQuery';
-import { CheckIcon, GearIcon, MenuIcon, PlusIcon, ShareIcon, StatsIcon } from './icons/glyphs';
+import { promptInstall, useCanInstall } from '../pwa/install';
+import {
+  CheckIcon,
+  GearIcon,
+  InstallIcon,
+  MenuIcon,
+  PlusIcon,
+  ShareIcon,
+  StatsIcon,
+} from './icons/glyphs';
 
 /** Slim one-line header: title, difficulty + timer, and icon buttons for the app-level actions. */
 export function Header({
@@ -33,6 +42,7 @@ export function Header({
     if (!puzzle) return;
     setShared((await copyText(shareUrl(puzzle.seed, puzzle.difficulty))) ? 'ok' : 'fail');
   };
+  const canInstall = useCanInstall();
   const mobile = useMediaQuery('(max-width: 600px)');
   const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -141,6 +151,18 @@ export function Header({
             >
               {shared === 'ok' ? <CheckIcon /> : <ShareIcon />}
             </button>
+            {canInstall && (
+              <button
+                type="button"
+                className={styles.hBtn}
+                data-testid="install-button"
+                aria-label="Install app"
+                title="Install app"
+                onClick={() => void promptInstall()}
+              >
+                <InstallIcon />
+              </button>
+            )}
             <button
               type="button"
               className={styles.hBtn}
@@ -199,6 +221,17 @@ export function Header({
               {shared === 'ok' ? 'Link copied' : shared === 'fail' ? 'Copy failed' : 'Share link'}
             </span>
           </button>
+          {canInstall && (
+            <button
+              type="button"
+              className={styles.menuItem}
+              data-testid="install-button"
+              onClick={act(() => void promptInstall())}
+            >
+              <InstallIcon />
+              <span>Install app</span>
+            </button>
+          )}
           <button
             type="button"
             className={styles.menuItem}

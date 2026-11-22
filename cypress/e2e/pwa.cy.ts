@@ -1,4 +1,4 @@
-import { checkA11y, sel, setTheme } from '../support/helpers';
+import { checkA11y, openHeaderMenu, sel, setTheme } from '../support/helpers';
 
 interface Icon {
   src: string;
@@ -91,4 +91,29 @@ describe('PWA: update banner', () => {
         cy.get(sel('update-banner')).should('be.visible');
         checkA11y();
       });
+});
+
+describe('PWA: install item', () => {
+  for (const [name, w, h] of [
+    ['desktop', 1280, 900],
+    ['phone', 375, 740],
+  ] as const)
+    it(`appears only after beforeinstallprompt and calls prompt (${name})`, () => {
+      cy.viewport(w, h);
+      cy.visit('/?seed=cy-pwa&d=easy');
+      cy.get(sel('board')).should('be.visible');
+      openHeaderMenu();
+      cy.get(sel('install-button')).should('not.exist');
+      cy.window().then((win) => {
+        const prompt = cy.stub().resolves();
+        cy.wrap(prompt).as('prompt');
+        const e = new win.Event('beforeinstallprompt', { cancelable: true });
+        Object.assign(e, { prompt, userChoice: Promise.resolve({ outcome: 'accepted' }) });
+        win.dispatchEvent(e);
+        expect(e.defaultPrevented).to.eq(true);
+      });
+      cy.get(sel('install-button')).should('be.visible').click();
+      cy.get('@prompt').should('have.been.calledOnce');
+      cy.get(sel('install-button')).should('not.exist');
+    });
 });

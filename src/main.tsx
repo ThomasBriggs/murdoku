@@ -3,8 +3,12 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import { browserStorage, hasSeenRules, hydrateStore, markRulesSeen } from './state/persistence';
 import { getGameStore } from './state/store';
+import { initInstall } from './pwa/install';
 import { initPwa } from './pwa/register';
 import './ui/theme.css';
+
+// Listen before the first render: the browser may fire beforeinstallprompt early.
+initInstall();
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Root element not found');

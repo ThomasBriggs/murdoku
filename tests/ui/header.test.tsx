@@ -1,10 +1,11 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createGameStore } from '../../src/state/store';
 import { createEngineClient } from '../../src/worker/client';
 import { createInProcessWorker } from '../../src/worker/inprocess';
 import { StoreContext } from '../../src/ui/context';
 import { Header } from '../../src/ui/Header';
+import { initInstall, resetInstallForTests } from '../../src/pwa/install';
 import { stubWidth } from './matchMedia';
 
 const ITEMS = ['share-button', 'stats-button', 'rules-button', 'settings-button'];
@@ -113,6 +114,41 @@ describe('header on a phone', () => {
     fireEvent.pointerDown(screen.getByTestId('header-menu'));
     expect(screen.getByTestId('header-menu')).toBeInTheDocument();
     fireEvent.pointerDown(document.body);
+    expect(screen.queryByTestId('header-menu')).toBeNull();
+  });
+});
+
+describe('install app item', () => {
+  let stop: () => void;
+  beforeEach(() => {
+    resetInstallForTests();
+    stop = initInstall();
+  });
+  afterEach(() => stop());
+
+  const installable = () => {
+    const e = new Event('beforeinstallprompt', { cancelable: true });
+    const prompt = vi.fn(() => Promise.resolve());
+    Object.assign(e, { prompt, userChoice: Promise.resolve({ outcome: 'accepted' }) });
+    act(() => void window.dispatchEvent(e));
+    return prompt;
+  };
+
+  it('only appears once the browser says the app is installable (desktop)', () => {
+    setup(1280);
+    expect(screen.queryByTestId('install-button')).toBeNull();
+    const prompt = installable();
+    fireEvent.click(screen.getByTestId('install-button'));
+    expect(prompt).toHaveBeenCalledTimes(1);
+  });
+
+  it('is a menu item on a phone, and closes the menu', () => {
+    setup(375);
+    fireEvent.click(screen.getByTestId('header-menu-button'));
+    expect(screen.queryByTestId('install-button')).toBeNull();
+    const prompt = installable();
+    fireEvent.click(screen.getByTestId('install-button'));
+    expect(prompt).toHaveBeenCalledTimes(1);
     expect(screen.queryByTestId('header-menu')).toBeNull();
   });
 });
