@@ -132,6 +132,21 @@ describe('board', () => {
     openKey();
     cy.get('[data-testid^="legend-furniture-"]').first().trigger('mouseover').trigger('mouseenter');
     cy.get('[data-highlight="true"]').should('have.length.greaterThan', 0);
+    // the lit fill is the neutral cell token, not the yellow --hl-fill that muddies blue rooms
+    cy.get('[data-highlight="true"]')
+      .first()
+      .then(($el) => {
+        const doc = $el[0]!.ownerDocument;
+        const win = doc.defaultView!;
+        const probe = doc.createElement('i');
+        probe.style.backgroundColor = 'var(--hl-cell-fill)';
+        doc.documentElement.appendChild(probe);
+        const neutral = win.getComputedStyle(probe).backgroundColor;
+        probe.remove();
+        const img = win.getComputedStyle($el[0]!).backgroundImage;
+        expect(img).to.contain(neutral);
+        expect(img).not.to.contain('255, 210, 60');
+      });
   });
 
   it('highlights cells when hovering a clue room word', () => {

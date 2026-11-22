@@ -27,17 +27,17 @@
   cursor: not-allowed;
 }
 .highlight {
-  background-image: linear-gradient(var(--hl-fill), var(--hl-fill));
-  outline: 2px solid var(--hl-ring);
-  outline-offset: -2px;
+  background-image: linear-gradient(var(--hl-cell-fill), var(--hl-cell-fill));
+  outline: 3px solid var(--hl-cell-ring);
+  outline-offset: -3px;
   z-index: 1;
 }
 /* Hovering a person card: solid ring where placed, dashed where pencilled, dotted where noted. */
 .pmPlaced,
 .pmTentative,
 .pmCandidate {
-  background-image: linear-gradient(var(--hl-fill), var(--hl-fill));
-  outline: 3px solid var(--hl-ring);
+  background-image: linear-gradient(var(--hl-cell-fill), var(--hl-cell-fill));
+  outline: 3px solid var(--hl-cell-ring);
   outline-offset: -3px;
   z-index: 1;
 }

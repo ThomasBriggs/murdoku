@@ -18,6 +18,9 @@
   --selected-bg: #e8f0fd;
   --hl-fill: rgb(255 210 60 / 0.45);
   --hl-ring: #d19a00;
+  /* On board cells: a neutral lift and a ring that read on every room hue (see Cell.module.css). */
+  --hl-cell-fill: rgb(255 255 255 / 0.5);
+  --hl-cell-ring: #a06c00;
   --hc-amber: #d19a00;
   --hc-red: #d13b3b;
   --hc-green: #2f9e4f;
@@ -49,6 +52,8 @@
     --selected-bg: #1f2a40;
     --hl-fill: rgb(255 210 60 / 0.3);
     --hl-ring: #ffd23c;
+    --hl-cell-fill: rgb(255 255 255 / 0.25);
+    --hl-cell-ring: #ffd23c;
     --hint: #4fd1c5;
     --hint-fill: rgb(79 209 197 / 0.25);
     --ok: #6fcf7f;
@@ -79,6 +84,8 @@
   --selected-bg: #1f2a40;
   --hl-fill: rgb(255 210 60 / 0.3);
   --hl-ring: #ffd23c;
+  --hl-cell-fill: rgb(255 255 255 / 0.25);
+  --hl-cell-ring: #ffd23c;
   --hint: #4fd1c5;
   --hint-fill: rgb(79 209 197 / 0.25);
   --ok: #6fcf7f;
