@@ -42,10 +42,10 @@ export function RadialPick({
   const cell = 100 / GRID_SIZE;
   const reach = RADIUS * cell + (ITEM * cell) / 2;
   const clamp = (v: number) => Math.min(100 - reach, Math.max(reach, v));
-  const ox = ((cellKey % GRID_SIZE) + 0.5) * cell;
-  const oy = (Math.floor(cellKey / GRID_SIZE) + 0.5) * cell;
-  const cx = clamp(ox);
-  const cy = clamp(oy);
+  // The ring is clamped to the board; Cancel stays at the ring centre (the target cell is
+  // marked with data-picking instead).
+  const cx = clamp(((cellKey % GRID_SIZE) + 0.5) * cell);
+  const cy = clamp((Math.floor(cellKey / GRID_SIZE) + 0.5) * cell);
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     const items = [...(ref.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])];
@@ -119,9 +119,9 @@ export function RadialPick({
           title="Cancel"
           tabIndex={-1}
           style={{
-            left: `${ox - cx}cqw`,
-            top: `${oy - cy}cqw`,
-            width: `${ITEM * cell * 0.6}cqw`,
+            left: 0,
+            top: 0,
+            width: `max(${ITEM * cell * 0.6}cqw, 32px)`,
           }}
           onClick={(e) => {
             if (e.detail === 0 || armed.current) onClose(true);

@@ -145,28 +145,42 @@ suite('tentative close-up', () => {
 });
 
 suite('radial pick', () => {
-  it('radial menu open on the board', () => {
-    cy.viewport(1280, 900);
+  /** Note people 1-4 on a cell, then hold it to open the radial menu and shoot it. */
+  function shoot(
+    name: string,
+    w: number,
+    h: number,
+    pickCell: (cells: HTMLElement[]) => HTMLElement,
+  ) {
+    cy.viewport(w, h);
     cy.visit('/?seed=cy-marks&d=easy');
     cy.get('[data-testid="board"]').should('be.visible');
     cy.get('[data-testid="board-grid"] [data-blocked="false"]').then(($cells) => {
-      const el = $cells.toArray()[Math.floor($cells.length / 2)]!;
+      const el = pickCell($cells.toArray());
       const [r, c] = [Number(el.dataset.r), Number(el.dataset.c)];
       for (const id of [1, 2, 3, 4]) {
         selectPerson(id);
         cell(r, c).click();
       }
       cy.get('body').type('{esc}');
-      cy.get(`[data-testid="cell-${r}-${c}"]`).trigger('pointerdown', {
-        button: 0,
-        pointerId: 1,
-        isPrimary: true,
-        force: true,
-      });
+      cell(r, c).trigger('pointerdown', { button: 0, pointerId: 1, isPrimary: true, force: true });
       cy.get('[data-testid="radial-pick-1"]').should('be.visible');
-      cy.get('[data-testid="board"]').screenshot('radial-pick', { capture: 'viewport' });
+      cy.get('[data-testid="board"]').screenshot(name, { capture: 'viewport' });
     });
-  });
+  }
+  const centre = (cs: HTMLElement[]) => cs[Math.floor(cs.length / 2)]!;
+  /** A free cell as close to the top-left corner as possible. */
+  const edge = (cs: HTMLElement[]) =>
+    [...cs].sort(
+      (a, b) =>
+        Number(a.dataset.r) + Number(a.dataset.c) - (Number(b.dataset.r) + Number(b.dataset.c)),
+    )[0]!;
+
+  it('radial menu open on the board', () => shoot('radial-pick', 1280, 900, centre));
+  it('radial menu, desktop, edge cell', () => shoot('radial-pick-desktop-edge', 1280, 900, edge));
+  it('radial menu, mobile, central cell', () =>
+    shoot('radial-pick-mobile-centre', 375, 740, centre));
+  it('radial menu, mobile, edge cell', () => shoot('radial-pick-mobile-edge', 375, 740, edge));
 });
 
 suite('focus layout screenshots', () => {

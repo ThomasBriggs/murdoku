@@ -182,6 +182,12 @@
     transition: none;
   }
 }
+/* Target of the open radial pick menu (the ring may be shifted away from it near an edge). */
+.cell[data-picking='true'] {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+  z-index: 2;
+}
 /* Press-and-hold feedback while a placement is being committed (Place mode). */
 .cell[data-holding='true'] {
   animation: hold var(--hold-ms, 450ms) linear forwards;

@@ -28,6 +28,8 @@ export interface CellProps {
   /** Roving-tabindex cursor is on this cell. */
   cursor: boolean;
   shaking: boolean;
+  /** The radial pick menu is open for this cell. */
+  picking?: boolean;
   /** Ruled out by the selected person's clue (assist, SPEC §6.5.9). */
   dimmed?: boolean;
   /** Possible for the selected person according to the player's logic grid. */
@@ -171,6 +173,7 @@ export const Cell = memo(function Cell(p: CellProps) {
       data-furniture={furniture ?? ''}
       data-blocked={blocked ? 'true' : 'false'}
       data-occupant={person ? person.id : ''}
+      data-picking={p.picking ? 'true' : undefined}
       data-autocross={p.autoCross ? 'true' : undefined}
       data-highlight={p.highlighted ? 'true' : undefined}
       data-person-mark={p.personMark}

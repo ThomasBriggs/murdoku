@@ -90,6 +90,21 @@ describe('radial pick', () => {
     expect(store.getState().placements[2]).toBeNull();
   });
 
+  it('Cancel sits at the ring centre and the target cell is marked while open', async () => {
+    const store = await setup();
+    const [r, c] = freeCell();
+    note(store, r, c, 1, 2);
+    expect(cell(r, c)).not.toHaveAttribute('data-picking');
+    hold(r, c);
+    const cancel = screen.getByTestId('radial-pick-cancel');
+    expect(cancel.style.left).toBe('0px');
+    expect(cancel.style.top).toBe('0px');
+    expect(cell(r, c)).toHaveAttribute('data-picking', 'true');
+    fireEvent.click(cancel);
+    expect(menu()).toBeNull();
+    expect(cell(r, c)).not.toHaveAttribute('data-picking');
+  });
+
   it('a click without a fresh press on the menu (the opening release) does not pick', async () => {
     const store = await setup();
     const [r, c] = freeCell();

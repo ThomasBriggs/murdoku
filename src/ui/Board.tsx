@@ -430,6 +430,7 @@ export function Board(p: BoardProps) {
                   selected={occ !== undefined && occ === p.selectedPerson}
                   cursor={p.cursor.r === r && p.cursor.c === c}
                   shaking={p.shakeCell === key}
+                  picking={p.pick?.key === key}
                   dimmed={p.dimmed?.has(key)}
                   possible={p.possible?.has(key)}
                   wrong={occ !== undefined && p.wrongPeople?.has(occ)}
