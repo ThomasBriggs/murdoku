@@ -3,6 +3,7 @@ import { generatePuzzle } from '../../src/engine/generator';
 import { cellKey, type CellKey } from '../../src/engine/types';
 import { allPlaced, createGameStore, selectConflicts, selectUnplaced } from '../../src/state/store';
 import { HISTORY_CAP } from '../../src/state/history';
+import { toSavedGame } from '../../src/state/persistence';
 import { createEngineClient } from '../../src/worker/client';
 import { createInProcessWorker } from '../../src/worker/inprocess';
 
@@ -168,6 +169,22 @@ describe('game store', () => {
     expect(g().status).toBe('won');
     expect(g().running).toBe(false);
     expect(g().place(0, solved[3]!)).toBe('refused');
+  });
+
+  it('a win inside nested what-if keeps the board and closes every level', async () => {
+    const g = () => store.getState();
+    g().startWhatIf();
+    g().startWhatIf();
+    expect(g().whatIfStack).toHaveLength(2);
+    solved.forEach((k, i) => g().place(i, k));
+    const win = await g().accuse(truth.solution.murdererId);
+    expect(win?.won).toBe(true);
+    expect(g().status).toBe('won');
+    expect(g().whatIfStack).toEqual([]);
+    expect(Object.values(g().placements)).toEqual(solved);
+    expect(g().undo()).toBe(false);
+    expect(g().whatIfStack).toEqual([]);
+    expect(toSavedGame(g())?.whatIfStack).toEqual([]);
   });
 
   it('timer ticks only while running; settings update', () => {

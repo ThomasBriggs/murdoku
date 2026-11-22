@@ -5,6 +5,7 @@ import {
   moreClick,
   openMore,
   openSettings,
+  playToWin,
   visitWithQuickBar,
 } from '../support/helpers';
 
@@ -180,6 +181,26 @@ describe('solving toolkit: logic grid, pen, scratchpad, what-if, helpers, print'
       tid('undo').click();
       tid('whatif-banner').should('not.exist');
     });
+  });
+
+  it('what-if: winning keeps the board and closes every level', () => {
+    load();
+    cy.get('body').type('w');
+    moreClick('whatif-start');
+    tid('whatif-level').should('have.text', 'What-if (level 2)');
+    playToWin();
+    tid('win-dialog').should('be.visible');
+    tid('win-close').click();
+    tid('whatif-banner').should('not.exist');
+    tid('whatif-breadcrumbs').should('not.exist');
+    tid('board').should('not.have.attr', 'data-whatif');
+    cy.get('[data-testid="board-grid"] [data-occupant]:not([data-occupant=""])').should(
+      'have.length',
+      9,
+    );
+    cy.reload();
+    tid('board').should('be.visible');
+    tid('whatif-banner').should('not.exist');
   });
 
   it('"show where this clue allows" dims cells for the selected person', () => {

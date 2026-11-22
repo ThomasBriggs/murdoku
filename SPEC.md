@@ -312,6 +312,7 @@ A free-text notepad for the whole puzzle, for longer reasoning ("If C is in the 
 - The player explores freely. Rule conflicts still show up as usual (if enabled), which is how a contradiction appears.
 - Afterwards they either **Keep** (merge into the main board) or **Abandon** (revert to the snapshot). An optional "note why" prompt records the result in the scratchpad, e.g. "C in Kitchen → contradiction."
 - Nesting is supported up to 3 levels, shown as breadcrumbs.
+- Winning (a correct accusation) while in a what-if keeps the board as it is and closes every open level, as if Keep was chosen at each.
 
 #### 6.5.9 Optional automatic helpers
 

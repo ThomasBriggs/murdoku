@@ -611,6 +611,8 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
             set((d) => {
               d.status = 'won';
               d.running = false;
+              // A win inside what-if keeps the board as it is and closes every level (as Keep).
+              d.whatIfStack = [];
               const r = recordWin(d.stats, s.puzzle!.difficulty, d.elapsedMs);
               d.stats = r.stats;
               d.newBest = r.newBest;
