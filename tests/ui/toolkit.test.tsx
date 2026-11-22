@@ -428,6 +428,21 @@ describe('V key on the selection', () => {
     vi.useRealTimers();
   });
 
+  it('with nobody picked, holding V places the one noted person; no notes arms nothing', async () => {
+    const store = await setupWithTimers();
+    const [r, c] = freeCell((_, cc) => cc > 0);
+    fireEvent.keyDown(cell(r, c - 1), { key: 'ArrowRight' }); // shows the cursor on (r, c)
+    fireEvent.keyDown(cell(r, c), { key: 'v' });
+    expect(cell(r, c)).not.toHaveAttribute('data-holding');
+    fireEvent.keyUp(cell(r, c), { key: 'v' });
+    act(() => store.getState().applyCandidate([cellKey(r, c)], 1));
+    fireEvent.keyDown(cell(r, c), { key: 'v' });
+    expect(cell(r, c)).toHaveAttribute('data-holding', 'true');
+    act(() => void vi.advanceTimersByTime(HOLD_MS + 50));
+    expect(store.getState().placements[1]).toBe(cellKey(r, c));
+    vi.useRealTimers();
+  });
+
   it('with no target V only switches to Place', async () => {
     const store = await setupWithTimers();
     store.getState().selectPerson(1);

@@ -448,6 +448,19 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
           const [key] = targets(at); // the 1-cell selection, `at`, or the cursor
           const r = Math.floor(key! / GRID_SIZE);
           const c = key! % GRID_SIZE;
+          if (s.selectedPerson === null) {
+            // Nobody picked: holding only arms on a cell with noted, unplaced people.
+            const who = s.puzzle
+              ? holdCandidates({
+                  puzzle: s.puzzle,
+                  key: key!,
+                  yes: s.annotations.candidates[key!]?.yes,
+                  candidatesVisible: s.annotations.layerVisibility.candidates,
+                  placements: s.placements,
+                })
+              : [];
+            if (who.length === 0) return;
+          }
           const el = document.querySelector<HTMLElement>(`[data-testid="cell-${r}-${c}"]`);
           if (el) el.dataset.holding = 'true';
           const timer = window.setTimeout(() => {
