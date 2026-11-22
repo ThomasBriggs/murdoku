@@ -373,7 +373,6 @@ describe('multi-select', () => {
     expect(store.getState().selection).toHaveLength(room.cells.length);
     store.getState().clearSelection();
 
-    fireEvent.click(screen.getByTestId('clues-toggle')); // the key is in the clue drawer
     fireEvent.click(screen.getByTestId('key-toggle'));
     const legend = within(await screen.findByTestId('furniture-legend'));
     const btn = legend.getAllByRole('button')[0]!;

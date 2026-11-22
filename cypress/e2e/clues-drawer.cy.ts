@@ -1,5 +1,4 @@
 import {
-  closeClues,
   openClues,
   pickTool,
   placePerson,
@@ -51,12 +50,42 @@ describe('clues drawer', () => {
       });
   });
 
-  it('is open beside the board at 1280px and toggles with the Clues button and the close button', () => {
+  for (const [w, h] of [
+    [1280, 900],
+    [1000, 700],
+  ]) {
+    it(`is always docked beside the board at ${w}x${h}, with no toggle`, () => {
+      cy.viewport(w, h);
+      load();
+      cy.get(sel('clues-toggle')).should('not.exist');
+      cy.get(sel('clues-close')).should('not.exist');
+      cy.get(sel('clues-drawer')).should('be.visible');
+      cy.get(sel('board')).then(($b) => {
+        cy.get(sel('clues-drawer')).then(($d) => {
+          const board = $b[0]!.getBoundingClientRect();
+          const drawer = $d[0]!.getBoundingClientRect();
+          expect(Math.round(drawer.right), 'drawer is at the right edge').to.eq(w);
+          expect(board.right, 'board clear of the drawer').to.be.at.most(drawer.left);
+          // the Check / Accuse group sits between the board and the drawer
+          for (const id of ['check-button', 'accuse-button']) {
+            cy.get(sel(id)).then(($x) => {
+              const r = $x[0]!.getBoundingClientRect();
+              expect(r.left, `${id} clear of the board`).to.be.at.least(board.right);
+              expect(r.right, `${id} clear of the drawer`).to.be.at.most(drawer.left);
+            });
+          }
+        });
+      });
+      cy.document().then((doc) => {
+        expect(doc.documentElement.scrollWidth).to.be.at.most(w);
+      });
+    });
+  }
+
+  it('stays docked on a landscape phone (844x390) with no horizontal scroll', () => {
+    cy.viewport(844, 390);
     load();
     cy.get(sel('clues-drawer')).should('be.visible');
-    cy.get(sel('clues-toggle')).should('have.attr', 'aria-expanded', 'true');
-    cy.get(sel('game')).should('have.attr', 'data-clues', 'open');
-    // docked: the board is not covered by the drawer
     cy.get(sel('board')).then(($b) => {
       cy.get(sel('clues-drawer')).then(($d) => {
         expect($b[0]!.getBoundingClientRect().right).to.be.at.most(
@@ -64,51 +93,60 @@ describe('clues drawer', () => {
         );
       });
     });
-    cy.get(sel('clues-close')).click();
-    cy.get(sel('clues-drawer')).should('not.be.visible');
-    cy.get(sel('clues-toggle')).should('have.attr', 'aria-expanded', 'false');
-    cy.get(sel('game')).should('have.attr', 'data-clues', 'closed');
-    cy.get(sel('clues-toggle')).click();
-    cy.get(sel('clues-drawer')).should('be.visible');
-  });
-
-  it('starts closed below 1200px and then overlays the board from the right', () => {
-    cy.viewport(1000, 700);
-    load();
-    cy.get(sel('clues-drawer')).should('not.be.visible');
-    cy.get(sel('clues-toggle')).should('have.attr', 'aria-expanded', 'false').click();
-    cy.get(sel('clues-drawer')).should('be.visible');
-    cy.get(sel('clues-drawer')).then(($d) => {
-      const r = $d[0]!.getBoundingClientRect();
-      expect(Math.round(r.right)).to.eq(1000);
-      expect(r.left, 'overlay leaves room on the left').to.be.greaterThan(300);
-    });
-    cy.get(sel('clues-close')).click();
-    cy.get(sel('clues-drawer')).should('not.be.visible');
-  });
-
-  it('is a bottom sheet on phones, opened from the Clues button', () => {
-    cy.viewport(375, 740);
-    load();
-    cy.get(sel('clues-drawer')).should('not.be.visible');
-    cy.get(sel('clues-toggle')).click();
-    cy.get(sel('clues-drawer')).should('be.visible');
-    cy.get(sel('clues-drawer')).then(($d) => {
-      const r = $d[0]!.getBoundingClientRect();
-      expect(Math.round(r.left)).to.eq(0);
-      expect(Math.round(r.right)).to.eq(375);
-      expect(Math.round(r.bottom)).to.eq(740);
-      expect(r.height).to.be.within(740 * 0.5, 740 * 0.75);
-    });
-    cy.get(sel('person-card-0')).should('be.visible');
-    cy.get(sel('clues-close')).click();
-    cy.get(sel('clues-drawer')).should('not.be.visible');
     cy.document().then((doc) => {
-      expect(doc.documentElement.scrollWidth).to.be.at.most(375);
+      expect(doc.documentElement.scrollWidth).to.be.at.most(844);
     });
   });
 
-  it('the Clues button badge counts the unplaced people', () => {
+  for (const [w, h] of [
+    [375, 740],
+    [375, 667],
+  ]) {
+    it(`on a phone (${w}x${h}) the clues are their own scrolling section below the board`, () => {
+      cy.viewport(w, h);
+      load();
+      cy.get(sel('clues-toggle')).should('not.exist');
+      cy.get(sel('clues-drawer')).should('be.visible');
+      cy.get(sel('board')).then(($b) => {
+        cy.get(sel('clues-drawer')).then(($d) => {
+          cy.get(sel('mobile-dock')).then(($dock) => {
+            const board = $b[0]!.getBoundingClientRect();
+            const drawer = $d[0]!.getBoundingClientRect();
+            const dock = $dock[0]!.getBoundingClientRect();
+            expect(drawer.top, 'below the board').to.be.at.least(board.bottom - 1);
+            expect(drawer.bottom, 'above the dock').to.be.at.most(dock.top + 1);
+            expect(drawer.height, 'room for clues').to.be.at.least(100);
+          });
+        });
+      });
+      cy.document().then((doc) => {
+        expect(doc.documentElement.scrollWidth).to.be.at.most(w);
+        expect(doc.documentElement.scrollHeight, 'the page itself does not scroll').to.be.at.most(
+          h,
+        );
+      });
+      cy.get(`${sel('clues-body')}`).then(($body) => {
+        expect($body[0]!.scrollHeight, 'the clue list scrolls').to.be.greaterThan(
+          $body[0]!.clientHeight,
+        );
+      });
+      cy.get(sel('board')).then(($b) => {
+        const top = $b[0]!.getBoundingClientRect().top;
+        cy.get(`${sel('clues-body')}`).scrollTo('bottom', {
+          ensureScrollable: false,
+        });
+        cy.get(`${sel('clues-body')}`).should(($body) => {
+          expect($body[0]!.scrollTop).to.be.greaterThan(0);
+        });
+        cy.get(sel('board')).then(($b2) => {
+          expect($b2[0]!.getBoundingClientRect().top, 'board did not move').to.eq(top);
+        });
+        cy.window().its('scrollY').should('eq', 0);
+      });
+    });
+  }
+
+  it('the drawer heading badge counts the unplaced people', () => {
     load();
     cy.get(sel('clues-count'))
       .should('have.text', '9')
@@ -123,7 +161,7 @@ describe('clues drawer', () => {
     });
   });
 
-  it('works through the phone flow: open clues, pick a person, place them', () => {
+  it('works through the phone flow: pick a person in the clue list, place them', () => {
     cy.viewport(375, 740);
     load();
     freeCells(1).then(([a]) => {
@@ -235,17 +273,5 @@ describe('clues: Unplaced and Placed sections', () => {
     cy.get('[data-testid="board-grid"] [data-blocked="false"]').last().focus();
     cy.focused().type('2');
     cy.get(sel('clues-unplaced')).find('[data-selected="true"]').should('have.length', 1);
-  });
-
-  it('keeps the drawer usable when closed and reopened with a collapsed Placed list', () => {
-    cy.viewport(1000, 700);
-    load();
-    freeCells(1).then(([a]) => placePerson(0, ...a!));
-    openClues();
-    cy.get(sel('clues-placed-toggle')).click();
-    closeClues();
-    openClues();
-    cy.get(sel('clues-placed-toggle')).should('have.attr', 'aria-expanded', 'false');
-    cy.get(sel('clues-placed-list')).should('not.be.visible');
   });
 });

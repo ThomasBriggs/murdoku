@@ -67,7 +67,6 @@ describe('Board UI', () => {
   it('lists the victim first, then suspects, with clues', async () => {
     store = await setup();
     const puzzle = store.getState().puzzle!;
-    fireEvent.click(screen.getByTestId('clues-toggle')); // the drawer starts closed in jsdom
     const items = within(screen.getByTestId('clues-unplaced')).getAllByRole('listitem');
     expect(items).toHaveLength(9);
     const victim = puzzle.people.find((p) => p.isVictim)!;

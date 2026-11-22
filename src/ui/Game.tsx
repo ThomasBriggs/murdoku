@@ -1,12 +1,4 @@
-import {
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { setHas } from '../engine/cellset';
 import { isOccupiable } from '../engine/furniture';
 import { allowedCells } from '../engine/clues/evaluate';
@@ -46,6 +38,7 @@ import {
   CheckIcon,
   FlagIcon,
   LogicGridIcon,
+  NotepadIcon,
   RedoIcon,
   ResetIcon,
   TrayIcon,
@@ -56,7 +49,7 @@ import { useGame, useStoreApi } from './context';
 import styles from './Game.module.css';
 import { PeoplePanel } from './PeoplePanel';
 import { assignRoomColors } from './roomColors';
-import { shouldDismissSheet } from './sheetGesture';
+import { useMediaQuery } from './useMediaQuery';
 import { OverflowMenu, Toolbar } from './Toolbar';
 import { conflictsByPerson, type Highlight } from './types';
 
@@ -95,19 +88,6 @@ const boardStamp = (s: GameStore) => ({
   t: s.tentativePlacements,
   a: s.annotations,
 });
-
-/** Subscribe to a CSS media query (false where matchMedia does not exist, e.g. jsdom). */
-function useMediaQuery(query: string): boolean {
-  return useSyncExternalStore(
-    (notify) => {
-      const mq = window.matchMedia?.(query);
-      mq?.addEventListener('change', notify);
-      return () => mq?.removeEventListener('change', notify);
-    },
-    () => window.matchMedia?.(query).matches ?? false,
-    () => false,
-  );
-}
 
 /** The playable screen: board, toolbar, people panel and the game-flow dialogs. */
 export function Game({ onNewGame }: { onNewGame(): void }) {
@@ -162,23 +142,8 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
   }, [moreOpen]);
   const [clearChoice, setClearChoice] = useState<ClearChoice | null>(null);
   const [logicOpen, setLogicOpen] = useState(false);
+  const scratchTrigger = useRef<HTMLButtonElement>(null);
   const [scratchOpen, setScratchOpen] = useState(() => loadLayout().open);
-  // The clue drawer starts open on wide screens only.
-  const [cluesOpen, setCluesOpen] = useState(
-    () => window.matchMedia?.('(min-width: 1200px)').matches ?? false,
-  );
-  const drawerRef = useRef<HTMLElement>(null);
-  const grab = useRef<{ id: number; y: number } | null>(null);
-  // The phone sheet is modal-ish: focus moves in when it opens, the page behind does not scroll.
-  useEffect(() => {
-    if (!mobile || !cluesOpen) return;
-    drawerRef.current?.focus({ preventScroll: true });
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [mobile, cluesOpen]);
   const [whatIfEnd, setWhatIfEnd] = useState<WhatIfEnd | null>(null);
   const [printOpen, setPrintOpen] = useState(false);
   const [printMarks, setPrintMarks] = useState(false);
@@ -611,22 +576,6 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
           );
         });
   const unplaced = puzzle.people.filter((x) => placements[x.id] == null).length;
-  const cluesButton = (
-    <button
-      type="button"
-      className={styles.cluesBtn}
-      data-testid="clues-toggle"
-      aria-expanded={cluesOpen}
-      aria-controls="clues-drawer"
-      title="Show or hide the clues"
-      onClick={() => setCluesOpen((o) => !o)}
-    >
-      <span>Clues</span>
-      <span className={styles.count} data-testid="clues-count" aria-label={`${unplaced} unplaced`}>
-        {unplaced}
-      </span>
-    </button>
-  );
   const popup = (tool === 'highlight' || tool === 'draw') && (
     <div className={styles.popup} data-testid="color-row">
       {tool === 'draw' && drawControls}
@@ -655,7 +604,7 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
   );
 
   return (
-    <div className={styles.layout} data-testid="game" data-clues={cluesOpen ? 'open' : 'closed'}>
+    <div className={styles.layout} data-testid="game">
       <div className={styles.boardArea} data-whatif={whatIfLevel || undefined}>
         {whatIfLevel > 0 && (
           <WhatIfBanner
@@ -750,6 +699,7 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
         open={scratchOpen}
         onToggle={setScratchOpen}
         onCommit={(text) => actions.setScratchpad(text)}
+        triggerRef={mobile ? scratchTrigger : undefined}
       />
       {!mobile && (
         <div className={styles.actions} role="group" aria-label="Investigate">
@@ -794,7 +744,6 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
             )}
             <div className={styles.mobileStrip} role="group" aria-label="Investigate">
               {investigate}
-              {cluesButton}
             </div>
             <div className={palette.bar}>
               <ToolPalette
@@ -939,8 +888,6 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
                 <RedoIcon />,
                 'Redo (Ctrl+Shift+Z)',
               )}
-              <span className={styles.dockSep} aria-hidden="true" />
-              {cluesButton}
               <OverflowMenu up>
                 {trayTools.length > 0 && (
                   <div className={styles.trayTools}>
@@ -963,80 +910,49 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
           </div>
         </div>
       )}
-      {mobile && cluesOpen && (
-        <div
-          className={styles.sheetBackdrop}
-          data-testid="clues-backdrop"
-          onClick={() => setCluesOpen(false)}
-        />
-      )}
       <aside
         className={styles.drawer}
         id="clues-drawer"
         data-testid="clues-drawer"
         aria-label="Clues"
-        hidden={!cluesOpen}
-        ref={drawerRef}
-        tabIndex={-1}
-        onKeyDown={(e) => {
-          if (e.key === 'Escape' && !e.defaultPrevented) {
-            e.stopPropagation();
-            setCluesOpen(false);
-          }
-        }}
       >
-        {mobile && (
-          <div
-            className={styles.grabber}
-            data-testid="clues-grabber"
-            aria-hidden="true"
-            onPointerDown={(e) => {
-              grab.current = { id: e.pointerId, y: e.clientY };
-              e.currentTarget.setPointerCapture?.(e.pointerId);
-            }}
-            onPointerMove={(e) => {
-              const g = grab.current;
-              if (g && g.id === e.pointerId && shouldDismissSheet(e.clientY - g.y)) {
-                grab.current = null;
-                setCluesOpen(false);
-              }
-            }}
-            onPointerUp={() => {
-              grab.current = null;
-            }}
-            onPointerCancel={() => {
-              grab.current = null;
-            }}
-            onClick={() => setCluesOpen(false)}
-          >
-            <span />
-          </div>
-        )}
         <div className={styles.drawerHead}>
           <h2 className={styles.drawerTitle}>Clues</h2>
-          <span className={styles.drawerSub}>{unplaced} unplaced</span>
-          <button
-            type="button"
-            className={styles.dockBtn}
-            data-testid="clues-close"
-            aria-label="Close clues"
-            onClick={() => setCluesOpen(false)}
+          <span
+            className={styles.count}
+            data-testid="clues-count"
+            aria-label={`${unplaced} unplaced`}
           >
-            ✕
-          </button>
+            {unplaced}
+          </span>
+          {mobile && !scratchOpen && (
+            <button
+              type="button"
+              ref={scratchTrigger}
+              className={styles.scratchBtn}
+              data-testid="scratchpad-toggle"
+              data-has-text={annotations.scratchpad !== '' ? 'true' : undefined}
+              aria-label="Scratchpad"
+              aria-expanded={false}
+              aria-controls="scratchpad-text"
+              title={annotations.scratchpad !== '' ? 'Scratchpad (has notes)' : 'Scratchpad'}
+              onClick={() => setScratchOpen(true)}
+            >
+              <NotepadIcon />
+              {annotations.scratchpad !== '' && (
+                <span className={styles.scratchDot} aria-hidden="true" />
+              )}
+            </button>
+          )}
         </div>
-        <div className={styles.drawerBody}>
+        <div className={styles.drawerBody} data-testid="clues-body">
           <PeoplePanel
             puzzle={puzzle}
             placements={placements}
             tentative={tentative}
             annotations={annotations}
             selectedPerson={selected}
-            onSelect={(id) => {
-              actions.selectPerson(id);
-              // On phones the sheet covers the board: step aside once someone is picked.
-              if (mobile && id !== null) setCluesOpen(false);
-            }}
+            onSelect={(id) => actions.selectPerson(id)}
             onHighlight={setHighlight}
           />
           <details
@@ -1050,14 +966,12 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
               <FurnitureLegend
                 furniture={puzzle.furniture}
                 onHighlight={setHighlight}
-                onSelect={(type, additive) => {
+                onSelect={(type, additive) =>
                   actions.selectCells(
                     furnitureCells(puzzle.furniture, type),
                     additive ? 'add' : 'replace',
-                  );
-                  // On phones the sheet covers the board: step aside to show the selection.
-                  if (mobile) setCluesOpen(false);
-                }}
+                  )
+                }
               />
             )}
           </details>

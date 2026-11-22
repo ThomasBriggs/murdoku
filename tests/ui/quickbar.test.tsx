@@ -34,7 +34,7 @@ describe('quick bar and tray', () => {
   it('shows only Place, Erase and Cross by default; the other tools are in the tray', async () => {
     const store = await setup();
     expect(dockTools()).toEqual(['tool-place', 'tool-erase', 'tool-cross']);
-    for (const id of ['undo', 'redo', 'clues-toggle', 'overflow-button'])
+    for (const id of ['undo', 'redo', 'overflow-button'])
       expect(within(screen.getByTestId('dock')).getByTestId(id)).toBeInTheDocument();
     expect(screen.queryByTestId('tool-dot')).toBeNull();
 

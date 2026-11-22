@@ -9,30 +9,12 @@ import { createEngineClient } from '../../src/worker/client';
 import { createInProcessWorker } from '../../src/worker/inprocess';
 import { panelOrder } from '../../src/ui/types';
 import { clickMore } from './more';
+import { stubWidth } from './matchMedia';
 
 const SEED = 'focus-test';
 const truth = generatePuzzle(SEED, 'easy');
 const solved = truth.solution.cellOf.map((c) => cellKey(c));
 const COLLAPSE_KEY = 'murdoku:v1:placed-collapsed';
-
-/** Fake matchMedia: `width` decides the min-width / max-width queries. */
-function stubWidth(width: number) {
-  window.matchMedia = ((q: string) => {
-    const min = /min-width:\s*(\d+)px/.exec(q);
-    const max = /max-width:\s*(\d+)px/.exec(q);
-    const matches = min ? width >= Number(min[1]) : max ? width <= Number(max[1]) : false;
-    return {
-      matches,
-      media: q,
-      addEventListener: () => {},
-      removeEventListener: () => {},
-      addListener: () => {},
-      removeListener: () => {},
-      onchange: null,
-      dispatchEvent: () => false,
-    } as unknown as MediaQueryList;
-  }) as typeof window.matchMedia;
-}
 
 beforeEach(() => {
   window.localStorage.clear();
@@ -157,30 +139,18 @@ describe('clue list: Unplaced / Placed', () => {
 });
 
 describe('clues drawer', () => {
-  it('is closed by default below 1200px and opens/closes with the toggle', async () => {
-    stubWidth(1000);
+  it.each([1280, 1000, 700])('is always shown at %ipx, with no toggle', async (w) => {
+    stubWidth(w);
     await setup();
     const drawer = screen.getByTestId('clues-drawer');
-    const toggle = screen.getByTestId('clues-toggle');
-    expect(drawer).toHaveAttribute('hidden');
-    expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.getByTestId('game')).toHaveAttribute('data-clues', 'closed');
-    fireEvent.click(toggle);
+    expect(drawer).toBeVisible();
     expect(drawer).not.toHaveAttribute('hidden');
-    expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByTestId('game')).toHaveAttribute('data-clues', 'open');
-    fireEvent.click(screen.getByTestId('clues-close'));
-    expect(drawer).toHaveAttribute('hidden');
+    expect(screen.queryByTestId('clues-toggle')).toBeNull();
+    expect(screen.queryByTestId('clues-close')).toBeNull();
+    expect(screen.getByTestId('game')).not.toHaveAttribute('data-clues');
   });
 
-  it('is open by default at 1200px and wider', async () => {
-    stubWidth(1280);
-    await setup();
-    expect(screen.getByTestId('clues-drawer')).not.toHaveAttribute('hidden');
-    expect(screen.getByTestId('clues-toggle')).toHaveAttribute('aria-expanded', 'true');
-  });
-
-  it('the toggle badge shows the unplaced count and follows placements', async () => {
+  it('the drawer heading badge shows the unplaced count and follows placements', async () => {
     const store = await setup();
     expect(screen.getByTestId('clues-count')).toHaveTextContent('9');
     expect(screen.getByTestId('clues-count')).toHaveAttribute('aria-label', '9 unplaced');
@@ -188,14 +158,51 @@ describe('clues drawer', () => {
     expect(screen.getByTestId('clues-count')).toHaveTextContent('6');
   });
 
-  it('on a phone the toggle lives on the peek bar and the dock is the bottom bar', async () => {
+  it('on a phone the clues are still shown, below the board, and the bottom bar has no clues button', async () => {
     stubWidth(375);
     await setup();
     expect(screen.queryByTestId('dock')).toBeNull();
     expect(screen.getByTestId('more-button')).toBeInTheDocument();
-    expect(screen.getByTestId('clues-toggle')).toBeInTheDocument();
-    fireEvent.click(screen.getByTestId('clues-toggle'));
-    expect(screen.getByTestId('clues-drawer')).not.toHaveAttribute('hidden');
+    expect(screen.queryByTestId('clues-toggle')).toBeNull();
+    expect(screen.queryByTestId('clues-grabber')).toBeNull();
+    expect(screen.queryByTestId('clues-backdrop')).toBeNull();
+    const drawer = screen.getByTestId('clues-drawer');
+    expect(drawer).toBeVisible();
+    expect(within(drawer).getByTestId('clues-count')).toHaveTextContent('9');
+    // Picking a person does not hide the clues.
+    const order = panelOrder(truth.puzzle.people);
+    fireEvent.click(screen.getByTestId(`person-card-${order[1]!.id}`).querySelector('button')!);
+    expect(screen.getByTestId('clues-drawer')).toBeVisible();
+  });
+});
+
+describe('scratchpad button on a phone', () => {
+  it('sits in the clue header (no floating button), opens the panel and returns focus on close', async () => {
+    stubWidth(375);
+    await setup();
+    const trigger = screen.getByTestId('scratchpad-toggle');
+    expect(trigger).toHaveAttribute('aria-label', 'Scratchpad');
+    expect(within(screen.getByTestId('clues-drawer')).getByTestId('scratchpad-toggle')).toBe(
+      trigger,
+    );
+    expect(screen.getAllByTestId('scratchpad-toggle')).toHaveLength(1);
+    fireEvent.click(trigger);
+    const panel = screen.getByTestId('scratchpad-panel');
+    expect(panel).toBeInTheDocument();
+    fireEvent.click(within(panel).getByTestId('scratchpad-toggle'));
+    expect(screen.queryByTestId('scratchpad-panel')).toBeNull();
+    expect(
+      within(screen.getByTestId('clues-drawer')).getByTestId('scratchpad-toggle'),
+    ).toHaveFocus();
+  });
+
+  it('keeps the floating button on desktop', async () => {
+    stubWidth(1280);
+    await setup();
+    expect(
+      within(screen.getByTestId('clues-drawer')).queryByTestId('scratchpad-toggle'),
+    ).toBeNull();
+    expect(screen.getByTestId('scratchpad-toggle')).toBeInTheDocument();
   });
 });
 

@@ -19,8 +19,7 @@ describe('dock (desktop)', () => {
           'tool-cross',
         ]);
       });
-      for (const id of ['undo', 'redo', 'clues-toggle', 'overflow-button'])
-        cy.get(sel(id)).should('be.visible');
+      for (const id of ['undo', 'redo', 'overflow-button']) cy.get(sel(id)).should('be.visible');
     });
   });
 
@@ -223,24 +222,23 @@ describe('furniture key', () => {
     cy.get(sel('furniture-legend')).should('not.exist');
   });
 
-  it('on phones, picking a furniture type closes the clue sheet to show the selection', () => {
+  it('on phones, picking a furniture type selects its cells and the clues stay shown', () => {
     cy.viewport(375, 740);
     load();
     openKey();
     cy.get('[data-testid^="legend-furniture-"]').first().click();
-    cy.get(sel('clues-drawer')).should('not.be.visible');
+    cy.get(sel('clues-drawer')).should('be.visible');
     cy.get('[data-sel="true"]').should('have.length.greaterThan', 0);
   });
 });
 
 describe('phone bottom bar', () => {
-  it('has an always-visible Check/Accuse/Clues strip above the tools', () => {
+  it('has an always-visible Check/Accuse strip above the tools', () => {
     cy.viewport(375, 740);
     load();
     cy.get(sel('dock')).should('not.exist');
     cy.get(sel('mobile-dock')).within(() => {
-      for (const id of ['check-button', 'accuse-button', 'clues-toggle'])
-        cy.get(sel(id)).should('be.visible');
+      for (const id of ['check-button', 'accuse-button']) cy.get(sel(id)).should('be.visible');
     });
     cy.get(sel('more-sheet')).should('not.exist');
     cy.get(sel('hint-button')).should('not.exist');

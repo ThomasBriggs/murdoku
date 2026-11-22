@@ -101,29 +101,12 @@ export function moreClick(id: string) {
   cy.get(sel(id)).click();
 }
 
-/** Is the clue drawer showing (it is `hidden` when closed)? */
-const cluesShown = ($b: JQuery<HTMLElement>) => $b.find(sel('clues-drawer')).is(':visible');
-
-/** Open the clue drawer (open by default at >=1200px, closed below), unless it already is. */
+/** The clue drawer is always shown (docked on the right, or below the board on phones). */
 export function openClues() {
-  cy.get('body').then(($b) => {
-    if (!cluesShown($b)) cy.get(sel('clues-toggle')).click();
-  });
   cy.get(sel('clues-drawer')).should('be.visible');
 }
 
-/** Close the clue drawer when it is showing. */
-export function closeClues() {
-  cy.get('body').then(($b) => {
-    if (cluesShown($b)) cy.get(sel('clues-close')).click();
-  });
-  cy.get(sel('clues-drawer')).should('not.be.visible');
-}
-
-/**
- * Select a person by clicking their clue card. Opens the drawer if needed and, where the drawer
- * is an overlay that would cover the board (below 1200px), closes it again afterwards.
- */
+/** Select a person by clicking their clue card (the drawer is always showing). */
 export function selectPerson(id: number | string) {
   openClues();
   // Click the name button: the card centre can land on a clue word, which doesn't select.
@@ -131,9 +114,6 @@ export function selectPerson(id: number | string) {
     .find('button')
     .first()
     .click();
-  cy.window().then((win) => {
-    if (win.innerWidth < 1200) closeClues();
-  });
 }
 
 /**
@@ -153,20 +133,48 @@ export function placePerson(id: number | string, r: number, c: number) {
   longPress(r, c);
 }
 
-/** Open the Settings popover in the header (idempotent). */
+/** Open the phone header menu when there is one (a no-op on desktop or when it is open). */
+export function openHeaderMenu() {
+  cy.get('body').then(($b) => {
+    if ($b.find(sel('header-menu-button')).length && !$b.find(sel('header-menu')).length)
+      cy.get(sel('header-menu-button')).click();
+  });
+}
+
+/** Close the phone header menu if it is open. */
+export function closeHeaderMenu() {
+  cy.get('body').then(($b) => {
+    if ($b.find(sel('header-menu')).length) cy.get(sel('header-menu-button')).click();
+  });
+  cy.get(sel('header-menu')).should('not.exist');
+}
+
+/**
+ * Click a header action (share, stats, rules, settings): on phones it opens the menu first.
+ * On desktop the buttons sit in the header itself.
+ */
+export function headerAction(
+  id: 'share-button' | 'stats-button' | 'rules-button' | 'settings-button',
+) {
+  openHeaderMenu();
+  cy.get(sel(id)).click();
+}
+
+/** Open the Settings popover in the header, or the settings panel in the phone menu (idempotent). */
 export function openSettings() {
   cy.get('body').then(($b) => {
-    if (!$b.find(sel('settings-popover')).length) cy.get(sel('settings-button')).click();
+    if (!$b.find(sel('settings-popover')).length) headerAction('settings-button');
   });
   cy.get(sel('settings-popover')).should('be.visible');
 }
 
-/** Close the Settings popover if it is open. */
+/** Close the Settings popover if it is open (and the phone menu around it). */
 export function closeSettings() {
   cy.get('body').then(($b) => {
     if ($b.find(sel('settings-popover')).length) cy.get(sel('settings-button')).click();
   });
   cy.get(sel('settings-popover')).should('not.exist');
+  closeHeaderMenu();
 }
 
 /** Toggle a Settings checkbox to the wanted state (opens and closes the popover). */

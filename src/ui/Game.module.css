@@ -1,16 +1,22 @@
 /* "Focus" layout: the board is centre stage; everything else floats around it. */
 .layout {
   --hdr-h: 3rem;
-  --drawer-w: 22rem;
+  /* The clue drawer is always docked on the right (phones get a section below the board). */
+  --drawer-w: clamp(14rem, 28vw, 20rem);
   --side-pad: 1rem;
   /* Vertical budget for the board: header + top pad + gutter + dock clearance. */
   --board-reserve: 11.25rem;
   padding: 0.5rem var(--side-pad) 4.75rem;
   min-height: calc(100dvh - var(--hdr-h));
 }
-@media (min-width: 1200px) {
-  .layout[data-clues='open'] {
+@media (min-width: 601px) {
+  .layout {
     padding-right: calc(var(--drawer-w) + var(--side-pad));
+  }
+}
+@media (min-width: 1200px) {
+  .layout {
+    --drawer-w: 22rem;
   }
 }
 .boardArea {
@@ -42,7 +48,7 @@
 .actions {
   position: fixed;
   z-index: 30;
-  right: 0.9rem;
+  right: calc(var(--drawer-w) + 0.9rem);
   top: 50%;
   translate: 0 -50%;
   display: flex;
@@ -53,11 +59,6 @@
   border: 1px solid var(--border);
   border-radius: 14px;
   box-shadow: 0 4px 18px rgb(0 0 0 / 0.22);
-}
-@media (min-width: 1200px) {
-  .layout[data-clues='open'] .actions {
-    right: calc(var(--drawer-w) + 0.9rem);
-  }
 }
 .actions button {
   flex-direction: column;
@@ -86,16 +87,11 @@
   position: fixed;
   z-index: 30;
   left: 0;
-  right: 0;
+  right: var(--drawer-w);
   bottom: 1rem;
   display: flex;
   justify-content: center;
   pointer-events: none;
-}
-@media (min-width: 1200px) {
-  .layout[data-clues='open'] .dockWrap {
-    right: var(--drawer-w);
-  }
 }
 .dockStack {
   position: relative;
@@ -123,8 +119,7 @@
   margin-inline: 0.3rem;
   flex: none;
 }
-.dockBtn,
-.cluesBtn {
+.dockBtn {
   width: var(--dk-size, 2.5rem);
   height: var(--dk-size, 2.5rem);
   padding: 0;
@@ -140,24 +135,13 @@
   width: 1.3rem;
   height: 1.3rem;
 }
-.dockBtn:hover:not(:disabled),
-.cluesBtn:hover {
+.dockBtn:hover:not(:disabled) {
   background: color-mix(in srgb, var(--text) 9%, transparent);
   border-color: transparent;
 }
-.dockBtn:focus-visible,
-.cluesBtn:focus-visible {
+.dockBtn:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 1px;
-}
-.cluesBtn {
-  width: auto;
-  gap: 0.4rem;
-  padding: 0 0.35rem 0 0.75rem;
-  font-weight: 600;
-}
-.cluesBtn[aria-expanded='true'] {
-  background: var(--selected-bg);
 }
 .count {
   min-width: 1.5rem;
@@ -189,28 +173,18 @@
   box-shadow: 0 6px 22px rgb(0 0 0 / 0.28);
 }
 
-/* Clue drawer (right on desktop, bottom sheet on phones). */
+/* Clue drawer: docked on the right on desktop, a section below the board on phones. */
 .drawer {
   position: fixed;
-  z-index: 50;
+  z-index: 20;
   top: var(--hdr-h);
   right: 0;
   bottom: 0;
-  width: min(var(--drawer-w), 100vw);
+  width: var(--drawer-w);
   display: flex;
   flex-direction: column;
   background: var(--bg);
   border-left: 1px solid var(--border);
-  box-shadow: -8px 0 28px rgb(0 0 0 / 0.25);
-}
-.drawer[hidden] {
-  display: none;
-}
-@media (min-width: 1200px) {
-  .drawer {
-    z-index: 20;
-    box-shadow: none;
-  }
 }
 .drawerHead {
   display: flex;
@@ -224,10 +198,35 @@
   margin: 0;
   font-size: 1rem;
 }
-.drawerSub {
-  flex: 1;
-  font-size: 0.8rem;
-  color: var(--text-muted);
+.drawerHead {
+  min-height: 2.5rem;
+}
+/* Phones: the scratchpad's button lives in the clue header, right-aligned. */
+.scratchBtn {
+  position: relative;
+  margin-left: auto;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  justify-content: center;
+  border-color: transparent;
+  background: transparent;
+}
+.scratchBtn svg {
+  width: 1.3rem;
+  height: 1.3rem;
+}
+.scratchDot {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--surface);
+  box-sizing: content-box;
+  translate: 25% -25%;
 }
 .drawerBody {
   flex: 1;
@@ -255,32 +254,23 @@
   }
 }
 
-/* Overlay drawer (601-1199px): it stops above the dock so the dock stays usable, and the
-   Hint/Check/Accuse group slides left of it. */
-@media (min-width: 601px) and (max-width: 1199px) {
-  .drawer {
-    bottom: 5.5rem;
-    border-bottom: 1px solid var(--border);
-    border-radius: 0 0 0 12px;
-  }
-  .layout[data-clues='open'] .actions {
-    right: calc(var(--drawer-w) + 0.9rem);
-  }
-}
-
-.grabber {
-  display: none;
-}
-
 /* Phones. */
 @media (max-width: 600px) {
   .layout {
     --side-pad: 10px;
     /* header + top pad + bottom dock (strip + tool bar) + breathing room */
-    --board-reserve: 11.25rem;
+    --board-reserve: 20.25rem;
+    /* The page does not scroll: the board stays put and the clues scroll in their own section. */
+    display: flex;
+    flex-direction: column;
+    height: calc(100dvh - var(--hdr-h));
+    overflow: hidden;
     padding-top: 0.4rem;
     padding-bottom: 7rem;
     min-height: 0;
+  }
+  .boardArea {
+    flex: none;
   }
   .mobileDock {
     position: fixed;
@@ -298,7 +288,7 @@
   .mobileDockOpen {
     z-index: 65;
   }
-  /* Hint / Check / Accuse and the Clues toggle: always one tap away. */
+  /* Check and Accuse: always one tap away. */
   .mobileStrip {
     display: flex;
     gap: 0.3rem;
@@ -313,17 +303,6 @@
     padding: 0.2rem 0.3rem;
     font-size: 0.82rem;
     touch-action: manipulation;
-  }
-  .mobileStrip .cluesBtn {
-    width: auto;
-    height: auto;
-    flex-grow: 1.15;
-    border-color: var(--border);
-    background: var(--surface);
-  }
-  .mobileStrip .cluesBtn[aria-expanded='true'] {
-    background: var(--selected-bg);
-    border-color: var(--selected);
   }
   .logicOverlay {
     position: static;
@@ -386,46 +365,21 @@
     justify-content: center;
     padding: 0.35rem 0.6rem;
   }
-  .sheetBackdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 49;
-    background: rgb(0 0 0 / 0.3);
-  }
   .drawer {
-    top: auto;
-    left: 0;
+    position: static;
+    flex: 1 1 auto;
+    min-height: 0;
     width: auto;
-    height: min(64dvh, 34rem);
+    margin-inline: calc(-1 * var(--side-pad));
+    margin-top: 0.4rem;
     border-left: 0;
     border-top: 1px solid var(--border);
-    border-radius: 16px 16px 0 0;
-    box-shadow: 0 -8px 28px rgb(0 0 0 / 0.35);
-    overflow: hidden;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-    outline: none;
   }
-  .grabber {
-    flex: none;
-    display: grid;
-    place-items: center;
-    height: 1.4rem;
-    cursor: grab;
-    touch-action: none;
-    background: var(--surface);
-  }
-  .grabber span {
-    width: 2.6rem;
-    height: 0.3rem;
-    border-radius: 999px;
-    background: var(--border);
+  .drawerBody {
+    padding-bottom: 0.75rem;
   }
   .drawerHead {
     padding-block: 0.1rem 0.3rem;
-  }
-  .drawerHead .dockBtn {
-    width: 2.75rem;
-    height: 2.75rem;
   }
 }
 @media (max-width: 359px) {
@@ -449,11 +403,8 @@
   .layout {
     --hdr-h: 2.5rem;
     --board-reserve: 4rem;
-    padding: 0.3rem 5.4rem 0.2rem 6.9rem;
+    padding: 0.3rem calc(var(--drawer-w) + 5.4rem) 0.2rem 6.9rem;
     min-height: 0;
-  }
-  .drawer {
-    bottom: 0;
   }
   .dockWrap {
     left: max(0.4rem, env(safe-area-inset-left));
@@ -461,9 +412,6 @@
     top: calc(var(--hdr-h) + 0.4rem);
     bottom: auto;
     justify-content: flex-start;
-  }
-  .layout[data-clues='open'] .dockWrap {
-    right: auto;
   }
   .dockStack {
     max-width: none;
@@ -495,15 +443,6 @@
   .dockSep,
   .dock [role='toolbar'] span:empty {
     display: none;
-  }
-  .dock .cluesBtn {
-    grid-column: 1 / -1;
-    order: 2;
-    width: auto;
-    height: var(--dk-size);
-    justify-content: center;
-    padding: 0 0.4rem;
-    border: 1px solid var(--border);
   }
   .popup {
     bottom: 0;

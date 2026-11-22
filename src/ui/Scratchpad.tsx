@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { NotepadIcon } from './icons/glyphs';
 import {
   CORNER_ORIGIN,
@@ -28,6 +28,11 @@ export interface ScratchpadProps {
   onToggle(open: boolean): void;
   /** Commit the text: one undo step per call (callers ignore unchanged text). */
   onCommit(text: string): void;
+  /**
+   * Phones: no floating button. The page shows its own trigger (in the clue header) and passes
+   * a ref to it, which gets the focus when the panel is minimised.
+   */
+  triggerRef?: RefObject<HTMLElement | null>;
 }
 
 /** Safety net if `animationend` never fires (hidden tab, interrupted animation). */
@@ -63,7 +68,8 @@ interface Gesture {
  * history gets one step per edit session, not one per keystroke. Position,
  * size and open state are remembered per viewer in localStorage.
  */
-export function Scratchpad({ value, open, onToggle, onCommit }: ScratchpadProps) {
+export function Scratchpad({ value, open, onToggle, onCommit, triggerRef }: ScratchpadProps) {
+  const external = triggerRef !== undefined;
   const [draft, setDraft] = useState(value);
   const draftRef = useRef(value);
   const timer = useRef<number | undefined>(undefined);
@@ -147,15 +153,15 @@ export function Scratchpad({ value, open, onToggle, onCommit }: ScratchpadProps)
   const prevOpen = useRef(open);
   useEffect(() => {
     if (open && !prevOpen.current) textRef.current?.focus();
-    if (!open && prevOpen.current) fabRef.current?.focus();
+    if (!open && prevOpen.current) (triggerRef?.current ?? fabRef.current)?.focus();
     prevOpen.current = open;
-  }, [open]);
+  }, [open, triggerRef]);
 
   const minimise = () => {
     flush();
     // Dragged panel: the button lands on the panel's anchor corner, where the panel is now.
     if (dragged) persist({ fab: fabAtCorner(rect, corner, vp), pos: null });
-    if (!reducedMotion()) setClosing({ rect, corner });
+    if (!reducedMotion() && !external) setClosing({ rect, corner });
     onToggle(false);
   };
 
@@ -290,7 +296,7 @@ export function Scratchpad({ value, open, onToggle, onCommit }: ScratchpadProps)
         </section>
       ) : (
         <>
-          {closing && (
+          {closing && !external && (
             <div
               className={`${styles.panel} ${styles.ghost}`}
               aria-hidden="true"
@@ -309,32 +315,34 @@ export function Scratchpad({ value, open, onToggle, onCommit }: ScratchpadProps)
               </div>
             </div>
           )}
-          <button
-            ref={fabRef}
-            type="button"
-            className={`${styles.fab} ${closing ? styles.fabIn : ''}`}
-            data-testid="scratchpad-toggle"
-            data-has-text={value !== '' ? 'true' : undefined}
-            aria-label="Open scratchpad"
-            aria-expanded={false}
-            aria-controls="scratchpad-text"
-            title={value !== '' ? 'Scratchpad (has notes)' : 'Scratchpad'}
-            style={{ left: fab.x, top: fab.y }}
-            onPointerDown={(e) => begin(e, 'fab', { ...fab, w: 0, h: 0 })}
-            onPointerMove={move}
-            onPointerUp={end}
-            onPointerCancel={end}
-            onClick={() => {
-              if (suppressClick.current) {
-                suppressClick.current = false;
-                return;
-              }
-              onToggle(true);
-            }}
-          >
-            <NotepadIcon />
-            {value !== '' && <span className={styles.dot} aria-hidden="true" />}
-          </button>
+          {!external && (
+            <button
+              ref={fabRef}
+              type="button"
+              className={`${styles.fab} ${closing ? styles.fabIn : ''}`}
+              data-testid="scratchpad-toggle"
+              data-has-text={value !== '' ? 'true' : undefined}
+              aria-label="Open scratchpad"
+              aria-expanded={false}
+              aria-controls="scratchpad-text"
+              title={value !== '' ? 'Scratchpad (has notes)' : 'Scratchpad'}
+              style={{ left: fab.x, top: fab.y }}
+              onPointerDown={(e) => begin(e, 'fab', { ...fab, w: 0, h: 0 })}
+              onPointerMove={move}
+              onPointerUp={end}
+              onPointerCancel={end}
+              onClick={() => {
+                if (suppressClick.current) {
+                  suppressClick.current = false;
+                  return;
+                }
+                onToggle(true);
+              }}
+            >
+              <NotepadIcon />
+              {value !== '' && <span className={styles.dot} aria-hidden="true" />}
+            </button>
+          )}
         </>
       )}
     </div>
