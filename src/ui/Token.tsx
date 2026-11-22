@@ -12,7 +12,7 @@ export function Token({
 }: {
   person: Person;
   conflict?: boolean;
-  /** Flagged wrong by a check or hint: an icon badge, never colour alone. */
+  /** Flagged wrong by a check: an icon badge, never colour alone. */
   wrong?: boolean;
   describedBy?: string;
   /** Prefix for test ids so the board and the panel can both show a token. */

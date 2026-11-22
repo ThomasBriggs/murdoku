@@ -3,7 +3,6 @@ import type {
   EngineRequest,
   EngineResponse,
   ErrorCode,
-  HintResult,
   Placements,
   RequestBody,
   ResponseFor,
@@ -31,7 +30,6 @@ export class EngineError extends Error {
 export interface EngineClient {
   generate(seed: string, difficulty: Difficulty): Promise<PuzzleView>;
   check(placements: Placements): Promise<{ correct: PersonId[]; wrong: PersonId[] }>;
-  hint(placements: Placements, revealOne?: boolean): Promise<HintResult>;
   accuse(
     placements: Placements,
     suspectId: PersonId,
@@ -44,7 +42,7 @@ export interface EngineClientOptions {
   workerFactory?: () => WorkerLike;
   /** Timeout for generate (default 60 s). */
   generateTimeoutMs?: number;
-  /** Timeout for check/hint/accuse (default 15 s). */
+  /** Timeout for check/accuse (default 15 s). */
   timeoutMs?: number;
 }
 
@@ -122,11 +120,6 @@ export function createEngineClient(options: EngineClientOptions = {}): EngineCli
     async check(placements) {
       const r = await request({ type: 'check', placements }, timeout);
       return { correct: r.correct, wrong: r.wrong };
-    },
-    async hint(placements, revealOne) {
-      return (
-        await request({ type: 'hint', placements, ...(revealOne ? { revealOne } : {}) }, timeout)
-      ).result;
     },
     async accuse(placements, suspectId) {
       const r = await request({ type: 'accuse', placements, suspectId }, timeout);

@@ -48,7 +48,6 @@ import {
 } from './annotations';
 import { mergeSelection, type SelectMode } from './selection';
 import { createEngineClient, type EngineClient } from '../worker/client';
-import type { HintResult } from '../worker/protocol';
 import { emptyStats, recordAbandon, recordWin, type Stats } from './stats';
 import type { SavedGame } from './persistence';
 import { emptyHistory, popRedo, popUndo, pushHistory, type History } from './history';
@@ -144,7 +143,6 @@ export interface GameState {
   history: History<Undoable>;
   elapsedMs: number;
   running: boolean;
-  hintsUsed: number;
   checksUsed: number;
   assistsUsed: number;
   /** People for whom "show where this clue allows" was already counted (once per person per game). */
@@ -183,7 +181,6 @@ export interface GameActions {
   redo(): boolean;
   reset(): void;
   check(): Promise<{ correct: PersonId[]; wrong: PersonId[] } | null>;
-  hint(revealOne?: boolean): Promise<HintResult | null>;
   accuse(suspectId: PersonId): Promise<{
     placementCorrect: boolean;
     accusationCorrect: boolean;
@@ -372,7 +369,6 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
         history: emptyHistory(),
         elapsedMs: 0,
         running: false,
-        hintsUsed: 0,
         checksUsed: 0,
         assistsUsed: 0,
         assistedPeople: [],
@@ -405,7 +401,6 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
             d.history = emptyHistory();
             d.elapsedMs = 0;
             d.running = false;
-            d.hintsUsed = 0;
             d.checksUsed = 0;
             d.assistsUsed = 0;
             d.assistedPeople = [];
@@ -455,7 +450,6 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
               d.whatIfStack = save.whatIfStack;
               d.history = { past: [...save.history.past], future: [...save.history.future] };
               d.elapsedMs = save.elapsedMs;
-              d.hintsUsed = save.hintsUsed;
               d.checksUsed = save.checksUsed;
               d.assistsUsed = save.assistsUsed;
               d.assistedPeople = save.assistedPeople;
@@ -585,15 +579,6 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
           return result;
         },
 
-        async hint(revealOne) {
-          if (!playing()) return null;
-          const result = await client.hint(get().placements, revealOne);
-          set((d) => {
-            d.hintsUsed += 1;
-          });
-          return result;
-        },
-
         async accuse(suspectId) {
           const s = get();
           if (s.status !== 'playing' || !allPlaced(s)) return null;
@@ -603,7 +588,7 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
             set((d) => {
               d.status = 'won';
               d.running = false;
-              const r = recordWin(d.stats, s.puzzle!.difficulty, d.elapsedMs, d.hintsUsed);
+              const r = recordWin(d.stats, s.puzzle!.difficulty, d.elapsedMs);
               d.stats = r.stats;
               d.newBest = r.newBest;
             });

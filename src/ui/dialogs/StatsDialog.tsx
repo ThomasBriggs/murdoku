@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { averageHints } from '../../state/stats';
 import { ConfirmDialog, Modal } from '../ConfirmDialog';
 import { useGame, useStoreApi } from '../context';
 import { formatTime } from '../time';
@@ -11,7 +10,6 @@ export function StatsDialog({ onClose }: { onClose(): void }) {
   const store = useStoreApi();
   const stats = useGame((g) => g.stats);
   const [confirming, setConfirming] = useState(false);
-  const avg = averageHints(stats);
 
   if (confirming)
     return (
@@ -62,8 +60,6 @@ export function StatsDialog({ onClose }: { onClose(): void }) {
         <dd data-testid="stats-streak">{stats.streak}</dd>
         <dt>Best streak</dt>
         <dd data-testid="stats-best-streak">{stats.bestStreak}</dd>
-        <dt>Average hints per win</dt>
-        <dd data-testid="stats-avg-hints">{avg === null ? '–' : avg.toFixed(1)}</dd>
         {LEVELS.map((d) => (
           <Best key={d} level={d} ms={stats.bestTimeMs[d]} />
         ))}

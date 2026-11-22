@@ -6,10 +6,12 @@ import {
   openKey,
   openMore,
   openSettings,
+  placePerson,
   playToWin,
   sel,
   selectPerson,
   setTheme,
+  solutionOfLoaded,
 } from '../support/helpers';
 
 const URL = '/?seed=cy-a11y&d=easy';
@@ -117,17 +119,18 @@ describe('accessibility (axe)', () => {
     checkA11y();
   });
 
-  it('draw controls, what-if banner and hint panel', () => {
+  it('draw controls, what-if banner and check panel', () => {
     cy.viewport(1280, 900);
     load();
     cy.get(sel('tool-draw')).click();
     cy.get(sel('draw-controls')).should('be.visible');
     checkA11y();
     cy.get(sel('tool-place')).click();
+    solutionOfLoaded().then((cells) => placePerson(1, cells[1]!.r, cells[1]!.c));
+    cy.get(sel('check-button')).click();
+    cy.get(sel('check-text')).should('be.visible');
     moreClick('whatif-start');
     cy.get(sel('whatif-banner')).should('be.visible');
-    cy.get(sel('hint-button')).click();
-    cy.get(sel('hint-panel')).should('be.visible');
     checkA11y();
   });
 

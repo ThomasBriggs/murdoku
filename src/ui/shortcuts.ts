@@ -21,7 +21,6 @@ const FIXED: readonly Shortcut[] = [
   { id: 'escape', keys: 'Esc', label: 'Deselect, or close a dialog', group: 'Playing' },
   { id: 'undo', keys: 'Ctrl+Z', label: 'Undo', group: 'Playing' },
   { id: 'redo', keys: 'Ctrl+Shift+Z', label: 'Redo', group: 'Playing' },
-  { id: 'hint', keys: 'H', label: 'Ask for a hint', group: 'Playing' },
   {
     id: 'clear',
     keys: 'Delete',

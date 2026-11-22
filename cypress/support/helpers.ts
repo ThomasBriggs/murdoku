@@ -1,29 +1,30 @@
 // Shared Cypress helpers (plain module; import it from specs).
+import { generatePuzzle } from '../../src/engine/generator';
+import type { Cell, Difficulty } from '../../src/engine/types';
+
 export const tid = (id: string) => cy.get(`[data-testid="${id}"]`);
 export const sel = (id: string) => `[data-testid="${id}"]`;
 export const cell = (r: number, c: number) => cy.get(sel(`cell-${r}-${c}`));
 
 /**
- * Solve with the Hint button alone: each round asks for a hint and applies it the way a
- * player would (select the person, click the cell). Counts the hints asked on `used`.
+ * The loaded puzzle's solution, worked out in the test from the seed and difficulty shown in
+ * the header. Test code only: the app itself never receives the solution (SPEC §7).
  */
-export function solveByHints(used: { n: number }, guard = 20) {
-  cy.get(sel('accuse-button')).then(($accuse) => {
-    if (!$accuse.prop('disabled')) return; // all nine are placed
-    expect(guard, 'hint rounds left').to.be.greaterThan(0);
-    cy.get(sel('hint-button')).click();
-    used.n++;
-    cy.get(sel('hint-panel')).then(($panel) => {
-      if ($panel.attr('data-hint-kind') === 'place') {
-        const id = $panel.attr('data-hint-person');
-        selectPerson(id!);
-        cell(Number($panel.attr('data-hint-row')), Number($panel.attr('data-hint-col'))).click();
-      } else {
-        cy.get(sel('hint-apply')).click(); // eliminate-only step: cross the cells out
-      }
-      solveByHints(used, guard - 1);
-    });
+export function solutionOfLoaded(): Cypress.Chainable<Cell[]> {
+  return cy.get(sel('puzzle-seed')).then(($seed) =>
+    cy.get(sel('puzzle-difficulty')).then(($d) => {
+      const d = $d.text().trim().toLowerCase() as Difficulty;
+      return generatePuzzle($seed.text().trim(), d).solution.cellOf;
+    }),
+  );
+}
+
+/** Place everyone at their solution cell the way a player would (select, click the cell). */
+export function solveFromSeed() {
+  solutionOfLoaded().then((cells) => {
+    cells.forEach((c, id) => placePerson(id, c.r, c.c));
   });
+  cy.get(sel('accuse-button')).should('be.enabled');
 }
 
 /** Accuse suspects one by one until the win dialog shows; wrong ones must say "not the murderer". */
@@ -39,10 +40,9 @@ export function accuseUntilWon(ids: string[], i = 0) {
   });
 }
 
-/** Hint-driven playthrough of the loaded puzzle: solve, accuse, end on the win dialog. Returns hints used. */
-export function playToWin(): Cypress.Chainable<number> {
-  const used = { n: 0 };
-  solveByHints(used);
+/** Playthrough of the loaded puzzle: solve from the seed, accuse, end on the win dialog. */
+export function playToWin() {
+  solveFromSeed();
   cy.get(sel('accuse-button')).should('be.enabled').click();
   cy.get('[data-testid^="accuse-suspect-"]').should('have.length', 8);
   cy.get('[data-testid^="accuse-suspect-"]').then(($r) => {
@@ -50,7 +50,6 @@ export function playToWin(): Cypress.Chainable<number> {
     accuseUntilWon(ids);
   });
   cy.get(sel('win-dialog')).should('be.visible');
-  return cy.then(() => used.n);
 }
 
 /** Pointer gesture over the drawing layer; points are fractions (0..1) of the layer's box. */
@@ -110,7 +109,10 @@ export function closeClues() {
 export function selectPerson(id: number | string) {
   openClues();
   // Click the name button: the card centre can land on a clue word, which doesn't select.
-  cy.get(sel(`person-card-${id}`)).find('button').first().click();
+  cy.get(sel(`person-card-${id}`))
+    .find('button')
+    .first()
+    .click();
   cy.window().then((win) => {
     if (win.innerWidth < 1200) closeClues();
   });

@@ -249,11 +249,12 @@ describe('dock and overflow menu', () => {
     expect(screen.getByTestId('logic-grid')).toBeInTheDocument();
   });
 
-  it('Hint, Check and Accuse sit beside the board, not in the overflow menu', async () => {
+  it('Check and Accuse sit beside the board, not in the overflow menu', async () => {
     await setup();
     const group = within(screen.getByRole('group', { name: 'Investigate' }));
-    for (const id of ['hint-button', 'check-button', 'accuse-button'])
+    for (const id of ['check-button', 'accuse-button'])
       expect(group.getByTestId(id)).toBeInTheDocument();
+    expect(screen.queryByTestId('hint-button')).toBeNull();
   });
 
   it('the Key toggle shows and hides the furniture legend', async () => {

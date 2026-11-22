@@ -56,8 +56,8 @@ export function RulesDialog({ onClose }: { onClose(): void }) {
         <dl>
           <dt>Beside</dt>
           <dd>
-            Directly up, down, left or right of it, in the same room. Diagonals and furniture on
-            the other side of a wall do not count.
+            Directly up, down, left or right of it, in the same room. Diagonals and furniture on the
+            other side of a wall do not count.
           </dd>
           <dt>In a corner</dt>
           <dd>A cell with a wall (or the board edge) on two sides that meet, within its room.</dd>
@@ -81,8 +81,8 @@ export function RulesDialog({ onClose }: { onClose(): void }) {
           ))}
         </dl>
         <p>
-          Hint explains the next step you can deduce. Check tells you how many placements are right
-          or wrong. Both are counted. Accuse unlocks once all nine are placed.
+          Check tells you how many placements are right or wrong, and is counted. Accuse unlocks
+          once all nine are placed.
         </p>
 
         <h3>Keyboard shortcuts</h3>

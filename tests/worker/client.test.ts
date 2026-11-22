@@ -41,7 +41,7 @@ describe('engine client', () => {
   it('rejects typed errors', async () => {
     const f = fakeWorker();
     const c = createEngineClient({ workerFactory: () => f.w });
-    const p = c.hint({});
+    const p = c.check({});
     f.reply({ id: 1, type: 'error', code: 'not-generated', message: 'nope' });
     await expect(p).rejects.toMatchObject({ name: 'EngineError', code: 'not-generated' });
   });

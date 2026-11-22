@@ -4,7 +4,7 @@ import {
   placePerson,
   selectPerson,
   sel,
-  solveByHints,
+  solveFromSeed,
 } from '../support/helpers';
 
 const URL = '/?seed=cy-clues&d=easy';
@@ -200,7 +200,7 @@ describe('clues: Unplaced and Placed sections', () => {
 
   it('shows an all-placed message once everyone is on the board', () => {
     load();
-    solveByHints({ n: 0 });
+    solveFromSeed();
     cy.get(sel('clues-all-placed')).should('be.visible');
     cy.get(sel('clues-unplaced')).should('contain.text', '(0)');
     cy.get(sel('clues-placed')).should('contain.text', '(9)');

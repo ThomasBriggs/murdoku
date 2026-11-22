@@ -80,15 +80,14 @@ describe('dock (desktop)', () => {
     cell(0, 0).should('have.attr', 'data-mark', 'cross');
   });
 
-  it('Hint, Check and Accuse float beside the board, not in the overflow menu', () => {
+  it('Check and Accuse float beside the board, not in the overflow menu', () => {
     load();
     cy.get('[role="group"][aria-label="Investigate"]').within(() => {
-      for (const id of ['hint-button', 'check-button', 'accuse-button'])
-        cy.get(sel(id)).should('be.visible');
+      for (const id of ['check-button', 'accuse-button']) cy.get(sel(id)).should('be.visible');
     });
+    cy.get(sel('hint-button')).should('not.exist');
     cy.get(sel('overflow-button')).click();
     cy.get(sel('overflow-menu')).within(() => {
-      cy.get(sel('hint-button')).should('not.exist');
       cy.get(sel('accuse-button')).should('not.exist');
     });
   });
@@ -184,17 +183,16 @@ describe('furniture key', () => {
 });
 
 describe('phone bottom bar', () => {
-  it('has an always-visible Hint/Check/Accuse/Clues strip above the tools', () => {
+  it('has an always-visible Check/Accuse/Clues strip above the tools', () => {
     cy.viewport(375, 740);
     load();
     cy.get(sel('dock')).should('not.exist');
     cy.get(sel('mobile-dock')).within(() => {
-      for (const id of ['hint-button', 'check-button', 'accuse-button', 'clues-toggle'])
+      for (const id of ['check-button', 'accuse-button', 'clues-toggle'])
         cy.get(sel(id)).should('be.visible');
     });
     cy.get(sel('more-sheet')).should('not.exist');
-    cy.get(sel('hint-button')).click();
-    cy.get(sel('hint-panel')).should('be.visible');
+    cy.get(sel('hint-button')).should('not.exist');
   });
 
   it('has the primary tools, undo and ⋯; the More sheet holds the rest', () => {
@@ -204,7 +202,6 @@ describe('phone bottom bar', () => {
     cy.get(sel('more-sheet')).should('be.visible');
     cy.get(sel('more-button')).should('have.attr', 'aria-expanded', 'true');
     cy.get(sel('more-sheet')).within(() => {
-      cy.get(sel('hint-button')).should('not.exist');
       cy.get(sel('accuse-button')).should('not.exist');
     });
     for (const id of [

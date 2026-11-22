@@ -21,13 +21,11 @@ import {
   WHATIF_MAX_DEPTH,
   type Tool,
 } from '../state/store';
-import type { HintDeduction as Deduction } from '../worker/protocol';
 import type { PersonId } from '../engine/types';
 import { AccuseDialog } from './dialogs/AccuseDialog';
 import { WinDialog } from './dialogs/WinDialog';
-import { CheckSummary, HintPanel, hintHighlights, type HintView } from './Feedback';
+import { CheckSummary } from './Feedback';
 import feedback from './Feedback.module.css';
-import { withShortcut } from './shortcuts';
 import { placementMatchesHash } from './verifyWin';
 import { Board } from './Board';
 import type { ActivateMods } from './Cell';
@@ -42,7 +40,7 @@ import { FurnitureLegend } from './FurnitureLegend';
 import { ClearMenu, describeClear, LayersMenu, type ClearChoice } from './ToolkitMenus';
 import { ColorPicker, PRIMARY_TOOLS, ToolPalette } from './ToolPalette';
 import palette from './ToolPalette.module.css';
-import { CheckIcon, FlagIcon, HintIcon, RedoIcon, ResetIcon, UndoIcon } from './icons/glyphs';
+import { CheckIcon, FlagIcon, RedoIcon, ResetIcon, UndoIcon } from './icons/glyphs';
 import { useGame, useStoreApi } from './context';
 import styles from './Game.module.css';
 import { PeoplePanel } from './PeoplePanel';
@@ -104,10 +102,8 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
   const solved = status === 'won';
   const elapsedMs = useGame((g) => g.elapsedMs);
   const newBest = useGame((g) => g.newBest);
-  const hintsUsed = useGame((g) => g.hintsUsed);
   const checksUsed = useGame((g) => g.checksUsed);
   const assistsUsed = useGame((g) => g.assistsUsed);
-  const [hintStamped, setHint] = useState<Stamped<HintView> | null>(null);
   const [checkStamped, setCheck] = useState<Stamped<{
     correct: PersonId[];
     wrong: PersonId[];
@@ -164,55 +160,13 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
   // Feedback is about the board as it was when asked for: any later change hides it.
   const stillValid = <T,>(x: Stamped<T> | null): T | null =>
     x && x.p === placements && x.t === tentative && x.a === annotations ? x.value : null;
-  const hint = stillValid(hintStamped);
   const check = stillValid(checkStamped);
-
-  const requestHint = useCallback(
-    async (revealOne?: boolean) => {
-      const r = await store.getState().hint(revealOne);
-      if (!r) return;
-      setCheck(null);
-      const at = boardStamp(store.getState());
-      if (r.type === 'deduction')
-        setHint({ ...at, value: { kind: 'deduction', deduction: r.deduction } });
-      else if (r.type === 'wrong')
-        setHint({
-          ...at,
-          value: {
-            kind: 'wrong',
-            count: r.count,
-            ...(r.person !== undefined ? { person: r.person } : {}),
-          },
-        });
-      else setHint({ ...at, value: { kind: 'none', complete: allPlaced(store.getState()) } });
-    },
-    [store],
-  );
 
   const runCheck = useCallback(async () => {
     const r = await store.getState().check();
     if (!r) return;
-    setHint(null);
     setCheck({ ...boardStamp(store.getState()), value: r });
   }, [store]);
-
-  const applyHint = useCallback(
-    (d: Deduction) => {
-      const s = store.getState();
-      if (d.kind === 'place' && d.person !== undefined && d.cells[0]) {
-        s.place(d.person, cellKey(d.cells[0].r, d.cells[0].c));
-      } else {
-        const keys = [...new Set(d.cells.map((c) => cellKey(c.r, c.c)))];
-        // applyMark toggles, so skip cells that are already crossed out.
-        s.applyMark(
-          keys.filter((k) => s.annotations.cellMarks[k] !== 'cross'),
-          'cross',
-        );
-      }
-      setHint(null);
-    },
-    [store],
-  );
 
   const accuse = useCallback(
     async (id: PersonId) => {
@@ -233,10 +187,8 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
   const wrongPeople = useMemo(() => {
     const out = new Set<PersonId>();
     if (check && showWrong) for (const id of check.wrong) out.add(id);
-    if (hint?.kind === 'wrong' && hint.person !== undefined) out.add(hint.person);
     return out;
-  }, [check, showWrong, hint]);
-  const hintCells = useMemo(() => hintHighlights(hint), [hint]);
+  }, [check, showWrong]);
 
   const conflicts = useMemo(
     () => conflictsByPerson(selectConflicts({ puzzle, placements })),
@@ -397,7 +349,6 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
         else if (k === 'p') s.setTool(s.tool === 'pencil' ? 'place' : 'pencil');
         else if (k === 'e') s.setTool(s.tool === 'eliminate' ? 'place' : 'eliminate');
         else if (k === 'd') s.setTool(s.tool === 'draw' ? 'place' : 'draw');
-        else if (k === 'h') void requestHint();
         else if (k === 'g') setLogicOpen((o) => !o);
         else if (k === 'w') {
           // W starts a what-if, or (inside one) asks how to end it; Shift+W nests another.
@@ -417,17 +368,7 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [
-    store,
-    confirmReset,
-    clearChoice,
-    whatIfEnd,
-    printOpen,
-    accuseOpen,
-    winOpen,
-    targets,
-    requestHint,
-  ]);
+  }, [store, confirmReset, clearChoice, whatIfEnd, printOpen, accuseOpen, winOpen, targets]);
 
   if (!puzzle) return null;
   const actions = store.getState();
@@ -514,20 +455,6 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
   );
   const investigate = (
     <>
-      <button
-        type="button"
-        data-testid="hint-button"
-        disabled={status !== 'playing'}
-        aria-keyshortcuts="h"
-        title={withShortcut('Hint: explain the next step you can deduce', 'hint')}
-        onClick={() => {
-          void requestHint();
-          closeMore();
-        }}
-      >
-        <HintIcon className={palette.menuIcon} />
-        <span>Hint</span>
-      </button>
       <button
         type="button"
         data-testid="check-button"
@@ -642,15 +569,6 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
             </span>
           </div>
         )}
-        {hint && (
-          <HintPanel
-            view={hint}
-            personName={(id) => puzzle.people.find((x) => x.id === id)?.name ?? 'Someone'}
-            onShowOne={() => void requestHint(true)}
-            onApply={applyHint}
-            onDismiss={() => setHint(null)}
-          />
-        )}
         {check && (
           <CheckSummary
             correct={check.correct.length}
@@ -700,7 +618,6 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
         </div>
         <Board
           solved={solved}
-          hintCells={hintCells}
           wrongPeople={wrongPeople}
           puzzle={puzzle}
           roomColors={roomColors}
@@ -1037,7 +954,6 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
           elapsedMs={elapsedMs}
           difficulty={puzzle.difficulty}
           seed={puzzle.seed}
-          hints={hintsUsed}
           checks={checksUsed}
           assists={assistsUsed}
           newBest={newBest}

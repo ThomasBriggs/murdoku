@@ -1,4 +1,11 @@
-import { accuseUntilWon, cell, solveByHints, sel as tid } from '../support/helpers';
+import {
+  accuseUntilWon,
+  cell,
+  placePerson,
+  solutionOfLoaded,
+  solveFromSeed,
+  sel as tid,
+} from '../support/helpers';
 
 const SEED = 'cy-flow';
 const URL = `/?seed=${SEED}&d=easy`;
@@ -16,9 +23,17 @@ describe('game flow', () => {
     cy.get(tid('timer')).should('not.have.text', '00:00');
     cy.get(tid('rules-button')).click();
     cy.get(tid('rules-dialog')).should('contain.text', 'You can be on');
-    cy.get(tid('rules-keys-playing')).should('contain.text', 'Ask for a hint');
+    cy.get(tid('rules-keys-playing')).should('not.contain.text', 'hint');
     cy.get(tid('rules-close')).click();
     cy.get(tid('rules-dialog')).should('not.exist');
+  });
+
+  it('has no Hint button or H shortcut', () => {
+    load();
+    cy.get(tid('check-button')).should('be.visible');
+    cy.get(tid('hint-button')).should('not.exist');
+    cy.get('body').type('h');
+    cy.get(tid('hint-panel')).should('not.exist');
   });
 
   it('keeps Accuse disabled until everyone is placed', () => {
@@ -27,28 +42,14 @@ describe('game flow', () => {
       .should('be.disabled')
       .and('have.attr', 'title')
       .and('match', /Place all 9/);
-    cy.get(tid('hint-button')).click();
-    cy.get(tid('hint-panel')).then(($p) => {
-      cy.get(tid(`person-card-${$p.attr('data-hint-person')}`)).click();
-      cell(Number($p.attr('data-hint-row')), Number($p.attr('data-hint-col'))).click();
-    });
-    cy.get(tid('hint-panel')).should('not.exist'); // cleared by the next action
+    solutionOfLoaded().then((cells) => placePerson(0, cells[0]!.r, cells[0]!.c));
     cy.get(tid('accuse-button')).should('be.disabled');
   });
 
   it('reports correct and wrong placements with a Check', () => {
     load();
-    cy.get(tid('hint-button')).click();
-    cy.get(tid('hint-panel')).then(($p) => {
-      const right = $p.attr('data-hint-person');
-      const r = Number($p.attr('data-hint-row'));
-      const c = Number($p.attr('data-hint-col'));
-      cell(r, c).should('have.attr', 'data-hint', 'target');
-      // someone else standing on the hinted cell can only be wrong
-      const wrong = right === '1' ? '2' : '1';
-      cy.get(tid(`person-card-${wrong}`)).click();
-      cell(r, c).click();
-    });
+    // person 2 standing on person 1's solution cell can only be wrong
+    solutionOfLoaded().then((cells) => placePerson(2, cells[1]!.r, cells[1]!.c));
     cy.get(tid('check-button')).click();
     cy.get(tid('check-text')).should('have.text', '0 correct, 1 wrong');
     cy.get('[data-testid^="wrong-badge-"]').should('not.exist');
@@ -56,10 +57,9 @@ describe('game flow', () => {
     cy.get('[data-testid^="wrong-badge-"]').should('have.length', 1);
   });
 
-  it('plays a seed through with hints, accuses and wins', () => {
+  it('plays a seed through, accuses and wins', () => {
     load();
-    const used = { n: 0 };
-    solveByHints(used);
+    solveFromSeed();
     cy.get(tid('accuse-button')).should('be.enabled').click();
     cy.get('[data-testid^="accuse-suspect-"]').should('have.length', 8);
     cy.get('[data-testid^="accuse-suspect-"]').then(($r) => {
@@ -67,7 +67,7 @@ describe('game flow', () => {
       accuseUntilWon(ids);
     });
     cy.get(tid('win-dialog')).should('be.visible');
-    cy.get(tid('win-hints')).should(($e) => expect(Number($e.text())).to.eq(used.n));
+    cy.get(tid('win-hints')).should('not.exist');
     cy.get(tid('win-difficulty')).should('have.text', 'easy');
     cy.get(tid('win-time'))
       .invoke('text')
@@ -91,7 +91,7 @@ describe('game flow', () => {
     cy.get(tid('win-close')).click();
     cy.get(tid('solved-banner')).should('be.visible');
     cy.get(tid('board')).should('have.attr', 'data-solved', 'true');
-    cy.get(tid('hint-button')).should('be.disabled');
+    cy.get(tid('check-button')).should('be.disabled');
     cy.get(tid('person-card-1')).click();
     cell(0, 0).click();
     cy.get(tid('board-grid')).find('[data-occupant="1"]').should('have.length', 1);
@@ -115,8 +115,7 @@ describe('game flow', () => {
 
   it('asks before discarding progress when starting a new game', () => {
     load();
-    cy.get(tid('hint-button')).click();
-    cy.get(tid('hint-apply')).click();
+    solutionOfLoaded().then((cells) => placePerson(0, cells[0]!.r, cells[0]!.c));
     cy.get(tid('new-game-button')).click();
     cy.get(tid('newgame-seed')).type('cy-flow-three');
     cy.get(tid('newgame-start')).click();

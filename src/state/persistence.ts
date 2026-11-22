@@ -103,7 +103,6 @@ export interface SavedGame {
   whatIfStack: WhatIfFrame[];
   history: SavedHistory;
   elapsedMs: number;
-  hintsUsed: number;
   checksUsed: number;
   assistsUsed: number;
   assistedPeople: PersonId[];
@@ -122,7 +121,6 @@ export type SaveSource = Pick<
   | 'whatIfStack'
   | 'history'
   | 'elapsedMs'
-  | 'hintsUsed'
   | 'checksUsed'
   | 'assistsUsed'
   | 'assistedPeople'
@@ -144,7 +142,6 @@ export function toSavedGame(s: SaveSource, now = Date.now()): SavedGame | null {
     whatIfStack: s.whatIfStack,
     history: { past: s.history.past, future: s.history.future },
     elapsedMs: Math.round(s.elapsedMs),
-    hintsUsed: s.hintsUsed,
     checksUsed: s.checksUsed,
     assistsUsed: s.assistsUsed,
     assistedPeople: s.assistedPeople,
@@ -285,7 +282,6 @@ export function parseSavedGame(
       whatIfStack,
       history: historyOf(raw.history),
       elapsedMs: count(raw.elapsedMs),
-      hintsUsed: count(raw.hintsUsed),
       checksUsed: count(raw.checksUsed),
       assistsUsed: count(raw.assistsUsed),
       assistedPeople: Array.isArray(raw.assistedPeople)
@@ -442,7 +438,6 @@ export function connectPersistence(
       s.annotations !== prev.annotations ||
       s.whatIfStack !== prev.whatIfStack ||
       s.history !== prev.history ||
-      s.hintsUsed !== prev.hintsUsed ||
       s.checksUsed !== prev.checksUsed ||
       s.assistsUsed !== prev.assistsUsed ||
       s.assistedPeople !== prev.assistedPeople;

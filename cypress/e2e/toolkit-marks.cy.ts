@@ -320,14 +320,7 @@ describe('solving toolkit: marks, notes, highlights', () => {
     cy.get('[data-testid="more-button"]').click();
     cy.get('[data-testid="more-sheet"]').should('be.visible');
     for (const t of ['dot', 'unsure', 'eliminate', 'select']) tool(t).should('be.visible');
-    for (const id of [
-      'redo',
-      'reset',
-      'layers-button',
-      'clear-button',
-      'hint-button',
-      'check-button',
-    ])
+    for (const id of ['redo', 'reset', 'layers-button', 'clear-button', 'check-button'])
       cy.get(`[data-testid="${id}"]`).should('be.visible');
     tool('dot').click();
     cy.get('[data-testid="more-sheet"]').should('not.exist');

@@ -8,7 +8,6 @@
  *  - WON counts accuse-verified wins; best time is the lowest elapsed time per difficulty.
  *  - STREAK = consecutive wins. Abandoning a game that had a placement resets it to 0; abandoning
  *    an empty game, or discarding a save from an outdated generator, does not.
- *  - Average hints = hints used in won games / wins.
  */
 import type { Difficulty } from '../engine/types';
 
@@ -18,8 +17,6 @@ export interface Stats {
   bestTimeMs: Record<Difficulty, number | null>;
   streak: number;
   bestStreak: number;
-  /** Sum of hints used over all won games. */
-  winHints: number;
 }
 
 export function emptyStats(): Stats {
@@ -29,7 +26,6 @@ export function emptyStats(): Stats {
     bestTimeMs: { easy: null, medium: null, hard: null },
     streak: 0,
     bestStreak: 0,
-    winHints: 0,
   };
 }
 
@@ -37,7 +33,6 @@ export function recordWin(
   s: Stats,
   difficulty: Difficulty,
   elapsedMs: number,
-  hints: number,
 ): { stats: Stats; newBest: boolean } {
   const best = s.bestTimeMs[difficulty];
   const newBest = best === null || elapsedMs < best;
@@ -50,7 +45,6 @@ export function recordWin(
       bestTimeMs: { ...s.bestTimeMs, [difficulty]: newBest ? elapsedMs : best },
       streak,
       bestStreak: Math.max(s.bestStreak, streak),
-      winHints: s.winHints + hints,
     },
   };
 }
@@ -59,10 +53,6 @@ export function recordWin(
 export function recordAbandon(s: Stats, hadPlacement: boolean): Stats {
   if (!hadPlacement) return s;
   return { ...s, played: s.played + 1, streak: 0 };
-}
-
-export function averageHints(s: Stats): number | null {
-  return s.won === 0 ? null : s.winHints / s.won;
 }
 
 const num = (v: unknown, d = 0) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : d);
@@ -83,6 +73,5 @@ export function normaliseStats(raw: unknown): Stats {
     bestTimeMs: { easy: time(bt.easy), medium: time(bt.medium), hard: time(bt.hard) },
     streak: num(r.streak),
     bestStreak: num(r.bestStreak),
-    winHints: num(r.winHints),
   };
 }

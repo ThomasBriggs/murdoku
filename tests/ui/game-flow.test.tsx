@@ -8,8 +8,6 @@ import { cellKey, type PersonId } from '../../src/engine/types';
 import { createGameStore, type GameStore } from '../../src/state/store';
 import { createEngineClient, type EngineClient } from '../../src/worker/client';
 import { createInProcessWorker } from '../../src/worker/inprocess';
-import { HintPanel } from '../../src/ui/Feedback';
-import type { Deduction } from '../../src/engine/solver/logical';
 
 const SEED = 'flow-test';
 const truth = generatePuzzle(SEED, 'easy');
@@ -86,7 +84,7 @@ describe('header, rules and new game', () => {
     expect(dlg).toHaveTextContent('Beside');
     expect(dlg).toHaveTextContent('In a corner');
     expect(dlg).toHaveTextContent('Against a wall');
-    expect(within(dlg).getByTestId('rules-keys-playing')).toHaveTextContent('Ask for a hint');
+    expect(within(dlg).getByTestId('rules-keys-playing')).not.toHaveTextContent(/hint/i);
     expect(within(dlg).getByTestId('rules-keys-tools')).toHaveTextContent('Cross tool');
     click('rules-close');
     expect(screen.queryByTestId('rules-dialog')).toBeNull();
@@ -156,97 +154,14 @@ describe('header, rules and new game', () => {
   });
 });
 
-describe('hints', () => {
-  it('shows a deduction, highlights the cells, counts it, and clears on the next action', async () => {
-    const store = await setup();
-    click('hint-button');
-    const panel = await screen.findByTestId('hint-panel');
-    expect(panel.dataset.hintKind).toBe('place');
-    const person = Number(panel.dataset.hintPerson);
-    expect(Number(panel.dataset.hintCell)).toBe(solved[person]);
-    expect(screen.getByTestId('hint-text').textContent!.length).toBeGreaterThan(10);
-    const r = Number(panel.dataset.hintRow);
-    const c = Number(panel.dataset.hintCol);
-    expect(screen.getByTestId(`cell-${r}-${c}`).dataset.hint).toBe('target');
-    expect(store.getState().hintsUsed).toBe(1);
-    act(() => void store.getState().place(person, solved[person]!));
-    expect(screen.queryByTestId('hint-panel')).toBeNull();
-    expect(screen.getByTestId(`cell-${r}-${c}`).dataset.hint).toBeUndefined();
-  });
-
-  it('highlights involved cells distinctly and clears them on dismiss; H key asks too', async () => {
-    const store = await setup();
+describe('hints are retired', () => {
+  it('has no Hint button, and H neither asks nor shows anything', async () => {
+    await setup();
+    expect(screen.queryByTestId('hint-button')).toBeNull();
     fireEvent.keyDown(window, { key: 'h' });
-    await screen.findByTestId('hint-panel');
-    expect(store.getState().hintsUsed).toBe(1);
-    const involved = document.querySelectorAll('[data-hint="involved"], [data-hint="target"]');
-    expect(involved.length).toBeGreaterThan(0);
-    click('hint-dismiss');
+    await act(async () => undefined);
     expect(screen.queryByTestId('hint-panel')).toBeNull();
     expect(document.querySelectorAll('[data-hint]').length).toBe(0);
-  });
-
-  it('Place them applies the deduction', async () => {
-    const store = await setup();
-    click('hint-button');
-    const panel = await screen.findByTestId('hint-panel');
-    const person = Number(panel.dataset.hintPerson);
-    click('hint-apply');
-    expect(store.getState().placements[person]).toBe(solved[person]);
-    expect(screen.queryByTestId('hint-panel')).toBeNull();
-  });
-
-  it('reports a wrong board, then marks one wrong token on request', async () => {
-    const store = await setup();
-    act(() => void store.getState().place(0, wrongCellFor(0)));
-    click('hint-button');
-    const panel = await screen.findByTestId('hint-panel');
-    expect(panel.dataset.hintKind).toBe('wrong');
-    expect(screen.getByTestId('hint-text')).toHaveTextContent('Something on the board is wrong');
-    expect(screen.queryByTestId('wrong-badge-0')).toBeNull();
-    click('hint-show-one');
-    await waitFor(() => expect(screen.getByTestId('wrong-badge-0')).toBeInTheDocument());
-    expect(screen.getByTestId('hint-text')).toHaveTextContent('not in the right place');
-  });
-
-  it('says so when the board is complete', async () => {
-    const store = await setup();
-    placeAll(store);
-    click('hint-button');
-    const panel = await screen.findByTestId('hint-panel');
-    expect(panel.dataset.hintKind).toBe('none');
-    expect(screen.getByTestId('hint-text')).toHaveTextContent('Accuse');
-  });
-
-  it('ignores tentative (pencil) placements', async () => {
-    const store = await setup();
-    act(() => void store.getState().placeTentative(0, wrongCellFor(0)));
-    click('hint-button');
-    const panel = await screen.findByTestId('hint-panel');
-    expect(panel.dataset.hintKind).toBe('place');
-  });
-
-  it('an elimination hint offers to cross out cells and has no person target', () => {
-    const d: Deduction = {
-      technique: 5,
-      kind: 'eliminate',
-      cells: [{ r: 0, c: 0 }],
-      explanation: 'Because.',
-      involvedCells: [],
-    };
-    const apply = vi.fn();
-    render(
-      <HintPanel
-        view={{ kind: 'deduction', deduction: d }}
-        personName={() => 'X'}
-        onShowOne={() => undefined}
-        onApply={apply}
-        onDismiss={() => undefined}
-      />,
-    );
-    expect(screen.getByTestId('hint-panel').dataset.hintPerson).toBeUndefined();
-    click('hint-apply');
-    expect(apply).toHaveBeenCalledWith(d);
   });
 });
 
@@ -335,8 +250,6 @@ describe('accuse and win', () => {
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
     const store = await setup();
     placeAll(store);
-    click('hint-button');
-    await screen.findByTestId('hint-panel');
     click('check-button');
     await waitFor(() => expect(store.getState().checksUsed).toBe(1));
     click('accuse-button');
@@ -344,7 +257,7 @@ describe('accuse and win', () => {
     const win = await screen.findByTestId('win-dialog');
     expect(store.getState().status).toBe('won');
     expect(store.getState().running).toBe(false);
-    expect(within(win).getByTestId('win-hints')).toHaveTextContent('1');
+    expect(within(win).queryByTestId('win-hints')).toBeNull();
     expect(within(win).getByTestId('win-checks')).toHaveTextContent('1');
     expect(within(win).getByTestId('win-assists')).toHaveTextContent('0');
     expect(within(win).getByTestId('win-difficulty')).toHaveTextContent('easy');
@@ -361,7 +274,7 @@ describe('accuse and win', () => {
     click('win-close');
     expect(screen.getByTestId('board')).toHaveAttribute('data-solved', 'true');
     expect(screen.getByTestId('solved-banner')).toBeInTheDocument();
-    expect(screen.getByTestId('hint-button')).toBeDisabled();
+    expect(screen.getByTestId('check-button')).toBeDisabled();
     expect(screen.getByTestId('accuse-button')).toBeDisabled();
     expect(store.getState().place(0, wrongCellFor(0))).toBe('refused');
     expect(store.getState().remove(0)).toBe(false);

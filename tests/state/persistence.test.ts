@@ -42,7 +42,6 @@ describe('saved game round trip', () => {
     const a = await startedStore();
     buildComplexState(a);
     a.getState().tick(12345);
-    await a.getState().hint();
     await a.getState().check();
     const before = a.getState();
     expect(before.whatIfStack).toHaveLength(2);
@@ -67,7 +66,6 @@ describe('saved game round trip', () => {
     expect(r.whatIfStack).toEqual(s.whatIfStack);
     expect(r.history).toEqual(s.history);
     expect(r.elapsedMs).toBe(12345);
-    expect(r.hintsUsed).toBe(1);
     expect(r.checksUsed).toBe(1);
     expect(r.startedAt).toBe(s.startedAt);
     expect(r.running).toBe(true);
@@ -109,7 +107,7 @@ describe('solution never stored', () => {
   it('saved JSON has no solution, puzzle view or unplaced-person cells', async () => {
     const a = await startedStore();
     buildComplexState(a);
-    for (let i = 0; i < 3; i++) await a.getState().hint(); // hints must not leak either
+    for (let i = 0; i < 3; i++) await a.getState().check(); // checks must not leak either
     const storage = new MemoryStorage();
     saveCurrent(storage, toSavedGame(a.getState())!);
     const text = storage.getItem(KEY_CURRENT)!;

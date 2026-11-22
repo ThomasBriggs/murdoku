@@ -1,7 +1,6 @@
 import { GRID_SIZE } from '../engine/constants';
 import { generatePuzzle } from '../engine/generator';
 import { solutionHash } from '../engine/secure';
-import { nextDeduction } from '../engine/solver/logical';
 import {
   parseCellKey,
   type Cell,
@@ -90,27 +89,6 @@ export async function handleRequest(
         const { correct, wrong } = grade(puzzle, solution, toCells(puzzle, req.placements));
         return { id, type: 'check', correct, wrong };
       }
-      case 'hint': {
-        const cells = toCells(puzzle, req.placements);
-        const { wrong } = grade(puzzle, solution, cells);
-        if (wrong.length > 0) {
-          return {
-            id,
-            type: 'hint',
-            result: {
-              type: 'wrong',
-              count: wrong.length,
-              ...(req.revealOne ? { person: wrong[0]! } : {}),
-            },
-          };
-        }
-        const deduction = nextDeduction(puzzle, { placements: cells });
-        return {
-          id,
-          type: 'hint',
-          result: deduction ? { type: 'deduction', deduction } : { type: 'none' },
-        };
-      }
       case 'accuse': {
         const cells = toCells(puzzle, req.placements);
         const { correct, wrong } = grade(puzzle, solution, cells);
@@ -123,6 +101,11 @@ export async function handleRequest(
           accusationCorrect,
           won: placementCorrect && accusationCorrect,
         };
+      }
+      default: {
+        // Messages arrive untyped from postMessage; anything else (e.g. the retired 'hint').
+        const type: unknown = (req as { type?: unknown }).type;
+        throw new BadRequest(`unknown request type ${String(type)}`);
       }
     }
   } catch (e) {

@@ -9,7 +9,6 @@ export interface WinDialogProps {
   elapsedMs: number;
   difficulty: Difficulty;
   seed: string;
-  hints: number;
   checks: number;
   assists: number;
   /** This win set a new best time for its difficulty. */
@@ -63,8 +62,6 @@ export function WinDialog(p: WinDialogProps) {
         <dd data-testid="win-difficulty" style={{ textTransform: 'capitalize' }}>
           {p.difficulty}
         </dd>
-        <dt>Hints used</dt>
-        <dd data-testid="win-hints">{p.hints}</dd>
         <dt>Checks used</dt>
         <dd data-testid="win-checks">{p.checks}</dd>
         <dt>Assists used</dt>

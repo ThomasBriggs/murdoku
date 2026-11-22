@@ -147,15 +147,12 @@ describe('game store', () => {
     expect(selectConflicts(g())).toEqual([]);
   });
 
-  it('check and hint increment counters', async () => {
+  it('check increments its counter', async () => {
     const g = () => store.getState();
     g().place(0, solved[0]!);
     const c = await g().check();
     expect(c).toEqual({ correct: [0], wrong: [] });
     expect(g().checksUsed).toBe(1);
-    const h = await g().hint();
-    expect(h?.type).toBe('deduction');
-    expect(g().hintsUsed).toBe(1);
   });
 
   it('accuse needs all placed, reports a wrong suspect, then wins', async () => {

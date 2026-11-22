@@ -165,7 +165,6 @@ describe('stats dialog and share', () => {
         won: 2,
         streak: 2,
         bestStreak: 2,
-        winHints: 3,
         bestTimeMs: { easy: 61_000, medium: null, hard: null },
       }),
     );
@@ -174,7 +173,7 @@ describe('stats dialog and share', () => {
     expect(tid('stats-won')).toHaveTextContent('2');
     expect(tid('stats-best-easy')).toHaveTextContent('01:01');
     expect(tid('stats-best-hard')).toHaveTextContent('–');
-    expect(tid('stats-avg-hints')).toHaveTextContent('1.5');
+    expect(screen.queryByTestId('stats-avg-hints')).toBeNull();
     fireEvent.click(tid('stats-reset'));
     fireEvent.click(tid('stats-reset-no'));
     expect(store.getState().stats.won).toBe(2);

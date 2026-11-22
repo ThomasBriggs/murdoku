@@ -108,11 +108,6 @@ export const DrawIcon = (p: P) => (
     <path d="M3 17c3-8 5 2 8-4s3-6 5-4M14 21l7-7-3-3-7 7v3z" />
   </svg>
 );
-export const HintIcon = (p: P) => (
-  <svg {...base} {...p}>
-    <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z" />
-  </svg>
-);
 export const CheckIcon = (p: P) => (
   <svg {...base} {...p}>
     <path d="M4 12.5l5 5L20 6.5" />

@@ -30,9 +30,7 @@ export interface BoardProps {
   /** Cells the selected person's clue rules out (assist) and cells their logic-grid ticks allow. */
   dimmed?: ReadonlySet<number>;
   possible?: ReadonlySet<number>;
-  /** Hint highlights (cleared by the parent when dismissed). */
-  hintCells?: { target: ReadonlySet<number>; involved: ReadonlySet<number> };
-  /** People whose token is flagged wrong (check / hint). */
+  /** People whose token is flagged wrong by a check. */
   wrongPeople?: ReadonlySet<PersonId>;
   /** The puzzle is solved: the board is view-only. */
   solved?: boolean;
@@ -327,13 +325,6 @@ export function Board(p: BoardProps) {
                   shaking={p.shakeCell === key}
                   dimmed={p.dimmed?.has(key)}
                   possible={p.possible?.has(key)}
-                  hint={
-                    p.hintCells?.target.has(key)
-                      ? 'target'
-                      : p.hintCells?.involved.has(key)
-                        ? 'involved'
-                        : undefined
-                  }
                   wrong={occ !== undefined && p.wrongPeople?.has(occ)}
                   removable={!p.solved}
                   onRemove={removePerson}

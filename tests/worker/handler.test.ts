@@ -81,23 +81,12 @@ describe('worker handler', () => {
     expect(r.code).toBe('bad-request');
   });
 
-  it('hint: deduction when correct, wrong count otherwise', async () => {
-    const ok = expectType(
-      await send(state, { type: 'hint', placements: { 0: solved[0]! } }),
-      'hint',
-    );
-    expect(ok.result.type).toBe('deduction');
-    const empty = expectType(await send(state, { type: 'hint', placements: {} }), 'hint');
-    expect(empty.result.type).toBe('deduction');
-
-    const bad: Placements = { 0: (solved[0]! + 10) % 81, 1: (solved[1]! + 10) % 81 };
-    const w = expectType(await send(state, { type: 'hint', placements: bad }), 'hint');
-    expect(w.result).toEqual({ type: 'wrong', count: 2 });
-    const rev = expectType(
-      await send(state, { type: 'hint', placements: bad, revealOne: true }),
-      'hint',
-    );
-    expect(rev.result.type === 'wrong' && [0, 1].includes(rev.result.person!)).toBe(true);
+  it('rejects unknown request types, including the retired hint', async () => {
+    for (const type of ['hint', 'solve']) {
+      const r = expectType(await send(state, { type, placements: {} }), 'error');
+      expect(r.code).toBe('bad-request');
+      expect(r.message).toContain(type);
+    }
   });
 
   it('accuse reports placement and accusation separately', async () => {
