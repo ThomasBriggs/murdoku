@@ -76,13 +76,41 @@ export function RadialPick({
       <div
         ref={ref}
         className={styles.menu}
-        role="menu"
-        aria-label="Place who here?"
-        data-testid="radial-pick"
         style={{ left: `${cx}cqw`, top: `${cy}cqw` }}
         onKeyDown={onKeyDown}
         onPointerDown={() => (armed.current = true)}
       >
+        <div
+          className={styles.menu}
+          role="menu"
+          aria-label="Place who here?"
+          data-testid="radial-pick"
+        >
+          {people.map((person, i) => {
+            const a = (i / people.length) * 2 * Math.PI - Math.PI / 2;
+            return (
+              <button
+                type="button"
+                key={person.id}
+                role="menuitem"
+                className={styles.item}
+                data-testid={`radial-pick-${person.id}`}
+                aria-label={`Place ${person.name}`}
+                title={`Place ${person.name}`}
+                style={{
+                  left: `${Math.cos(a) * RADIUS * cell}cqw`,
+                  top: `${Math.sin(a) * RADIUS * cell}cqw`,
+                  width: `${ITEM * cell}cqw`,
+                }}
+                onClick={(e) => {
+                  if (e.detail === 0 || armed.current) pick(person.id);
+                }}
+              >
+                <Token person={person} scope="pick-" />
+              </button>
+            );
+          })}
+        </div>
         <button
           type="button"
           className={styles.cancel}
@@ -101,30 +129,6 @@ export function RadialPick({
         >
           <span aria-hidden="true">✕</span>
         </button>
-        {people.map((person, i) => {
-          const a = (i / people.length) * 2 * Math.PI - Math.PI / 2;
-          return (
-            <button
-              type="button"
-              key={person.id}
-              role="menuitem"
-              className={styles.item}
-              data-testid={`radial-pick-${person.id}`}
-              aria-label={`Place ${person.name}`}
-              title={`Place ${person.name}`}
-              style={{
-                left: `${Math.cos(a) * RADIUS * cell}cqw`,
-                top: `${Math.sin(a) * RADIUS * cell}cqw`,
-                width: `${ITEM * cell}cqw`,
-              }}
-              onClick={(e) => {
-                if (e.detail === 0 || armed.current) pick(person.id);
-              }}
-            >
-              <Token person={person} scope="pick-" />
-            </button>
-          );
-        })}
       </div>
     </div>
   );

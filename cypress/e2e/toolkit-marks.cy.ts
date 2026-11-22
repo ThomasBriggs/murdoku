@@ -115,7 +115,7 @@ describe('solving toolkit: marks, notes, highlights', () => {
       cell(...b).click();
       cy.get('body').type('{esc}');
       longPress(...b);
-      cy.get('[data-testid="radial-pick"]').should('be.visible');
+      cy.get('[data-testid="radial-pick"]').should('exist');
       cy.get('[data-testid="radial-pick-2"]').should('be.visible');
       cy.get('[data-testid="radial-pick-3"]').should('be.visible');
       cy.get('[data-testid="radial-pick-cancel"]').click();

@@ -163,7 +163,7 @@ suite('radial pick', () => {
         isPrimary: true,
         force: true,
       });
-      cy.get('[data-testid="radial-pick"]').should('be.visible');
+      cy.get('[data-testid="radial-pick-1"]').should('be.visible');
       cy.get('[data-testid="board"]').screenshot('radial-pick', { capture: 'viewport' });
     });
   });

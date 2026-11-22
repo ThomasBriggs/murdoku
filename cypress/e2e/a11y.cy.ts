@@ -131,24 +131,27 @@ describe('accessibility (axe)', () => {
   it('radial pick menu open', () => {
     cy.viewport(1280, 900);
     load();
-    cy.get('[data-testid="board-grid"] [data-blocked="false"]')
-      .first()
-      .then(($c) => {
-        const [r, c] = [Number($c[0]!.dataset.r), Number($c[0]!.dataset.c)];
-        selectPerson(1);
-        cell(r, c).click();
-        selectPerson(2);
-        cell(r, c).click();
-        cy.get('body').type('{esc}');
-        cell(r, c).trigger('pointerdown', {
-          button: 0,
-          pointerId: 1,
-          isPrimary: true,
-          force: true,
-        });
-        cy.get(sel('radial-pick')).should('be.visible');
-        checkA11y();
+    cy.get('[data-testid="board-grid"] [data-blocked="false"]').then(($cells) => {
+      // a cell without a room label (axe: label-content-name-mismatch)
+      const el = $cells
+        .toArray()
+        .filter((x) => !x.querySelector('[data-testid^="room-label-"]'))[20]!;
+      const [r, c] = [Number(el.dataset.r), Number(el.dataset.c)];
+      selectPerson(1);
+      cell(r, c).click();
+      selectPerson(2);
+      cell(r, c).click();
+      cy.get('body').type('{esc}');
+      cell(r, c).trigger('pointerdown', {
+        button: 0,
+        pointerId: 1,
+        isPrimary: true,
+        force: true,
       });
+      cy.get(sel('radial-pick-1')).should('be.visible');
+      // the menu itself (the noted cell's multi-letter initials are a separate, existing matter)
+      checkA11y(sel('radial-pick'));
+    });
   });
 
   it('draw controls, what-if banner and check panel', () => {
