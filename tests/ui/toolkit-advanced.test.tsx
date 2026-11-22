@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { afterEach, describe, expect, it } from 'vitest';
 import type { StoreApi } from 'zustand/vanilla';
 import App from '../../src/App';
-import { createGameStore, type GameStore } from '../../src/state/store';
+import { createGameStore, type GameStore, QUICK_ITEMS } from '../../src/state/store';
 import { abbreviateRoom } from '../../src/ui/LogicGrid';
 import { createEngineClient } from '../../src/worker/client';
 import { createInProcessWorker } from '../../src/worker/inprocess';
@@ -20,6 +20,8 @@ async function setup(): Promise<StoreApi<GameStore>> {
   });
   render(<App store={store} />);
   await waitFor(() => expect(screen.getByTestId('board')).toBeInTheDocument(), { timeout: 20000 });
+  // These suites exercise every tool and key: pin them all to the quick bar.
+  act(() => store.getState().updateSettings({ quickBar: [...QUICK_ITEMS] }));
   return store;
 }
 

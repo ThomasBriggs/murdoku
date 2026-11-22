@@ -1,4 +1,4 @@
-import { cell, longPress, tid } from '../support/helpers';
+import { cell, longPress, tid, visitWithQuickBar } from '../support/helpers';
 
 const URL = '/?seed=cy-people-hover&d=easy';
 /** Mouse over/out on the card's name button (the card centre can land on a clue word instead). */
@@ -19,7 +19,7 @@ function freeCells(): Cypress.Chainable<[number, number][]> {
 
 describe('people panel: placed names and hover highlights', () => {
   it('strikes through a placed name and lights up placed, pencilled and noted cells on hover', () => {
-    cy.visit(URL);
+    visitWithQuickBar(URL);
     tid('board').should('be.visible');
     freeCells().then((free) => {
       const [a, b, c, d] = [free[0]!, free[10]!, free[20]!, free[30]!];

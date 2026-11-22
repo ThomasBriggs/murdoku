@@ -1,4 +1,4 @@
-import { openKey, sel } from '../support/helpers';
+import { openKey, pickTool, sel } from '../support/helpers';
 
 const URL = '/?seed=cy-layout&d=easy';
 
@@ -36,7 +36,7 @@ describe('layout', () => {
     });
     // The tool palette is a horizontal dock below the board, in one row.
     cy.get(sel('tool-place')).then(($a) => {
-      cy.get(sel('tool-draw')).then(($b) => {
+      cy.get(sel('tool-cross')).then(($b) => {
         const a = $a[0]!.getBoundingClientRect();
         const b = $b[0]!.getBoundingClientRect();
         expect(Math.abs(a.top - b.top)).to.be.lessThan(2);
@@ -88,9 +88,9 @@ describe('layout', () => {
     cy.viewport(1280, 900);
     cy.visit(URL);
     cy.get(sel('color-red')).should('not.exist');
-    cy.get(sel('tool-highlight')).click();
+    pickTool('highlight');
     cy.get(sel('color-red')).should('be.visible');
-    cy.get(sel('tool-cross')).click();
+    pickTool('cross');
     cy.get(sel('color-red')).should('not.exist');
   });
 

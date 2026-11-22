@@ -589,3 +589,21 @@
 .boardArea[data-whatif='3'] {
   --whatif: #1a9a8a;
 }
+
+/* Tray: the tools that are not on the quick bar, two to a row above the other actions. */
+.trayTools {
+  padding-bottom: 0.35rem;
+  margin-bottom: 0.2rem;
+  border-bottom: 1px solid var(--border);
+}
+.trayTools [role='toolbar'] {
+  margin: 0;
+}
+.trayTools [role='toolbar'] > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.2rem;
+}
+.dockBtn[aria-pressed='true'] {
+  background: var(--selected-bg);
+}

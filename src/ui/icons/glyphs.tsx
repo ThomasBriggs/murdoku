@@ -32,6 +32,23 @@ export const RedoIcon = (p: P) => (
     <path d="M15 14l5-5-5-5M20 9H10a6 6 0 0 0 0 12h3" />
   </svg>
 );
+/** The quick bar's tray: a chevron over a shelf ("more pops up from here"). */
+export const TrayIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M6 13l6-6 6 6M5 18h14" />
+  </svg>
+);
+export const LogicGridIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M4 4h16v16H4zM4 9.3h16M4 14.6h16M9.3 4v16M14.6 4v16" />
+  </svg>
+);
+/** What-if: a path that forks. */
+export const WhatIfIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M12 21v-8M12 13L6 6M12 13l6-7M4 7l2-1 1 2M20 7l-2-1-1 2" />
+  </svg>
+);
 export const ResetIcon = (p: P) => (
   <svg {...base} {...p}>
     <path d="M4 12a8 8 0 1 0 3-6.2M4 4v5h5" />

@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { StoreApi } from 'zustand/vanilla';
 import App from '../../src/App';
 import { cellKey } from '../../src/engine/types';
-import { createGameStore, type GameStore } from '../../src/state/store';
+import { createGameStore, type GameStore, QUICK_ITEMS } from '../../src/state/store';
 import { clueSelection, splitByHighlights } from '../../src/ui/PeoplePanel';
 import { HOLD_MS } from '../../src/ui/hold';
 import { TOOLS } from '../../src/ui/ToolPalette';
@@ -23,6 +23,8 @@ async function setup(): Promise<StoreApi<GameStore>> {
   });
   render(<App store={store} />);
   await waitFor(() => expect(screen.getByTestId('board')).toBeInTheDocument(), { timeout: 20000 });
+  // These suites exercise every tool and key: pin them all to the quick bar.
+  act(() => store.getState().updateSettings({ quickBar: [...QUICK_ITEMS] }));
   return store;
 }
 

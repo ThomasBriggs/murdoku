@@ -1,4 +1,12 @@
-import { gesture, longPress, openSettings, playToWin, sel, tid } from '../support/helpers';
+import {
+  gesture,
+  longPress,
+  openSettings,
+  playToWin,
+  sel,
+  tid,
+  visitWithQuickBar,
+} from '../support/helpers';
 
 const A = '/?seed=cy-persist-a&d=easy';
 const B = '/?seed=cy-persist-b&d=medium';
@@ -13,7 +21,7 @@ type Saved = {
 };
 
 function load(url = A) {
-  cy.visit(url);
+  visitWithQuickBar(url);
   cy.get(sel('board')).should('be.visible');
 }
 

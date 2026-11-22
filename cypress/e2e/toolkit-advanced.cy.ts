@@ -5,6 +5,7 @@ import {
   moreClick,
   openMore,
   openSettings,
+  visitWithQuickBar,
 } from '../support/helpers';
 
 const URL = '/?seed=cy-adv&d=easy';
@@ -12,7 +13,7 @@ const cell = (r: number, c: number) => cy.get(`[data-testid="cell-${r}-${c}"]`);
 const tid = (id: string) => cy.get(`[data-testid="${id}"]`);
 
 function load() {
-  cy.visit(URL);
+  visitWithQuickBar(URL);
   cy.get('[data-testid="board"]').should('be.visible');
 }
 

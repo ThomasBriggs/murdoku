@@ -130,18 +130,29 @@
   min-width: 0;
   margin: 0;
   padding: 0;
-  overflow: visible;
+  /* Many pinned tools: one row that scrolls sideways, never a second line. */
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
 }
 .bar .tools {
   width: 100%;
+  flex-wrap: nowrap;
 }
 .bar .tool,
 .barBtn {
   flex: 1;
-  min-width: 0;
+  min-width: 2.6rem;
   min-height: 2.75rem;
   padding: 0.2rem;
   justify-content: center;
+}
+.barSep {
+  flex: none;
+  width: 1px;
+  align-self: stretch;
+  margin: 0.5rem 0.1rem;
+  background: var(--border);
 }
 .barBtn {
   flex: none;

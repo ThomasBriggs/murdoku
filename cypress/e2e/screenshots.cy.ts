@@ -5,6 +5,7 @@ import {
   closeClues,
   moreClick,
   openClues,
+  pickTool,
   placePerson,
   selectPerson,
   setTheme as sharedSetTheme,
@@ -13,16 +14,6 @@ import {
 
 const URL = '/?seed=cy-board&d=easy';
 const cell = (r: number, c: number) => cy.get(`[data-testid="cell-${r}-${c}"]`);
-
-/** On mobile widths the less-used controls live in the "More" sheet. */
-function inMore(w: number, action: () => void) {
-  if (w > 600) return action();
-  cy.get('[data-testid="more-button"]').click();
-  action();
-  cy.get('body').then(($b) => {
-    if ($b.find('[data-testid="more-close"]').length) cy.get('[data-testid="more-close"]').click();
-  });
-}
 
 const suite = Cypress.expose('SCREENSHOTS') ? describe : describe.skip;
 suite('board screenshots', () => {
@@ -68,7 +59,7 @@ suite('toolkit screenshots', () => {
       cy.get('[data-testid="board"]').should('be.visible');
       setTheme(w, theme);
       // crosses, dots and a question mark
-      cy.get('[data-testid="tool-cross"]').click();
+      pickTool('cross');
       for (const [r, c] of [
         [0, 0],
         [0, 1],
@@ -76,9 +67,9 @@ suite('toolkit screenshots', () => {
         [5, 5],
       ])
         cell(r!, c!).click();
-      inMore(w, () => cy.get('[data-testid="tool-dot"]').click());
+      pickTool('dot');
       cell(2, 2).click();
-      inMore(w, () => cy.get('[data-testid="tool-unsure"]').click());
+      pickTool('unsure');
       cell(3, 3).click();
       // highlights in three colours
       for (const [colour, cells] of [
@@ -105,12 +96,12 @@ suite('toolkit screenshots', () => {
           ],
         ],
       ] as const) {
-        cy.get('[data-testid="tool-highlight"]').click();
+        pickTool('highlight');
         cy.get(`[data-testid="color-${colour}"]`).click();
         for (const [r, c] of cells) cell(r, c).click();
       }
       // candidates and an eliminated initial
-      cy.get('[data-testid="tool-place"]').click(); // quick taps note candidates
+      pickTool('place'); // quick taps note candidates
       for (const id of [1, 2, 3]) {
         selectPerson(id);
         for (const [r, c] of [
@@ -120,18 +111,18 @@ suite('toolkit screenshots', () => {
         ])
           cell(r!, c!).click();
       }
-      inMore(w, () => cy.get('[data-testid="tool-eliminate"]').click());
+      pickTool('eliminate');
       cell(2, 6).click();
       selectPerson(2);
       cell(7, 0).click();
       // a tentative guess
-      cy.get('[data-testid="tool-pencil"]').click();
+      pickTool('pencil');
       selectPerson(4);
       cell(1, 7).click();
       // a room note
       cy.get('[data-testid^="room-note-btn-"]').first().click();
       cy.get('[data-testid^="room-note-input-"]').type('victim + 1{enter}');
-      cy.get('[data-testid="tool-place"]').click();
+      pickTool('place');
       cy.screenshot(`toolkit-${name}-${theme}`, { capture: 'fullPage' });
     });
 });
@@ -146,13 +137,13 @@ suite('tentative close-up', () => {
         .toArray()
         .map((el) => [Number(el.dataset.r), Number(el.dataset.c)] as [number, number]);
       placePerson(0, free[0]![0], free[0]![1]);
-      cy.get('[data-testid="tool-pencil"]').click();
+      pickTool('pencil');
       selectPerson(4);
       cell(free[1]![0], free[1]![1]).click();
       selectPerson(5);
       cell(free[2]![0], free[2]![1]).click();
     });
-    cy.get('[data-testid="tool-place"]').click();
+    pickTool('place');
     cy.get('[data-testid^="tentative-"]').first().scrollIntoView();
     cy.get('[data-testid="board"]').screenshot('tentative-closeup', { capture: 'viewport' });
   });

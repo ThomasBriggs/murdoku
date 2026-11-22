@@ -337,6 +337,20 @@ describe('settings, stats storage and the rules flag', () => {
     expect(loadSettings(s)).toMatchObject({ theme: 'system', autoCross: true });
   });
 
+  it('defaults the quick bar to Erase and Cross, and keeps only known items in bar order', () => {
+    const s = new MemoryStorage();
+    expect(loadSettings(s).quickBar).toEqual(['erase', 'cross']);
+    s.setItem(
+      KEY_SETTINGS,
+      JSON.stringify({ quickBar: ['logic', 'notes', 'dot', 'place', 'dot', 42, 'erase'] }),
+    );
+    expect(loadSettings(s).quickBar).toEqual(['erase', 'dot', 'logic']);
+    s.setItem(KEY_SETTINGS, JSON.stringify({ quickBar: [] }));
+    expect(loadSettings(s).quickBar).toEqual([]);
+    s.setItem(KEY_SETTINGS, JSON.stringify({ quickBar: 'cross' }));
+    expect(loadSettings(s).quickBar).toEqual(['erase', 'cross']);
+  });
+
   it('remembers that the rules were seen', () => {
     const s = new MemoryStorage();
     expect(hasSeenRules(s)).toBe(false);

@@ -214,8 +214,9 @@ A **clue** is a conjunction of 1–3 atoms per person, rendered as one sentence:
 
 The "Focus" layout keeps the board as the centre of attention and tucks everything else away; the page itself never scrolls.
 
-- **Desktop**: a slim header, the board, and a floating **dock** below it (tools, undo/redo, a Clues button and a "⋯" overflow menu holding Reset, Layers, Clear, What-if, Logic grid and Print). Check and Accuse float beside the board. The **clue drawer** opens on the right: docked beside the board at 1200 px and wider (open by default), an overlay below that (closed by default).
-- **Mobile (600 px and narrower)**: the board with a bottom bar (primary tools, undo, "⋯"). The "⋯" opens a **More** sheet with the remaining tools, Check/Accuse and the menu items above. Clues open as a bottom sheet from a Clues button. The layout works down to 360 px wide.
+- **Quick bar**: by default only **Place**, **Erase** and **Cross** are on the bar, then Undo/Redo (after a separator), then Clues (after another). Everything else is in the **tray**, which pops out from the bar's tray button. In Settings → *Quick bar* the player can pin any other tool, the Logic grid or What-if to the bar (Place is always there); the choice is saved in localStorage with the other settings. A tool's keyboard shortcut (and `G`, `W`) only works while it is on the bar; tray items do not advertise their key.
+- **Desktop**: a slim header, the board, and a floating **dock** below it holding the quick bar. The tray opens upwards from the dock: the unpinned tools (two per row) above Reset, Layers, Clear, What-if, Logic grid and Print. Check and Accuse float beside the board. The **clue drawer** opens on the right: docked beside the board at 1200 px and wider (open by default), an overlay below that (closed by default).
+- **Mobile (600 px and narrower)**: the board with a Check/Accuse/Clues strip and, below it, the quick bar (pinned tools, undo/redo, tray button). With many tools pinned the tool row scrolls sideways rather than wrapping. The tray button opens a bottom sheet with the remaining tools and the menu items above. Clues open as a bottom sheet from the Clues button. The layout works down to 360 px wide.
 - The header shows the title, difficulty, timer and seed, with icon buttons for New game, Share, Statistics, Rules (?) and Settings.
 - The room legend sits above the board; the furniture legend is behind a **Key** toggle.
 
@@ -331,7 +332,7 @@ All are in Settings and all are **off by default**, except where marked. They ac
 
 - Arrow keys move a cell cursor. `1`–`9` select a person. `Enter` places, `Space` notes a candidate.
 - Marks: `X` (cross), `.` (possible), `?` (unsure), `E` (eliminate), `P` (pencil/tentative placement), `D` (draw tool), `C` (cycle highlight colour), `W` (start/end what-if), `G` (logic grid).
-- Every tool has a palette button with a tooltip showing its shortcut.
+- Every tool has a palette button with a tooltip showing its shortcut (when it is on the quick bar). Tool keys are gated by the quick bar (§6.1); arrows, digits, `Enter`, `Space`, `V`, `Esc` and undo/redo always work.
 - Every cell has an `aria-label`, e.g. "Row 3, column D, Kitchen, chair, empty".
 - Colour is never the only signal: tokens show initials and conflicts also use an icon.
 - `prefers-reduced-motion` is respected.

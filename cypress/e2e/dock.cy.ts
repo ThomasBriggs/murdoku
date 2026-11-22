@@ -1,4 +1,4 @@
-import { openKey, sel } from '../support/helpers';
+import { closeSettings, openKey, openSettings, pickTool, sel } from '../support/helpers';
 
 const URL = '/?seed=cy-dock&d=easy';
 const cell = (r: number, c: number) => cy.get(sel(`cell-${r}-${c}`));
@@ -9,25 +9,34 @@ function load() {
 }
 
 describe('dock (desktop)', () => {
-  it('is a floating bar below the board with the tools, undo/redo, Clues and the ⋯ menu', () => {
+  it('is a floating bar with Place, Erase, Cross, undo/redo, Clues and the tray button', () => {
     load();
     cy.get(sel('dock')).within(() => {
-      for (const id of [
-        'place',
-        'pencil',
-        'cross',
-        'dot',
-        'unsure',
-        'eliminate',
-        'erase',
-        'highlight',
-        'select',
-        'draw',
-      ])
-        cy.get(sel(`tool-${id}`)).should('be.visible');
+      cy.get('button[data-testid^="tool-"]').then(($t) => {
+        expect($t.toArray().map((el) => el.dataset.testid)).to.deep.eq([
+          'tool-place',
+          'tool-erase',
+          'tool-cross',
+        ]);
+      });
       for (const id of ['undo', 'redo', 'clues-toggle', 'overflow-button'])
         cy.get(sel(id)).should('be.visible');
     });
+  });
+
+  it('the tray pops out the other tools; picking one closes it', () => {
+    load();
+    cy.get(sel('tool-dot')).should('not.exist');
+    cy.get(sel('overflow-button')).click();
+    cy.get(sel('tool-palette-tray')).within(() => {
+      for (const id of ['pencil', 'dot', 'unsure', 'eliminate', 'highlight', 'select', 'draw'])
+        cy.get(sel(`tool-${id}`)).should('be.visible');
+      cy.get(sel('tool-cross')).should('not.exist');
+    });
+    cy.get(sel('tool-dot')).click();
+    cy.get(sel('overflow-menu')).should('not.exist');
+    cy.get(sel('board')).should('have.attr', 'data-tool', 'dot');
+    cell(0, 0).click().should('have.attr', 'data-mark', 'dot');
   });
 
   it('shows the active tool with aria-pressed, from clicks and from shortcuts', () => {
@@ -36,19 +45,52 @@ describe('dock (desktop)', () => {
     cy.get(sel('tool-cross')).click().should('have.attr', 'aria-pressed', 'true');
     cy.get(sel('tool-place')).should('have.attr', 'aria-pressed', 'false');
     cy.get(sel('board')).should('have.attr', 'data-tool', 'cross');
-    cy.get('body').type('p');
-    cy.get(sel('tool-pencil')).should('have.attr', 'aria-pressed', 'true');
+    cy.get('body').type('r');
+    cy.get(sel('tool-erase')).should('have.attr', 'aria-pressed', 'true');
     cy.get(sel('tool-cross')).should('have.attr', 'aria-pressed', 'false');
-    cy.get('body').type('p'); // toggles back to place
+    cy.get('body').type('v');
     cy.get(sel('tool-place')).should('have.attr', 'aria-pressed', 'true');
     cy.get('[data-testid^="tool-"][aria-pressed="true"]').should('have.length', 1);
+  });
+
+  it('keys of tools that are not on the bar do nothing until pinned in Settings', () => {
+    load();
+    cy.get('body').type('p');
+    cy.get(sel('board')).should('have.attr', 'data-tool', 'place');
+    cy.get('body').type('g');
+    cy.get(sel('logic-grid')).should('not.exist');
+    // pin Pencil and the logic grid
+    openSettings();
+    cy.get(sel('quickbar-pencil')).check();
+    cy.get(sel('quickbar-logic')).check();
+    closeSettings();
+    cy.get(sel('dock')).find(sel('tool-pencil')).should('be.visible');
+    cy.get(sel('dock')).find(sel('quick-logic')).should('be.visible');
+    cy.get('body').type('p');
+    cy.get(sel('board')).should('have.attr', 'data-tool', 'pencil');
+    cy.get('body').type('g');
+    cy.get(sel('logic-grid')).should('be.visible');
+    cy.get(sel('logic-close')).click();
+    // the choice is remembered
+    cy.reload();
+    cy.get(sel('board')).should('be.visible');
+    cy.get(sel('dock')).find(sel('tool-pencil')).should('be.visible');
+    cy.get(sel('dock')).find(sel('quick-logic')).click();
+    cy.get(sel('logic-grid')).should('be.visible');
+    // unpin Cross: it leaves the bar and X stops working
+    openSettings();
+    cy.get(sel('quickbar-cross')).uncheck();
+    closeSettings();
+    cy.get(sel('dock')).find(sel('tool-cross')).should('not.exist');
+    cell(2, 2).focus().type('x');
+    cell(2, 2).should('not.have.attr', 'data-mark');
   });
 
   it('the active tool button looks different from the others', () => {
     load();
     cy.get(sel('tool-cross')).click();
     cy.get(sel('tool-cross')).then(($a) => {
-      cy.get(sel('tool-dot')).then(($b) => {
+      cy.get(sel('tool-erase')).then(($b) => {
         expect(getComputedStyle($a[0]!).backgroundColor).not.to.eq(
           getComputedStyle($b[0]!).backgroundColor,
         );
@@ -59,9 +101,9 @@ describe('dock (desktop)', () => {
   it('highlight and draw open a colour row above the dock', () => {
     load();
     cy.get(sel('color-row')).should('not.exist');
-    cy.get(sel('tool-highlight')).click();
+    pickTool('highlight');
     cy.get(sel('color-row')).should('be.visible');
-    cy.get(sel('tool-draw')).click();
+    pickTool('draw');
     cy.get(sel('draw-controls')).should('be.visible');
     cy.get(sel('tool-cross')).click();
     cy.get(sel('color-row')).should('not.exist');
@@ -79,7 +121,7 @@ describe('dock (desktop)', () => {
     cell(0, 0).should('have.attr', 'data-mark', 'cross');
   });
 
-  it('Check and Accuse float beside the board, not in the overflow menu', () => {
+  it('Check and Accuse float beside the board, not in the tray', () => {
     load();
     cy.get('[role="group"][aria-label="Investigate"]').within(() => {
       for (const id of ['check-button', 'accuse-button']) cy.get(sel(id)).should('be.visible');
@@ -92,7 +134,7 @@ describe('dock (desktop)', () => {
   });
 });
 
-describe('overflow menu (⋯)', () => {
+describe('tray menu', () => {
   it('opens and closes with aria-expanded, Escape (returning focus) and an outside click', () => {
     load();
     cy.get(sel('overflow-menu')).should('not.exist');
@@ -114,7 +156,7 @@ describe('overflow menu (⋯)', () => {
     cy.get(sel('overflow-button')).should('have.focus');
     cy.get(sel('overflow-button')).click();
     cy.get(sel('overflow-menu')).should('be.visible');
-    cy.get(sel('board')).click('center');
+    cy.get(sel('board')).click('topLeft');
     cy.get(sel('overflow-menu')).should('not.exist');
   });
 
@@ -194,7 +236,7 @@ describe('phone bottom bar', () => {
     cy.get(sel('hint-button')).should('not.exist');
   });
 
-  it('has the primary tools, undo and ⋯; the More sheet holds the rest', () => {
+  it('has the quick tools, undo/redo and the tray; the tray sheet holds the rest', () => {
     cy.viewport(375, 740);
     load();
     cy.get(sel('more-button')).should('have.attr', 'aria-expanded', 'false').click();
@@ -216,7 +258,7 @@ describe('phone bottom bar', () => {
     cy.get(sel('more-sheet')).should('not.exist');
   });
 
-  it('the sheet closes with Escape and returns focus to the ⋯ button', () => {
+  it('the sheet closes with Escape and returns focus to the tray button', () => {
     cy.viewport(375, 740);
     load();
     cy.get(sel('more-button')).click();

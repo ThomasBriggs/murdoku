@@ -1,4 +1,4 @@
-import { cell, longPress } from '../support/helpers';
+import { cell, longPress, visitWithQuickBar } from '../support/helpers';
 
 const URL = '/?seed=cy-marks&d=easy';
 const tool = (t: string) => cy.get(`[data-testid="tool-${t}"]`);
@@ -33,7 +33,7 @@ function offCentre($el: JQuery<HTMLElement>): { dx: number; dy: number } {
 describe('cell clean-up and centred markers', () => {
   beforeEach(() => {
     cy.viewport(1280, 900);
-    cy.visit(URL);
+    visitWithQuickBar(URL);
     cy.get('[data-testid="board"]').should('be.visible');
   });
 

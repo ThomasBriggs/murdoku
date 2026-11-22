@@ -1,4 +1,4 @@
-import { longPress, moreClick, openKey } from '../support/helpers';
+import { longPress, moreClick, openKey, pickTool, visitWithQuickBar } from '../support/helpers';
 
 const URL = '/?seed=cy-marks&d=easy';
 const cell = (r: number, c: number) => cy.get(`[data-testid="cell-${r}-${c}"]`);
@@ -14,7 +14,7 @@ function freeCells(): Cypress.Chainable<[number, number][]> {
 }
 
 function load() {
-  cy.visit(URL);
+  visitWithQuickBar(URL);
   cy.get('[data-testid="board"]').should('be.visible');
 }
 
@@ -304,7 +304,7 @@ describe('solving toolkit: marks, notes, highlights', () => {
     });
   });
 
-  it('keeps the mobile layout without horizontal scroll', () => {
+  it('keeps the mobile layout without horizontal scroll, even with every tool pinned', () => {
     cy.viewport(375, 740);
     load();
     cy.document().then((doc) => {
@@ -315,36 +315,37 @@ describe('solving toolkit: marks, notes, highlights', () => {
     cell(4, 4).click().should('have.attr', 'data-mark', 'cross');
   });
 
-  it('mobile: compact bar, colour row with Highlight, and a More sheet for the rest', () => {
+  it('mobile: the default bar is Place, Erase, Cross; the tray sheet has the rest', () => {
     cy.viewport(375, 740);
-    load();
-    // the bar is one slim row with the common tools only
-    cy.get('[data-testid="tool-palette"] button').should('have.length', 5);
+    cy.visit(URL);
+    cy.get('[data-testid="board"]').should('be.visible');
+    // one slim row: the three quick tools, undo/redo and the tray button
+    cy.get('[data-testid="tool-palette"] button').should('have.length', 3);
+    for (const id of ['tool-place', 'tool-erase', 'tool-cross', 'undo', 'redo', 'more-button'])
+      cy.get(`[data-testid="mobile-dock"] [data-testid="${id}"]`).should('be.visible');
     cy.get('[data-testid="tool-dot"]').should('not.exist');
     cy.get('[data-testid="more-button"]').parent().invoke('height').should('be.lessThan', 70);
     cy.get('[data-testid="color-row"]').should('not.exist');
-    tool('highlight').click();
+    // the sheet holds the other tools and the menus
+    cy.get('[data-testid="more-button"]').click();
+    cy.get('[data-testid="more-sheet"]').should('be.visible');
+    for (const t of ['pencil', 'dot', 'unsure', 'eliminate', 'highlight', 'select', 'draw'])
+      tool(t).should('be.visible');
+    for (const id of ['reset', 'layers-button', 'clear-button', 'whatif-start', 'logic-toggle'])
+      cy.get(`[data-testid="more-sheet"] [data-testid="${id}"]`).should('be.visible');
+    tool('dot').click();
+    cy.get('[data-testid="more-sheet"]').should('not.exist');
+    cell(4, 4).click().should('have.attr', 'data-mark', 'dot');
+    // Highlight from the tray brings up the colour row on the bar
+    pickTool('highlight');
     cy.get('[data-testid="color-row"] [data-testid^="color-"]')
       .should('have.length', 6)
       .and('be.visible');
     cy.get('[data-testid="color-red"]').click();
     cell(3, 3).click().should('have.attr', 'data-hl-color', 'red');
-    // the sheet holds the other tools and the menus
-    cy.get('[data-testid="more-button"]').click();
-    cy.get('[data-testid="more-sheet"]').should('be.visible');
-    for (const t of ['dot', 'unsure', 'eliminate', 'select']) tool(t).should('be.visible');
-    for (const id of ['redo', 'reset', 'layers-button', 'clear-button', 'check-button'])
-      cy.get(`[data-testid="${id}"]`).should('be.visible');
-    tool('dot').click();
-    cy.get('[data-testid="more-sheet"]').should('not.exist');
-    cell(4, 4).click().should('have.attr', 'data-mark', 'dot');
-    // a colour picked in the sheet activates Highlight
-    cy.get('[data-testid="more-button"]').click();
-    cy.get('[data-testid="color-blue"]').click();
-    cell(5, 5).click().should('have.attr', 'data-hl-color', 'blue');
     // undo stays on the bar
     cy.get('[data-testid="undo"]').click();
-    cell(5, 5).should('not.have.attr', 'data-hl-color');
+    cell(3, 3).should('not.have.attr', 'data-hl-color');
     cy.get('[data-testid="more-button"]').click();
     cy.get('[data-testid="more-backdrop"]').click({ force: true });
     cy.get('[data-testid="more-sheet"]').should('not.exist');

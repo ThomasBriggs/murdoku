@@ -109,14 +109,11 @@ export const TOOLS: readonly ToolDef[] = [
   },
 ];
 
-/** Tools on the compact mobile bar; the rest live in its "More" sheet. */
-export const PRIMARY_TOOLS: readonly Tool[] = ['place', 'pencil', 'cross', 'highlight', 'erase'];
-
 /** Tools that start a new visual group in the strip. */
 const GROUP_START = new Set<Tool>(['cross', 'eliminate', 'highlight']);
 
 export interface ToolPaletteProps {
-  /** Only these tools (default: all). */
+  /** Only these tools, in this order (default: all, in palette order). */
   only?: readonly Tool[];
   /** Tools to leave out. */
   except?: readonly Tool[];
@@ -124,8 +121,13 @@ export interface ToolPaletteProps {
   /** Wrap onto several lines instead of scrolling sideways (used in the mobile sheet). */
   wrap?: boolean;
   testId?: string;
-  /** Compact icon-only strip (desktop): grouped, labels hidden, shortcut shown as a badge. */
+  /** Compact icon-only strip (desktop): labels hidden, shortcut shown as a badge. */
   strip?: boolean;
+  /**
+   * Whether these tools' keyboard shortcuts are live (they are only on the quick bar). Off, the
+   * tooltip says how to enable the key instead of advertising it.
+   */
+  shortcuts?: boolean;
   tool: Tool;
   color: ColorId;
   onTool(tool: Tool): void;
@@ -133,9 +135,10 @@ export interface ToolPaletteProps {
 }
 
 export function ToolPalette(p: ToolPaletteProps) {
-  const shown = TOOLS.filter(
-    (t) => (!p.only || p.only.includes(t.id)) && !p.except?.includes(t.id),
+  const shown = (p.only ? p.only.flatMap((id) => TOOLS.filter((t) => t.id === id)) : TOOLS).filter(
+    (t) => !p.except?.includes(t.id),
   );
+  const keys = p.shortcuts !== false;
   return (
     <div
       className={`${styles.palette} ${p.wrap ? styles.wrapAll : ''} ${p.strip ? styles.strip : ''}`}
@@ -146,7 +149,7 @@ export function ToolPalette(p: ToolPaletteProps) {
       <div className={styles.tools}>
         {shown.map((t, i) => (
           <Fragment key={t.id}>
-            {p.strip && i > 0 && GROUP_START.has(t.id) && (
+            {p.strip && !p.only && i > 0 && GROUP_START.has(t.id) && (
               <span className={styles.groupSep} aria-hidden="true" />
             )}
             <button
@@ -154,16 +157,20 @@ export function ToolPalette(p: ToolPaletteProps) {
               className={styles.tool}
               data-testid={`tool-${t.id}`}
               aria-pressed={p.tool === t.id}
-              aria-keyshortcuts={t.key}
+              aria-keyshortcuts={keys ? t.key : undefined}
               aria-label={t.label}
-              title={`${t.label} (${t.shortcut}): ${t.help}`}
+              title={
+                keys
+                  ? `${t.label} (${t.shortcut}): ${t.help}`
+                  : `${t.label}: ${t.help}. Pin it to the quick bar in Settings to use its key (${t.shortcut})`
+              }
               onClick={() => p.onTool(t.id)}
             >
               <span className={styles.glyph} aria-hidden="true">
                 <t.Icon />
               </span>
               <span className={styles.label}>{t.label}</span>
-              {p.strip && (
+              {p.strip && keys && (
                 <span className={styles.kbd} aria-hidden="true">
                   {t.key === 'c' ? 'C' : t.shortcut}
                 </span>

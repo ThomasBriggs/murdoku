@@ -1,6 +1,7 @@
 // Shared Cypress helpers (plain module; import it from specs).
 import { generatePuzzle } from '../../src/engine/generator';
 import type { Cell, Difficulty } from '../../src/engine/types';
+import { QUICK_ITEMS } from '../../src/state/store';
 import { HOLD_MS } from '../../src/ui/hold';
 
 export const tid = (id: string) => cy.get(`[data-testid="${id}"]`);
@@ -70,7 +71,30 @@ export function gesture(points: [number, number][]) {
   });
 }
 
-/** Open the desktop overflow menu or the mobile More sheet, unless it is already open. */
+/**
+ * Visit with these items pinned to the quick bar (default: everything), as if chosen in
+ * Settings. Specs that drive many tools or their keys use this; others keep the default bar.
+ */
+export function visitWithQuickBar(url: string, items: readonly string[] = QUICK_ITEMS) {
+  cy.visit(url, {
+    onBeforeLoad(win) {
+      win.localStorage.setItem('murdoku:v1:settings', JSON.stringify({ quickBar: items }));
+    },
+  });
+}
+
+/** Pick a tool from the quick bar, or from the tray when it is not pinned there. */
+export function pickTool(id: string) {
+  cy.get(sel('board')).should('be.visible');
+  cy.get('body').then(($b) => {
+    if (!$b.find(sel(`tool-${id}`)).filter(':visible').length) openMore();
+    cy.get(sel(`tool-${id}`))
+      .filter(':visible')
+      .click();
+  });
+}
+
+/** Open the tray (desktop dock menu or mobile sheet), unless it is already open. */
 export function openMore() {
   cy.get('body').then(($b) => {
     if ($b.find(sel('overflow-menu')).length || $b.find(sel('more-sheet')).length) return;

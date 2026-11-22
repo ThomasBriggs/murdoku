@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import type { Settings, Theme } from '../state/store';
-import { GearIcon, RedoIcon, UndoIcon } from './icons/glyphs';
+import { QUICK_ITEMS, type QuickItem, type Settings, type Theme } from '../state/store';
+import { GearIcon, RedoIcon, TrayIcon, UndoIcon } from './icons/glyphs';
+import { TOOLS } from './ToolPalette';
 import styles from './Toolbar.module.css';
 
 export interface ToolbarProps {
   canUndo: boolean;
   canRedo: boolean;
-  /** The mobile "More" sheet: everything in one flat, wrapping list (Undo lives on the bar). */
+  /** The mobile "More" sheet: everything in one flat, wrapping list (Undo/Redo live on the bar). */
   compact?: boolean;
   onUndo(): void;
   onRedo(): void;
@@ -17,6 +18,14 @@ export interface ToolbarProps {
 }
 
 const THEMES: Theme[] = ['system', 'light', 'dark'];
+
+/** What a quick-bar item is called, and its key. */
+export function quickItemInfo(item: QuickItem): { label: string; key: string } {
+  if (item === 'logic') return { label: 'Logic grid', key: 'G' };
+  if (item === 'whatif') return { label: 'What-if', key: 'W' };
+  const t = TOOLS.find((x) => x.id === item)!;
+  return { label: t.label, key: t.key === 'c' ? 'C' : t.shortcut };
+}
 
 export function Toolbar(p: ToolbarProps) {
   const redo = (
@@ -47,7 +56,7 @@ export function Toolbar(p: ToolbarProps) {
           <span className={styles.actionLabel}>Undo</span>
         </button>
       )}
-      {redo}
+      {!p.compact && redo}
       {!p.compact && <span className={styles.sep} aria-hidden="true" />}
       {p.children}
       {p.secondary &&
@@ -85,18 +94,18 @@ export function OverflowMenu({ children, up }: { children: ReactNode; up?: boole
         aria-expanded={open}
         aria-haspopup="true"
         aria-controls="overflow-menu"
-        aria-label="More actions"
-        title="More: reset, layers, clear, what-if, logic grid, print, settings"
+        aria-label="Tray: more tools and actions"
+        title="Tray: the other tools, plus reset, layers, clear, what-if, logic grid and print"
         onClick={() => setOpen((o) => !o)}
       >
-        <span aria-hidden="true">⋯</span>
+        <TrayIcon className={styles.icon} />
       </button>
       {open && (
         <div
           id="overflow-menu"
           className={`${styles.overflow} ${up ? styles.overflowUp : ''}`}
           role="group"
-          aria-label="More actions"
+          aria-label="Tray"
           data-testid="overflow-menu"
           onKeyDown={(e) => {
             if (e.key === 'Escape') {
@@ -210,6 +219,34 @@ export function SettingsMenu({
             />
             Show where the selected person’s clue allows (counts as an assist)
           </label>
+          <fieldset className={styles.quick} data-testid="quickbar-settings">
+            <legend>Quick bar</legend>
+            <p className={styles.hint}>
+              Place is always there. A tool’s keyboard shortcut only works while it is on the bar;
+              the rest are in the tray.
+            </p>
+            {QUICK_ITEMS.map((q) => {
+              const { label, key } = quickItemInfo(q);
+              const on = p.settings.quickBar.includes(q);
+              return (
+                <label key={q}>
+                  <input
+                    type="checkbox"
+                    data-testid={`quickbar-${q}`}
+                    checked={on}
+                    onChange={(e) =>
+                      p.onSettings({
+                        quickBar: QUICK_ITEMS.filter((x) =>
+                          x === q ? e.target.checked : p.settings.quickBar.includes(x),
+                        ),
+                      })
+                    }
+                  />
+                  {label} <kbd>{key}</kbd>
+                </label>
+              );
+            })}
+          </fieldset>
           <fieldset className={styles.theme}>
             <legend>Theme</legend>
             {THEMES.map((t) => (

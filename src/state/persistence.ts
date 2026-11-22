@@ -21,6 +21,7 @@ import {
   DEFAULT_SETTINGS,
   type GameStore,
   type Placements,
+  QUICK_ITEMS,
   type Settings,
   type Theme,
   type Undoable,
@@ -336,6 +337,11 @@ export function loadSettings(storage: StorageLike | null): Settings {
     'showClueAllows',
   ] as const)
     if (typeof raw[k] === 'boolean') out[k] = raw[k];
+  if (Array.isArray(raw.quickBar)) {
+    // Known items only, once each, in the bar's own order.
+    const given = new Set(raw.quickBar);
+    out.quickBar = QUICK_ITEMS.filter((q) => given.has(q));
+  }
   return out;
 }
 

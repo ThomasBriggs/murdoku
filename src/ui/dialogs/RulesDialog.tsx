@@ -86,6 +86,10 @@ export function RulesDialog({ onClose }: { onClose(): void }) {
         </p>
 
         <h3>Keyboard shortcuts</h3>
+        <p data-testid="rules-quickbar">
+          A tool’s key (and G, W) only works while it is on your quick bar. Pin tools in Settings,
+          under Quick bar; the rest are in the tray.
+        </p>
         {GROUPS.map((g) => (
           <div key={g}>
             <p className={styles.muted}>{g}</p>

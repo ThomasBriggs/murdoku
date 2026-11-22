@@ -6,6 +6,7 @@ import {
   openKey,
   openMore,
   openSettings,
+  pickTool,
   placePerson,
   playToWin,
   sel,
@@ -38,11 +39,11 @@ function populate() {
       n++;
     }
   });
-  cy.get(sel('tool-cross')).click();
+  pickTool('cross');
   cell(8, 8).click();
-  cy.get(sel('tool-highlight')).click();
+  pickTool('highlight');
   cell(7, 0).click();
-  cy.get(sel('tool-place')).click();
+  pickTool('place');
   selectPerson(5);
   cell(6, 6).click(); // a quick tap in Place mode notes a candidate
 }
@@ -120,10 +121,10 @@ describe('accessibility (axe)', () => {
   it('draw controls, what-if banner and check panel', () => {
     cy.viewport(1280, 900);
     load();
-    cy.get(sel('tool-draw')).click();
+    pickTool('draw');
     cy.get(sel('draw-controls')).should('be.visible');
     checkA11y();
-    cy.get(sel('tool-place')).click();
+    pickTool('place');
     solutionOfLoaded().then((cells) => placePerson(1, cells[1]!.r, cells[1]!.c));
     cy.get(sel('check-button')).click();
     cy.get(sel('check-text')).should('be.visible');

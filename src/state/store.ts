@@ -64,7 +64,29 @@ export interface Settings {
   linkLogicGrid: boolean;
   /** Dim the cells the selected person's clue rules out; counts as an assist (SPEC §6.5.9). */
   showClueAllows: boolean;
+  /**
+   * Items pinned to the quick bar next to Place (SPEC §6.1). Everything else lives in the
+   * tray, and a tool's keyboard shortcut only works while it is pinned here.
+   */
+  quickBar: QuickItem[];
 }
+
+/** Everything that can be pinned to the quick bar, in the order the bar shows them. */
+export const QUICK_ITEMS = [
+  'erase',
+  'cross',
+  'pencil',
+  'dot',
+  'unsure',
+  'eliminate',
+  'highlight',
+  'select',
+  'draw',
+  'logic',
+  'whatif',
+] as const;
+export type QuickItem = (typeof QUICK_ITEMS)[number];
+export const DEFAULT_QUICK_BAR: readonly QuickItem[] = ['erase', 'cross'];
 
 export const DEFAULT_SETTINGS: Settings = {
   theme: 'system',
@@ -73,6 +95,7 @@ export const DEFAULT_SETTINGS: Settings = {
   autoClearCandidates: true,
   linkLogicGrid: false,
   showClueAllows: false,
+  quickBar: [...DEFAULT_QUICK_BAR],
 };
 
 export type Placements = Record<PersonId, CellKey | null>;

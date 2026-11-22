@@ -19,6 +19,7 @@ import {
   allPlaced,
   selectConflicts,
   type GameStore,
+  type QuickItem,
   WHATIF_MAX_DEPTH,
   type Tool,
 } from '../state/store';
@@ -39,9 +40,18 @@ import { loadLayout } from './scratchLayout';
 import { WhatIfBanner, WhatIfEndDialog, type WhatIfEnd } from './WhatIf';
 import { FurnitureLegend } from './FurnitureLegend';
 import { ClearMenu, describeClear, LayersMenu, type ClearChoice } from './ToolkitMenus';
-import { ColorPicker, PRIMARY_TOOLS, ToolPalette } from './ToolPalette';
+import { ColorPicker, ToolPalette, TOOLS } from './ToolPalette';
 import palette from './ToolPalette.module.css';
-import { CheckIcon, FlagIcon, RedoIcon, ResetIcon, UndoIcon } from './icons/glyphs';
+import {
+  CheckIcon,
+  FlagIcon,
+  LogicGridIcon,
+  RedoIcon,
+  ResetIcon,
+  TrayIcon,
+  UndoIcon,
+  WhatIfIcon,
+} from './icons/glyphs';
 import { useGame, useStoreApi } from './context';
 import styles from './Game.module.css';
 import { PeoplePanel } from './PeoplePanel';
@@ -52,6 +62,21 @@ import { OverflowMenu, Toolbar } from './Toolbar';
 import { conflictsByPerson, type Highlight } from './types';
 
 const SHAKE_MS = 400;
+
+/** Keys that belong to a quick-bar item: they do nothing unless that item is pinned. */
+const GATED_KEYS: Record<string, QuickItem | undefined> = {
+  x: 'cross',
+  '.': 'dot',
+  '?': 'unsure',
+  r: 'erase',
+  p: 'pencil',
+  e: 'eliminate',
+  d: 'draw',
+  g: 'logic',
+  w: 'whatif',
+  s: 'select',
+  c: 'highlight',
+};
 
 /** Furniture nobody can stand on (the same rule placement uses). */
 const isBlocked = (puzzle: Pick<PuzzleView, 'furniture'>, key: number) => {
@@ -366,6 +391,10 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
           s.setTool(tool);
           if (act) s.applyTool(targets(at));
         };
+        // Tool and panel keys only work for items pinned to the quick bar (Settings).
+        const del = e.key === 'Delete' || e.key === 'Backspace';
+        const item = del ? 'erase' : GATED_KEYS[e.key === '.' || e.key === '?' ? e.key : k];
+        if (item && !s.settings.quickBar.includes(item)) return;
         if (k === 'x') toolKey('cross');
         else if (e.key === '.') toolKey('dot');
         else if (e.key === '?') toolKey('unsure');
@@ -384,7 +413,7 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
           if (s.tool === 'highlight') s.cycleColor();
           else s.setTool('highlight');
           if (act) s.applyTool(targets(at));
-        } else if ((e.key === 'Delete' || e.key === 'Backspace') && act) {
+        } else if (del && act) {
           e.preventDefault();
           s.clearCellAnnotations(targets(at));
         }
@@ -405,6 +434,45 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
     if (store.getState().selection.length > 0) store.getState().applyTool(selection);
   };
   const closeMore = () => setMoreOpen(false);
+  // The quick bar: Place plus whatever the player pinned (Settings); the rest sit in the tray.
+  const pinned = (item: QuickItem) => settings.quickBar.includes(item);
+  const barTools: Tool[] = [
+    'place',
+    ...settings.quickBar.filter((q): q is Tool & QuickItem => q !== 'logic' && q !== 'whatif'),
+  ];
+  const trayTools = TOOLS.map((t) => t.id).filter((t) => !barTools.includes(t));
+  const quickActions = (btnClass: string | undefined) => (
+    <>
+      {pinned('logic') && (
+        <button
+          type="button"
+          className={btnClass}
+          data-testid="quick-logic"
+          aria-pressed={logicOpen}
+          aria-keyshortcuts="g"
+          aria-label="Logic grid"
+          title="Logic grid (G)"
+          onClick={() => setLogicOpen((o) => !o)}
+        >
+          <LogicGridIcon style={{ width: '1.2rem', height: '1.2rem' }} />
+        </button>
+      )}
+      {pinned('whatif') && (
+        <button
+          type="button"
+          className={btnClass}
+          data-testid="quick-whatif"
+          disabled={whatIfLevel >= WHATIF_MAX_DEPTH}
+          aria-keyshortcuts="w"
+          aria-label="Start what-if"
+          title="Start what-if (W)"
+          onClick={() => actions.startWhatIf()}
+        >
+          <WhatIfIcon style={{ width: '1.2rem', height: '1.2rem' }} />
+        </button>
+      )}
+    </>
+  );
   const drawControls = (
     <DrawControls
       pen={pen}
@@ -439,8 +507,8 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
         type="button"
         data-testid="whatif-start"
         disabled={whatIfLevel >= WHATIF_MAX_DEPTH}
-        aria-keyshortcuts="w"
-        title="Start what-if (W): try a hypothesis in pencil, then keep or abandon it"
+        aria-keyshortcuts={pinned('whatif') ? 'w' : undefined}
+        title={`Start what-if${pinned('whatif') ? ' (W)' : ''}: try a hypothesis in pencil, then keep or abandon it`}
         onClick={() => {
           actions.startWhatIf();
           closeMore();
@@ -453,8 +521,8 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
         type="button"
         data-testid="logic-toggle"
         aria-pressed={logicOpen}
-        aria-keyshortcuts="g"
-        title="Logic grid (G)"
+        aria-keyshortcuts={pinned('logic') ? 'g' : undefined}
+        title={pinned('logic') ? 'Logic grid (G)' : 'Logic grid'}
         onClick={() => {
           setLogicOpen((o) => !o);
           closeMore();
@@ -750,13 +818,15 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
             </div>
             <div className={palette.bar}>
               <ToolPalette
-                only={PRIMARY_TOOLS}
+                only={barTools}
                 showColors={false}
                 tool={tool}
                 color={color}
                 onTool={onTool}
                 onColor={onColor}
               />
+              {quickActions(palette.barBtn)}
+              <span className={palette.barSep} aria-hidden="true" />
               <button
                 type="button"
                 className={palette.barBtn}
@@ -771,14 +841,25 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
               <button
                 type="button"
                 className={palette.barBtn}
+                data-testid="redo"
+                disabled={!canRedo}
+                onClick={() => actions.redo()}
+                title="Redo (Ctrl+Shift+Z)"
+                aria-label="Redo"
+              >
+                <RedoIcon style={{ width: '1.2rem', height: '1.2rem' }} />
+              </button>
+              <button
+                type="button"
+                className={palette.barBtn}
                 ref={moreButton}
                 data-testid="more-button"
                 aria-expanded={moreOpen}
-                aria-label="More tools"
-                title="More tools and options"
+                aria-label="Tray: more tools and actions"
+                title="Tray: more tools and actions"
                 onClick={() => setMoreOpen((o) => !o)}
               >
-                ⋯
+                <TrayIcon style={{ width: '1.2rem', height: '1.2rem' }} />
               </button>
             </div>
             {moreOpen && (
@@ -826,7 +907,8 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
                   </div>
                   <ToolPalette
                     wrap
-                    except={PRIMARY_TOOLS}
+                    only={trayTools}
+                    shortcuts={false}
                     testId="tool-palette-more"
                     tool={tool}
                     color={color}
@@ -852,12 +934,14 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
             <div className={styles.dock} data-testid="dock">
               <ToolPalette
                 strip
+                only={barTools}
                 showColors={false}
                 tool={tool}
                 color={color}
                 onTool={onTool}
                 onColor={onColor}
               />
+              {quickActions(styles.dockBtn)}
               <span className={styles.dockSep} aria-hidden="true" />
               {dockButton(
                 'undo',
@@ -877,7 +961,24 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
               )}
               <span className={styles.dockSep} aria-hidden="true" />
               {cluesButton}
-              <OverflowMenu up>{secondary}</OverflowMenu>
+              <OverflowMenu up>
+                {trayTools.length > 0 && (
+                  <div className={styles.trayTools}>
+                    <ToolPalette
+                      wrap
+                      only={trayTools}
+                      shortcuts={false}
+                      showColors={false}
+                      testId="tool-palette-tray"
+                      tool={tool}
+                      color={color}
+                      onTool={onTool}
+                      onColor={onColor}
+                    />
+                  </div>
+                )}
+                {secondary}
+              </OverflowMenu>
             </div>
           </div>
         </div>
