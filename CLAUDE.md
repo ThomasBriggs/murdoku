@@ -32,6 +32,7 @@ Measured on this machine, full suite (`cypress run`, after the build), two runs 
 - Conventional Commits: `feat(scope): …`, `fix(scope): …`, `test(scope): …`, `chore: …`, `docs: …`, `refactor(scope): …`.
   Scopes: `engine`, `clues`, `solver`, `worker`, `ui`, `toolkit`, `game`, `persist`, `e2e`, `build`, `a11y`, `perf`, `ci`.
 - Commit in small logical steps as you go (not one giant commit). Never commit failing tests or a broken build.
+- A feature's tests (Vitest and Cypress) go in the same commit as the feature; don't split them into a separate `test(e2e)` commit. Use `test(...)` commits only for test-only changes.
 - End every commit message with a blank line then the attribution line given in your system instructions.
 - Do not rewrite history (no amend/rebase/force) on commits already made.
 
