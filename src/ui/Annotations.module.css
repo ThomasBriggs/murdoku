@@ -93,14 +93,25 @@
 .cand {
   position: relative;
   font-size: clamp(6px, 24cqw, 13px);
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1;
-  color: var(--text);
-  text-shadow: 0 0 2px var(--room-bg);
+  /* The person's colour, ringed twice so it reads on any room or furniture fill: a thin dark
+     stroke hugging the glyph, then a light halo outside it. */
+  color: var(--tc, var(--text));
+  -webkit-text-stroke: 1.5px var(--cand-ring, #111);
+  paint-order: stroke fill;
+  text-shadow:
+    1px 0 0 var(--cand-halo, #fff),
+    -1px 0 0 var(--cand-halo, #fff),
+    0 1px 0 var(--cand-halo, #fff),
+    0 -1px 0 var(--cand-halo, #fff),
+    1px 1px 0 var(--cand-halo, #fff),
+    -1px -1px 0 var(--cand-halo, #fff),
+    1px -1px 0 var(--cand-halo, #fff),
+    -1px 1px 0 var(--cand-halo, #fff);
 }
 .cand[data-state='no'] {
   opacity: 0.6;
-  color: var(--danger);
 }
 .cand[data-state='no']::after {
   content: '';
@@ -108,9 +119,9 @@
   inset: -2px;
   background: linear-gradient(
     to top right,
-    transparent calc(50% - 1px),
-    currentColor calc(50% - 1px) calc(50% + 1px),
-    transparent calc(50% + 1px)
+    transparent calc(50% - 1.5px),
+    var(--danger) calc(50% - 1.5px) calc(50% + 1.5px),
+    transparent calc(50% + 1.5px)
   );
 }
 

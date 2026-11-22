@@ -85,7 +85,13 @@ export function CellMarks(p: CellMarksProps) {
             <span
               key={cd.person.id}
               className={styles.cand}
-              style={{ gridRow: Math.floor(cd.slot / 3) + 1, gridColumn: (cd.slot % 3) + 1 }}
+              style={
+                {
+                  gridRow: Math.floor(cd.slot / 3) + 1,
+                  gridColumn: (cd.slot % 3) + 1,
+                  '--tc': cd.person.color,
+                } as CSSProperties
+              }
               data-state={cd.state}
               data-glyph={cd.person.initial}
               data-testid={`cand-${p.r}-${p.c}-${cd.person.id}`}

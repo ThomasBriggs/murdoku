@@ -83,7 +83,14 @@ describe('persistence', () => {
     cy.get(sel('board')).should('be.visible');
     cy.get('[data-testid="board-grid"] [data-occupant="1"]').should('have.length', 1);
     cy.get('[data-testid^="mark-"]').should('have.length', 1);
-    cy.get('[data-testid^="cand-"]').should('have.length', 1);
+    cy.get('[data-testid^="cand-"]')
+      .should('have.length', 1)
+      .then(($el) => {
+        // drawn in its person's colour (hex in --tc), not the default text colour
+        const hex = $el[0]!.style.getPropertyValue('--tc').trim();
+        const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+        expect(getComputedStyle($el[0]!).color).to.eq(`rgb(${r}, ${g}, ${b})`);
+      });
     cy.get('[data-testid="drawing-layer"] path[data-testid^="stroke-"]').should('have.length', 1);
     tid('scratchpad-toggle').click();
     tid('scratchpad-text').should('have.value', 'the cook did it');
