@@ -236,6 +236,7 @@ export interface GameActions {
   promoteTentative(person: PersonId): boolean;
   setRowNote(row: number, text: string): boolean;
   setColNote(col: number, text: string): boolean;
+  /** Legacy: room notes have no UI since the room legend went; kept for the save format. */
   setRoomNote(room: RoomId, text: string): boolean;
   toggleClueTick(person: PersonId, atom: number): boolean;
   toggleClueStruck(person: PersonId): boolean;

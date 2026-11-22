@@ -55,7 +55,6 @@ import {
 import { useGame, useStoreApi } from './context';
 import styles from './Game.module.css';
 import { PeoplePanel } from './PeoplePanel';
-import { RoomLegend } from './RoomLegend';
 import { assignRoomColors } from './roomColors';
 import { shouldDismissSheet } from './sheetGesture';
 import { OverflowMenu, Toolbar } from './Toolbar';
@@ -146,6 +145,7 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
 
   const [cursor, setCursor] = useState({ r: 0, c: 0 });
   const [highlight, setHighlight] = useState<Highlight | null>(null);
+  const [keyOpen, setKeyOpen] = useState(false);
   const [shakeCell, setShakeCell] = useState<number | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const mobile = useMediaQuery('(max-width: 600px)');
@@ -167,7 +167,6 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
   const [cluesOpen, setCluesOpen] = useState(
     () => window.matchMedia?.('(min-width: 1200px)').matches ?? false,
   );
-  const [keyOpen, setKeyOpen] = useState(false);
   const drawerRef = useRef<HTMLElement>(null);
   const grab = useRef<{ id: number; y: number } | null>(null);
   // The phone sheet is modal-ish: focus moves in when it opens, the page behind does not scroll.
@@ -671,43 +670,6 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
           />
         )}
 
-        <div className={styles.legendRow}>
-          <RoomLegend
-            rooms={puzzle.rooms}
-            colors={roomColors}
-            notes={annotations.roomNotes}
-            showNotes={annotations.layerVisibility.margins}
-            onHighlight={setHighlight}
-            onSelectRoom={(room) => actions.selectCells(roomCells(puzzle.roomOf, room), 'replace')}
-            onNote={(room, text) => actions.setRoomNote(room, text)}
-          />
-
-          <button
-            type="button"
-            className={styles.keyBtn}
-            data-testid="key-toggle"
-            aria-expanded={keyOpen}
-            aria-controls="furniture-key"
-            title="Furniture key"
-            onClick={() => setKeyOpen((o) => !o)}
-          >
-            Key
-          </button>
-          {keyOpen && (
-            <div className={styles.keyPop} id="furniture-key">
-              <FurnitureLegend
-                furniture={puzzle.furniture}
-                onHighlight={setHighlight}
-                onSelect={(type, additive) =>
-                  actions.selectCells(
-                    furnitureCells(puzzle.furniture, type),
-                    additive ? 'add' : 'replace',
-                  )
-                }
-              />
-            </div>
-          )}
-        </div>
         <Board
           solved={solved}
           wrongPeople={wrongPeople}
@@ -1059,6 +1021,28 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
             }}
             onHighlight={setHighlight}
           />
+          <details
+            className={styles.keySection}
+            data-testid="furniture-key"
+            open={keyOpen}
+            onToggle={(e) => setKeyOpen(e.currentTarget.open)}
+          >
+            <summary data-testid="key-toggle">Furniture key</summary>
+            {keyOpen && (
+              <FurnitureLegend
+                furniture={puzzle.furniture}
+                onHighlight={setHighlight}
+                onSelect={(type, additive) => {
+                  actions.selectCells(
+                    furnitureCells(puzzle.furniture, type),
+                    additive ? 'add' : 'replace',
+                  );
+                  // On phones the sheet covers the board: step aside to show the selection.
+                  if (mobile) setCluesOpen(false);
+                }}
+              />
+            )}
+          </details>
         </div>
       </aside>
       <PrintSheet
@@ -1124,7 +1108,7 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
               checked={printMarks}
               onChange={(e) => setPrintMarks(e.target.checked)}
             />{' '}
-            Include my marks (placements, crosses, candidates, margin notes)
+            Include my marks (placements, crosses, candidates)
           </label>
         </ConfirmDialog>
       )}

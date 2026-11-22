@@ -253,17 +253,10 @@ describe('Board UI', () => {
     expect(document.querySelectorAll('[data-person-mark]')).toHaveLength(0);
   });
 
-  it('shows a room legend whose hover highlights the room', async () => {
+  it('has no room legend above the board', async () => {
     store = await setup();
-    const puzzle = store.getState().puzzle!;
-    const items = within(screen.getByTestId('room-legend')).getAllByRole('listitem');
-    expect(items).toHaveLength(puzzle.rooms.length);
-    const room = puzzle.rooms[0]!;
-    expect(items[0]).toHaveTextContent(room.name);
-    fireEvent.mouseEnter(items[0]!);
-    expect(document.querySelectorAll('[data-highlight="true"]')).toHaveLength(room.cells.length);
-    fireEvent.mouseLeave(items[0]!);
-    expect(document.querySelectorAll('[data-highlight="true"]')).toHaveLength(0);
+    expect(screen.queryByTestId('room-legend')).toBeNull();
+    expect(screen.queryByTestId(/^legend-room-/)).toBeNull();
   });
 
   it('marks the victim token and applies the theme to <html>', async () => {

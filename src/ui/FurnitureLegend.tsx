@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { FURNITURE } from '../engine/furniture';
 import type { FurnitureType } from '../engine/types';
 import { FurnitureIcon } from './icons/FurnitureIcon';
-import styles from './RoomLegend.module.css';
+import styles from './FurnitureLegend.module.css';
 import type { Highlight } from './types';
 
 /**

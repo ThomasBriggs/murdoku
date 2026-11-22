@@ -197,19 +197,11 @@ describe('solving toolkit: marks, notes, highlights', () => {
       });
   });
 
-  it('writes a note on a room; row and column notes no longer exist', () => {
+  it('has no note fields for rows, columns or rooms', () => {
     load();
     cy.get('[data-testid^="row-note-"]').should('not.exist');
     cy.get('[data-testid^="col-note-"]').should('not.exist');
-    cy.get('[data-testid^="room-note-btn-"]').first().click();
-    cy.get('[data-testid^="room-note-input-"]').type('victim + 1{enter}');
-    cy.get('[data-testid^="room-note-"]')
-      .filter(':not([data-testid^="room-note-btn"]):not([data-testid^="room-note-input"])')
-      .should('contain.text', 'victim + 1')
-      .and('be.visible');
-    cy.get('[data-note="true"]').should('exist');
-    // undo takes the note back
-    cy.get('[data-testid="undo"]').click();
+    cy.get('[data-testid^="room-note-"]').should('not.exist');
     cy.get('[data-note="true"]').should('not.exist');
   });
 

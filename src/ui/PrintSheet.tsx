@@ -13,7 +13,7 @@ export interface PrintSheetProps {
   puzzle: PuzzleView;
   placements: Record<PersonId, number | null>;
   annotations: Annotations;
-  /** Include the player's placements, marks, candidates and margin notes; otherwise a blank sheet. */
+  /** Include the player's placements, marks and candidates; otherwise a blank sheet. */
   includeMarks: boolean;
 }
 
@@ -76,7 +76,6 @@ export function PrintSheet({ puzzle, placements, annotations, includeMarks }: Pr
               const person = occupant.get(key);
               const mark = includeMarks ? annotations.cellMarks[key] : undefined;
               const cand = includeMarks && !person ? annotations.candidates[key] : undefined;
-              const roomNote = includeMarks ? annotations.roomNotes[roomId] : undefined;
               return (
                 <div
                   key={key}
@@ -91,10 +90,7 @@ export function PrintSheet({ puzzle, placements, annotations, includeMarks }: Pr
                     .join(' ')}
                 >
                   {first?.[0] === r && first[1] === c && (
-                    <span className="ps-room">
-                      {puzzle.rooms[roomId]!.name}
-                      {roomNote ? ` (${roomNote})` : ''}
-                    </span>
+                    <span className="ps-room">{puzzle.rooms[roomId]!.name}</span>
                   )}
                   {f && (
                     <span className="ps-furn">

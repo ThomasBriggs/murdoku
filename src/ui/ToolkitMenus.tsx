@@ -11,13 +11,16 @@ export const LAYER_LABELS: Record<LayerId, string> = {
   tentative: 'Tentative placements',
 };
 
-/** Layers that can be toggled and cleared. */
+/**
+ * Layers that can be toggled and cleared. Room notes ("margins") were removed with the room
+ * legend; the layer id stays in the save format only so old saves load.
+ */
 const AVAILABLE: Record<LayerId, boolean> = {
   crosses: true,
   candidates: true,
   highlights: true,
   drawing: true,
-  margins: true,
+  margins: false,
   tentative: true,
 };
 
@@ -56,17 +59,15 @@ export function LayersMenu({
             if (e.key === 'Escape') setOpen(false);
           }}
         >
-          {LAYER_IDS.map((l) => (
+          {LAYER_IDS.filter((l) => AVAILABLE[l]).map((l) => (
             <label key={l}>
               <input
                 type="checkbox"
                 data-testid={`layer-${l}`}
                 checked={visibility[l]}
-                disabled={!AVAILABLE[l]}
                 onChange={(e) => onToggle(l, e.target.checked)}
               />
               {LAYER_LABELS[l]}
-              {!AVAILABLE[l] && ' (coming soon)'}
             </label>
           ))}
         </div>

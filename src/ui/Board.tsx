@@ -379,7 +379,6 @@ export function Board(p: BoardProps) {
                   color={p.roomColors.get(roomId)!}
                   furniture={puzzle.furniture[r]![c] ?? null}
                   roomLabel={first?.[0] === r && first[1] === c}
-                  roomNote={vis.margins ? annotations.roomNotes[roomId] : undefined}
                   person={person}
                   conflicts={
                     p.conflictHighlight && occ !== undefined ? (p.conflicts.get(occ) ?? []) : []

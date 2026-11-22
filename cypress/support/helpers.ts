@@ -183,12 +183,13 @@ export function setSetting(id: string, on: boolean) {
   closeSettings();
 }
 
-/** Open the furniture key (behind the Key toggle), unless it already is. */
+/** Open the furniture key (a collapsible section at the foot of the clue drawer). */
 export function openKey() {
+  openClues();
   cy.get('body').then(($b) => {
     if (!$b.find(sel('furniture-legend')).length) cy.get(sel('key-toggle')).click();
   });
-  cy.get(sel('furniture-legend')).should('be.visible');
+  cy.get(sel('furniture-legend')).scrollIntoView().should('be.visible');
 }
 
 /** Run axe on the page (or a context) and fail with a readable list of violations. */

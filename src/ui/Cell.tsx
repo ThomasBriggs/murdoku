@@ -42,8 +42,6 @@ export interface CellProps {
   onContextMenu?(r: number, c: number): void;
   /** Double-click on the room label selects the whole room. */
   onRoomLabelDouble?(room: number): void;
-  /** Player's note for this room (shown as a badge on the label). */
-  roomNote?: string;
   /** Toolkit state, exposed as data attributes for tests and styling. */
   ann?: CellAnn;
   /** Visuals of the annotation toolkit (marks, candidates, highlight, tentative tokens). */
@@ -193,13 +191,11 @@ export const Cell = memo(function Cell(p: CellProps) {
           className={styles.roomLabel}
           aria-hidden="true"
           data-testid={`room-label-${room.id}`}
-          data-note={p.roomNote ? 'true' : undefined}
-          title={p.roomNote ? `${room.name}: ${p.roomNote}` : 'Double-click to select the room'}
+          title="Double-click to select the room"
           onClick={(e) => e.stopPropagation()}
           onDoubleClick={() => p.onRoomLabelDouble?.(room.id)}
         >
           {room.name}
-          {p.roomNote && <span className={styles.noteBadge}> ✎</span>}
         </span>
       )}
       {furniture && (

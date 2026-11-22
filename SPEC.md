@@ -218,7 +218,7 @@ The "Focus" layout keeps the board as the centre of attention and tucks everythi
 - **Desktop**: a slim header, the board, and a floating **dock** below it holding the quick bar. The tray opens upwards from the dock: the unpinned tools (two per row) above Reset, Layers, Clear, What-if, Logic grid and Print. Check and Accuse float beside the board. The **clue drawer** opens on the right: docked beside the board at 1200 px and wider (open by default), an overlay below that (closed by default).
 - **Mobile (600 px and narrower)**: the board with a Check/Accuse/Clues strip and, below it, the quick bar (pinned tools, undo/redo, tray button). With many tools pinned the tool row scrolls sideways rather than wrapping. The tray button opens a bottom sheet with the remaining tools and the menu items above. Clues open as a bottom sheet from the Clues button. The layout works down to 360 px wide.
 - The header shows the title, difficulty, timer and seed, with icon buttons for New game, Share, Statistics, Rules (?) and Settings.
-- The room legend sits above the board; the furniture legend is behind a **Key** toggle.
+- There is no room legend above the board (room names are labelled in the board itself). The furniture legend is a collapsible **Furniture key** section at the foot of the clue drawer; hovering an entry highlights those cells and clicking one selects them (on phones the clue sheet then closes to show the selection).
 
 ### 6.2 Board
 
@@ -277,8 +277,7 @@ A **tool palette** (the dock on desktop, the bottom bar and More sheet on mobile
 
 #### 6.5.3 Room notes
 
-- Each **room** has a note badge in the room legend for initials or short text (e.g. "victim + 1 here," "only C or F").
-- Per-row and per-column margin notes were **removed** in the Focus layout in favour of room notes and the scratchpad (the old fields remain in the save format only for compatibility).
+- *Removed.* Room notes went with the room legend, and per-row and per-column margin notes were removed earlier; the scratchpad and person-card notes cover free text. The old fields remain in the save format only so old saves load; nothing shows them.
 
 #### 6.5.4 Clue annotations
 
@@ -324,7 +323,7 @@ All are in Settings and all are **off by default**, except where marked. They ac
 
 #### 6.5.10 Layers, clearing and printing
 
-- A **layers menu** toggles visibility for: crosses, candidates, highlights, drawing, room notes and tentative placements.
+- A **layers menu** toggles visibility for: crosses, candidates, highlights, drawing and tentative placements.
 - **Clear…** offers a choice: clear one layer, clear all annotations but keep placements, or reset everything (each with confirmation; all undoable).
 - **Print / PDF**: a print stylesheet renders a clean black-and-white board, legend and clue list on one A4/Letter page. An option includes the player's current marks. Useful for people who want to finish on real paper.
 

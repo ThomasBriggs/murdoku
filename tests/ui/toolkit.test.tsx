@@ -269,13 +269,12 @@ describe('keyboard shortcuts', () => {
 
   it('ignores shortcuts while typing in a note field', async () => {
     const store = await setup();
-    const room = store.getState().puzzle!.rooms[0]!;
-    fireEvent.click(screen.getByTestId(`room-note-btn-${room.id}`));
-    const input = screen.getByTestId(`room-note-input-${room.id}`);
-    fireEvent.keyDown(input, { key: 'n' });
+    const person = store.getState().puzzle!.people[1]!.id;
+    fireEvent.click(screen.getByTestId(`person-note-btn-${person}`));
+    fireEvent.keyDown(screen.getByTestId(`person-note-${person}`), { key: 'x' });
     expect(store.getState().tool).toBe('place');
     fireEvent.click(screen.getByTestId('scratchpad-toggle'));
-    fireEvent.keyDown(screen.getByTestId('scratchpad-text'), { key: 'n' });
+    fireEvent.keyDown(screen.getByTestId('scratchpad-text'), { key: 'x' });
     expect(store.getState().tool).toBe('place');
   });
 
@@ -366,19 +365,17 @@ describe('multi-select', () => {
     expect(store.getState().selection).toEqual(Array.from({ length: 9 }, (_, r) => cellKey(r, 0)));
   });
 
-  it('double-clicking a room label or legend entry selects the room; a furniture entry selects its type', async () => {
+  it('double-clicking a room label selects the room; a furniture key entry selects its type', async () => {
     const store = await setup();
     const puzzle = store.getState().puzzle!;
     const room = puzzle.rooms[0]!;
     fireEvent.doubleClick(screen.getByTestId(`room-label-${room.id}`));
     expect(store.getState().selection).toHaveLength(room.cells.length);
     store.getState().clearSelection();
-    const other = puzzle.rooms[1]!;
-    fireEvent.doubleClick(screen.getByTestId(`legend-room-${other.id}`));
-    expect(store.getState().selection).toHaveLength(other.cells.length);
 
+    fireEvent.click(screen.getByTestId('clues-toggle')); // the key is in the clue drawer
     fireEvent.click(screen.getByTestId('key-toggle'));
-    const legend = within(screen.getByTestId('furniture-legend'));
+    const legend = within(await screen.findByTestId('furniture-legend'));
     const btn = legend.getAllByRole('button')[0]!;
     const type = btn.dataset.testid!.replace('legend-furniture-', '');
     fireEvent.click(btn);
@@ -395,26 +392,20 @@ describe('margin notes', () => {
     expect(screen.queryByTestId('col-note-0')).toBeNull();
   });
 
-  it('room notes are edited in place and survive undo/redo', async () => {
+  it('room notes are gone too: no room legend and no note badge on room labels', async () => {
     const store = await setup();
     const room = store.getState().puzzle!.rooms[0]!;
-    fireEvent.click(screen.getByTestId(`room-note-btn-${room.id}`));
-    const input = screen.getByTestId(`room-note-input-${room.id}`) as HTMLInputElement;
-    fireEvent.change(input, { target: { value: 'only C or F' } });
-    fireEvent.blur(input);
-    expect(screen.getByTestId(`room-note-${room.id}`)).toHaveTextContent('only C or F');
-    expect(screen.getByTestId(`room-label-${room.id}`)).toHaveAttribute('data-note', 'true');
-
-    fireEvent.click(screen.getByTestId('undo'));
-    expect(store.getState().annotations.roomNotes).toEqual({});
-    expect(screen.queryByTestId(`room-note-${room.id}`)).toBeNull();
-    fireEvent.click(screen.getByTestId('redo'));
-    expect(store.getState().annotations.roomNotes[room.id]).toBe('only C or F');
+    expect(screen.queryByTestId('room-legend')).toBeNull();
+    expect(screen.queryByTestId(`room-note-btn-${room.id}`)).toBeNull();
+    // A note from an old save is ignored.
+    act(() => store.getState().setRoomNote(room.id, 'old note'));
+    expect(screen.getByTestId(`room-label-${room.id}`)).not.toHaveAttribute('data-note');
+    expect(screen.getByTestId(`room-label-${room.id}`)).not.toHaveTextContent('old note');
   });
 });
 
 describe('layers, clearing and settings', () => {
-  it('hides candidates, marks, highlights, margins and tentative tokens per layer', async () => {
+  it('hides candidates, marks, highlights and tentative tokens per layer', async () => {
     const store = await setup();
     store.getState().applyMark([cellKey(0, 0)], 'cross');
     store.getState().applyCandidate([cellKey(0, 1)], 0);
@@ -435,13 +426,9 @@ describe('layers, clearing and settings', () => {
       fireEvent.click(screen.getByTestId(`layer-${layer}`));
       expect(gone(), layer).toBeTruthy();
     }
-    const noted = store.getState().puzzle!.rooms[0]!.id;
-    act(() => store.getState().setRoomNote(noted, 'hidden soon'));
-    expect(screen.getByTestId(`room-note-${noted}`)).toBeInTheDocument();
-    fireEvent.click(screen.getByTestId('layer-margins'));
-    expect(screen.queryByTestId(`room-note-${noted}`)).toBeNull();
+    expect(screen.queryByTestId('layer-margins')).toBeNull(); // room notes are gone
     expect(screen.getByTestId('layer-drawing')).not.toBeDisabled();
-    expect(store.getState().history.past).toHaveLength(5); // visibility never enters history
+    expect(store.getState().history.past).toHaveLength(4); // visibility never enters history
   });
 
   it('Clear… asks for confirmation and each clear is undoable', async () => {

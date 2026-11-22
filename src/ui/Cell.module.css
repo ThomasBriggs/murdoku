@@ -71,9 +71,6 @@
   cursor: help;
   z-index: 1;
 }
-.noteBadge {
-  color: var(--accent);
-}
 .inSel {
   outline: 2px dashed var(--selected);
   outline-offset: -2px;

@@ -1,4 +1,4 @@
-import { longPress, moreClick } from '../support/helpers';
+import { longPress, moreClick, openKey } from '../support/helpers';
 
 const URL = '/?seed=cy-board&d=easy';
 
@@ -126,10 +126,11 @@ describe('board', () => {
     });
   });
 
-  it('shows a room legend that highlights cells on hover', () => {
+  it('has no room legend; the furniture key in the clue drawer highlights cells on hover', () => {
     loadBoard();
-    cy.get('[data-testid="room-legend"] li').should('have.length.greaterThan', 2);
-    cy.get('[data-testid^="legend-room-"]').first().trigger('mouseover').trigger('mouseenter');
+    cy.get('[data-testid="room-legend"]').should('not.exist');
+    openKey();
+    cy.get('[data-testid^="legend-furniture-"]').first().trigger('mouseover').trigger('mouseenter');
     cy.get('[data-highlight="true"]').should('have.length.greaterThan', 0);
   });
 

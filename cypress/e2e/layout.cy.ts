@@ -20,13 +20,9 @@ describe('layout', () => {
       cy.log(`board spans ${Math.round(r.top)}..${Math.round(r.bottom)}px`);
       expect(r.bottom, 'board fully above the fold').to.be.lessThan(901);
     });
-    cy.get(sel('room-legend')).then(($l) => {
-      const bottom = $l[0]!.getBoundingClientRect().bottom;
-      cy.log(`room legend ends at ${Math.round(bottom)}px`);
-      expect(bottom, 'room legend fully visible').to.be.lessThan(901);
-    });
+    cy.get(sel('room-legend')).should('not.exist');
     cy.window().its('scrollY').should('eq', 0);
-    // The furniture key is behind a toggle and opens inside the viewport.
+    // The furniture key is a collapsed section in the clue drawer and opens inside the viewport.
     cy.get(sel('furniture-legend')).should('not.exist');
     openKey();
     cy.get(sel('furniture-legend')).then(($l) => {
@@ -75,13 +71,14 @@ describe('layout', () => {
     });
   }
 
-  it('row and column note fields are gone; rooms keep their notes', () => {
+  it('row, column and room note fields are gone', () => {
     cy.visit(URL);
     cy.get(sel('board')).should('be.visible');
     cy.get('[data-testid^="row-note"]').should('not.exist');
     cy.get('[data-testid^="col-note"]').should('not.exist');
     cy.get('[data-testid="row-notes"], [data-testid="col-notes"]').should('not.exist');
-    cy.get('[data-testid^="room-note-btn-"]').should('have.length.greaterThan', 2);
+    cy.get('[data-testid^="room-note"]').should('not.exist');
+    cy.get(sel('room-legend')).should('not.exist');
   });
 
   it('desktop colour swatches only show for the highlight and draw tools', () => {

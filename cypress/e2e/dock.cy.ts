@@ -210,16 +210,26 @@ describe('tray menu', () => {
 });
 
 describe('furniture key', () => {
-  it('is hidden until the Key button is pressed, then lists furniture and selects its cells', () => {
+  it('is a collapsed section in the clue drawer that lists furniture and selects its cells', () => {
+    cy.viewport(1280, 900);
     load();
+    cy.get(sel('clues-drawer')).find(sel('furniture-key')).should('not.have.attr', 'open');
     cy.get(sel('furniture-legend')).should('not.exist');
-    cy.get(sel('key-toggle')).should('have.attr', 'aria-expanded', 'false');
     openKey();
-    cy.get(sel('key-toggle')).should('have.attr', 'aria-expanded', 'true');
+    cy.get(sel('furniture-key')).should('have.attr', 'open');
     cy.get('[data-testid^="legend-furniture-"]').first().click();
     cy.get('[data-sel="true"]').should('have.length.greaterThan', 0);
     cy.get(sel('key-toggle')).click();
     cy.get(sel('furniture-legend')).should('not.exist');
+  });
+
+  it('on phones, picking a furniture type closes the clue sheet to show the selection', () => {
+    cy.viewport(375, 740);
+    load();
+    openKey();
+    cy.get('[data-testid^="legend-furniture-"]').first().click();
+    cy.get(sel('clues-drawer')).should('not.be.visible');
+    cy.get('[data-sel="true"]').should('have.length.greaterThan', 0);
   });
 });
 

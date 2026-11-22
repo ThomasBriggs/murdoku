@@ -119,9 +119,6 @@ suite('toolkit screenshots', () => {
       pickTool('pencil');
       selectPerson(4);
       cell(1, 7).click();
-      // a room note
-      cy.get('[data-testid^="room-note-btn-"]').first().click();
-      cy.get('[data-testid^="room-note-input-"]').type('victim + 1{enter}');
       pickTool('place');
       cy.screenshot(`toolkit-${name}-${theme}`, { capture: 'fullPage' });
     });

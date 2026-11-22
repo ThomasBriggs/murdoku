@@ -257,16 +257,17 @@ describe('dock and overflow menu', () => {
     expect(screen.queryByTestId('hint-button')).toBeNull();
   });
 
-  it('the Key toggle shows and hides the furniture legend', async () => {
+  it('the furniture key is a collapsible section at the foot of the clue drawer', async () => {
     await setup();
-    const key = screen.getByTestId('key-toggle');
+    const section = screen.getByTestId('furniture-key');
+    expect(within(screen.getByTestId('clues-drawer')).getByTestId('furniture-key')).toBe(section);
+    expect(section).not.toHaveAttribute('open');
     expect(screen.queryByTestId('furniture-legend')).toBeNull();
-    expect(key).toHaveAttribute('aria-expanded', 'false');
-    fireEvent.click(key);
-    expect(key).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByTestId('furniture-legend')).toBeInTheDocument();
-    fireEvent.click(key);
-    expect(screen.queryByTestId('furniture-legend')).toBeNull();
+    fireEvent.click(screen.getByTestId('key-toggle'));
+    expect(section).toHaveAttribute('open');
+    expect(await screen.findByTestId('furniture-legend')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('key-toggle'));
+    await waitFor(() => expect(screen.queryByTestId('furniture-legend')).toBeNull());
   });
 });
 
