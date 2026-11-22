@@ -2,7 +2,7 @@
 // setups, so these only run on request:
 //   cypress run --browser firefox --expose SCREENSHOTS=1 --spec cypress/e2e/screenshots.cy.ts
 import {
-  closeClues,
+  headerAction,
   moreClick,
   openClues,
   pickTool,
@@ -41,9 +41,7 @@ suite('board screenshots', () => {
             n++;
           }
         });
-        // (the clue drawer is closed on phones, so there is no clue word to hover there)
-        if (w >= 1200)
-          cy.get('[data-testid^="clue-room-"]').first().trigger('mouseover').trigger('mouseenter');
+        cy.get('[data-testid^="clue-room-"]').first().trigger('mouseover').trigger('mouseenter');
         cy.screenshot(`board-${name}-${theme}`, { capture: 'fullPage' });
       });
 });
@@ -187,9 +185,44 @@ suite('focus layout screenshots', () => {
       cy.get(t('clues-placed-toggle')).click().should('have.attr', 'aria-expanded', 'false');
       cy.get(t('clues-placed-list')).should('not.be.visible');
       cy.screenshot(`clues-placed-collapsed-${name}`, { capture: 'viewport' });
-      if (w < 1200) closeClues();
     });
   }
+});
+
+suite('mobile layout screenshots', () => {
+  const t = (id: string) => `[data-testid="${id}"]`;
+  for (const [w, h] of [
+    [375, 740],
+    [375, 667],
+    [320, 568],
+  ] as const)
+    it(`clues below the board ${w}x${h}`, () => {
+      cy.viewport(w, h);
+      cy.visit(URL);
+      cy.get(t('board')).should('be.visible');
+      cy.get(t('clues-drawer')).should('be.visible');
+      cy.screenshot(`mobile-clues-below-board-${w}x${h}`, { capture: 'viewport' });
+    });
+
+  for (const theme of ['light', 'dark'] as const)
+    it(`header menu open ${theme}`, () => {
+      cy.viewport(375, 740);
+      cy.visit(URL);
+      cy.get(t('board')).should('be.visible');
+      setTheme(375, theme);
+      headerAction('settings-button');
+      cy.get(t('settings-popover')).should('be.visible');
+      cy.screenshot(`mobile-header-menu-settings-${theme}`, { capture: 'viewport' });
+    });
+
+  it('header menu open (collapsed settings)', () => {
+    cy.viewport(375, 740);
+    cy.visit(URL);
+    cy.get(t('board')).should('be.visible');
+    cy.get(t('header-menu-button')).click();
+    cy.get(t('header-menu')).should('be.visible');
+    cy.screenshot('mobile-header-menu', { capture: 'viewport' });
+  });
 });
 
 function setTheme(_w: number, theme: 'light' | 'dark') {
@@ -306,7 +339,7 @@ suite('game flow screenshots', () => {
     cy.visit('/?seed=cy-flow&d=easy');
     cy.get(t('board')).should('be.visible');
     setTheme(375, 'light');
-    cy.get(t('rules-button')).click();
+    headerAction('rules-button');
     cy.get(t('rules-dialog')).should('be.visible');
     cy.screenshot('rules-mobile-light', { capture: 'viewport' });
   });
