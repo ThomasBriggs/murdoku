@@ -2,6 +2,10 @@ import type { Rng } from './rng';
 import type { Person } from './types';
 import { PEOPLE } from './constants';
 
+/** Easter egg: the person whose name starts with this is always {@link ELLIE_COLOR}. */
+export const ELLIE = 'Ellie 🐸';
+export const ELLIE_COLOR = '#f58231';
+
 export const NAME_POOL: readonly string[] = [
   'Alice',
   'Arthur',
@@ -12,7 +16,7 @@ export const NAME_POOL: readonly string[] = [
   'Daphne',
   'Douglas',
   'Edmund',
-  'Ellie 🐸',
+  ELLIE,
   'Florence',
   'Frederick',
   'Gerald',
@@ -55,7 +59,7 @@ export const TOKEN_COLORS: readonly string[] = [
   '#e6194b',
   '#3cb44b',
   '#4363d8',
-  '#f58231',
+  ELLIE_COLOR,
   '#911eb4',
   '#0aa5a5',
   '#c2185b',
@@ -65,10 +69,6 @@ export const TOKEN_COLORS: readonly string[] = [
   '#6d4c41',
   '#d81b60',
 ];
-
-/** Easter egg: the person whose name starts with this is always {@link ELLIE_COLOR}. */
-export const ELLIE = 'Ellie';
-export const ELLIE_COLOR = '#f58231';
 
 export function pickPeople(rng: Rng): Person[] {
   const names: string[] = [];
@@ -83,7 +83,7 @@ export function pickPeople(rng: Rng): Person[] {
   const colors = rng.shuffle(TOKEN_COLORS);
   // Easter egg: Ellie is always orange. Swap after the shuffle so no extra
   // randomness is drawn and every seed still yields the same puzzle.
-  const ellie = names.findIndex((n) => n.startsWith(ELLIE));
+  const ellie = names.findIndex((n) => n == ELLIE);
   if (ellie >= 0) {
     const orange = colors.indexOf(ELLIE_COLOR);
     [colors[ellie], colors[orange]] = [colors[orange]!, colors[ellie]!];
