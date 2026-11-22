@@ -92,7 +92,7 @@ describe('layout', () => {
   });
 
   for (const w of [360, 375, 414]) {
-    it(`mobile ${w}px: header fits in one or two rows with no horizontal scroll`, () => {
+    it(`mobile ${w}px: header fits in one row with no horizontal scroll`, () => {
       cy.viewport(w, 740);
       cy.visit(URL);
       cy.get(sel('board')).should('be.visible');
@@ -103,8 +103,16 @@ describe('layout', () => {
         expect($h[0]!.getBoundingClientRect().height).to.be.lessThan(125);
         expect($h[0]!.scrollWidth).to.be.at.most($h[0]!.clientWidth);
       });
-      for (const id of ['new-game-button', 'share-button', 'stats-button', 'rules-button'])
+      for (const id of ['new-game-button', 'header-menu-button'])
         cy.get(sel(id)).should('be.visible');
+      for (const id of ['share-button', 'stats-button', 'rules-button', 'settings-button'])
+        cy.get(sel(id)).should('not.exist');
+      cy.get(sel('header-menu-button')).click();
+      for (const id of ['share-button', 'stats-button', 'rules-button', 'settings-button'])
+        cy.get(sel(id)).should('be.visible');
+      cy.document().then((doc) => {
+        expect(doc.documentElement.scrollWidth).to.be.at.most(w);
+      });
     });
   }
 });

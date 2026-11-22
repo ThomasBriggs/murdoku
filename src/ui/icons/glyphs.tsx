@@ -163,3 +163,9 @@ export const NotepadIcon = (p: P) => (
     <path d="M15 3v4h4M8.5 12h7M8.5 16h5" strokeWidth={1.7} />
   </svg>
 );
+/** The phone header's menu: three bars. */
+export const MenuIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M4 6h16M4 12h16M4 18h16" />
+  </svg>
+);

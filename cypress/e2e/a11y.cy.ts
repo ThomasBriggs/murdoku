@@ -1,10 +1,10 @@
 import {
   checkA11y,
-  closeClues,
   moreClick,
   openClues,
   openKey,
   openMore,
+  headerAction,
   openSettings,
   pickTool,
   placePerson,
@@ -83,16 +83,26 @@ describe('accessibility (axe)', () => {
     checkA11y();
   });
 
-  it('clues drawer as an overlay (1000px) and as a phone bottom sheet', () => {
+  it('clues drawer docked (1000px) and as a phone section below the board', () => {
     cy.viewport(1000, 700);
     load();
     openClues();
     checkA11y();
-    closeClues();
     cy.viewport(375, 740);
     openClues();
     checkA11y();
   });
+
+  for (const theme of ['light', 'dark'] as const) {
+    it(`mobile header menu open with settings, ${theme}`, () => {
+      cy.viewport(375, 740);
+      load();
+      setTheme(theme);
+      headerAction('settings-button');
+      cy.get(sel('settings-popover')).should('be.visible');
+      checkA11y();
+    });
+  }
 
   it('scratchpad panel and furniture key', () => {
     cy.viewport(1280, 900);
@@ -138,10 +148,10 @@ describe('accessibility (axe)', () => {
       cy.viewport(1280, 900);
       load();
       setTheme(theme);
-      cy.get(sel('rules-button')).click();
+      headerAction('rules-button');
       checkA11y();
       cy.get('body').type('{esc}');
-      cy.get(sel('stats-button')).click();
+      headerAction('stats-button');
       checkA11y();
       cy.get(sel('stats-reset')).click();
       checkA11y();

@@ -116,6 +116,58 @@
     width: 2.4rem;
     height: 2.75rem;
   }
+  /* Above the fixed bottom dock (z-index 65), so the menu is never covered. */
+  .header {
+    z-index: 70;
+  }
+  .menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: min(18rem, 100vw);
+    max-height: calc(100dvh - var(--hdr-h));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    display: grid;
+    padding: 0.3rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 0;
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.3);
+  }
+  .menuItem {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.75rem;
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0 0.75rem;
+    border-color: transparent;
+    background: transparent;
+    color: var(--text);
+    font-size: 1rem;
+    text-align: left;
+  }
+  .menuItem:hover:not(:disabled),
+  .menuItem[aria-expanded='true'] {
+    background: var(--selected-bg);
+  }
+  .menuItem svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex: none;
+  }
+  .menuGlyph {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    flex: none;
+    font-weight: 700;
+    font-size: 1.15rem;
+  }
 }
 /* 320-wide phones: the difficulty word makes way for the timer. */
 @media (max-width: 359px) {
