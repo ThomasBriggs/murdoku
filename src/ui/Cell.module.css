@@ -15,7 +15,7 @@
   container-type: inline-size;
   overflow: hidden;
 }
-.cell:focus-visible {
+[data-kbd='true'] .cell:focus {
   outline: 3px solid var(--focus);
   outline-offset: -3px;
   z-index: 2;
@@ -160,7 +160,7 @@
   color: var(--on-danger);
 }
 .cell:hover .unplace,
-.cell:focus-visible .unplace,
+[data-kbd='true'] .cell:focus .unplace,
 .selected .unplace {
   opacity: 1;
 }

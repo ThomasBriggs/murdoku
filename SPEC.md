@@ -333,6 +333,7 @@ All are in Settings and all are **off by default**, except where marked. They ac
 
 - Arrow keys move a cell cursor. `1`–`9` select a person. `Enter` places, `Space` notes a candidate.
 - Marks: `X` (cross), `.` (possible), `?` (unsure), `E` (eliminate), `P` (pencil/tentative placement), `D` (draw tool), `C` (cycle highlight colour), `W` (start/end what-if), `G` (logic grid).
+- Mark shortcuts act on the selection, or on the cell cursor only while it is shown (keyboard navigation shows it; pointer use and `Esc` hide it).
 - Every tool has a palette button with a tooltip showing its shortcut (when it is on the quick bar). Tool keys are gated by the quick bar (§6.1); arrows, digits, `Enter`, `Space`, `V`, `Esc` and undo/redo always work.
 - Every cell has an `aria-label`, e.g. "Row 3, column D, Kitchen, chair, empty".
 - Colour is never the only signal: tokens show initials and conflicts also use an icon.

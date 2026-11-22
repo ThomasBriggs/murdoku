@@ -49,6 +49,10 @@ export interface BoardProps {
   whatIfLevel?: number;
   draw: Omit<DrawingProps, 'strokes' | 'visible'>;
   onCursor(r: number, c: number): void;
+  /** The keyboard cell cursor is visible: the focus ring shows and mark keys act on the focused cell. */
+  cursorShown: boolean;
+  /** Show or hide the keyboard cursor (pointer use hides it; arrows, Enter, Space and Tab show it). */
+  onCursorShown(shown: boolean): void;
   /** Open radial "who to place here?" menu (hold on a cell with several noted people). */
   pick?: { key: number; people: PersonId[] } | null;
   onPick?(person: PersonId): void;
@@ -96,6 +100,16 @@ export function Board(p: BoardProps) {
   const gridRef = useRef<HTMLDivElement>(null);
   const drag = useRef<DragState | null>(null);
   const suppressClick = useRef(false);
+  /** A pointer press is in progress: the focus it causes is not keyboard focus. */
+  const pointerFocus = useRef(false);
+  const { onCursor, onCursorShown } = p;
+  const onFocusCell = useCallback(
+    (r: number, c: number) => {
+      onCursor(r, c);
+      if (!pointerFocus.current) onCursorShown(true);
+    },
+    [onCursor, onCursorShown],
+  );
   const labelCells = useMemo(() => firstCellOfRooms(puzzle.roomOf), [puzzle.roomOf]);
   const people = useMemo(() => new Map(puzzle.people.map((x) => [x.id, x])), [puzzle.people]);
   const order = useMemo(() => panelOrder(puzzle.people), [puzzle.people]);
@@ -139,9 +153,11 @@ export function Board(p: BoardProps) {
       e.preventDefault();
       const nr = Math.min(GRID_SIZE - 1, Math.max(0, r + arrow[0]));
       const nc = Math.min(GRID_SIZE - 1, Math.max(0, c + arrow[1]));
+      p.onCursorShown(true);
       focusCell(nr, nc);
     } else if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
+      p.onCursorShown(true);
       // Enter places; Space notes a candidate (the keyboard's "quick tap").
       p.onActivate(r, c, { keyboard: true, note: e.key === ' ' });
     } else if (e.key === 'Escape') {
@@ -226,6 +242,8 @@ export function Board(p: BoardProps) {
 
   const onPointerDown = (e: PointerEvent) => {
     if (e.button !== 0 || (e.target as HTMLElement).closest('button, input')) return;
+    p.onCursorShown(false);
+    pointerFocus.current = true;
     const key = cellAt(e);
     if (key === null) return;
     holdClick.current = false;
@@ -249,6 +267,7 @@ export function Board(p: BoardProps) {
   };
   useEffect(() => {
     const end = () => {
+      pointerFocus.current = false;
       if (hold.current) {
         window.clearTimeout(hold.current.timer);
         delete hold.current.el.dataset.holding;
@@ -384,6 +403,7 @@ export function Board(p: BoardProps) {
         ref={gridRef}
         className={`${styles.grid} ${p.tool === 'select' ? styles.selecting : ''}`}
         role="grid"
+        data-kbd={p.cursorShown ? 'true' : undefined}
         aria-label="Murdoku board"
         aria-rowcount={GRID_SIZE}
         aria-colcount={GRID_SIZE}
@@ -454,7 +474,7 @@ export function Board(p: BoardProps) {
                   onActivate={p.onActivate}
                   onContextMenu={onContextMenu}
                   onRoomLabelDouble={p.onRoomSelect}
-                  onFocusCell={p.onCursor}
+                  onFocusCell={onFocusCell}
                 />
               );
             })}

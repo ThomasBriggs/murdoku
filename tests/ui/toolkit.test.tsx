@@ -306,6 +306,24 @@ describe('keyboard shortcuts', () => {
     expect(cell(0, 1)).not.toHaveAttribute('data-mark');
   });
 
+  it('a clicked cell is not marked by X until the keyboard cursor is shown; Esc hides it', async () => {
+    const store = await setup();
+    const grid = screen.getByRole('grid');
+    fireEvent.pointerDown(cell(0, 0), { button: 0 });
+    act(() => cell(0, 0).focus());
+    fireEvent.pointerUp(window);
+    expect(grid).not.toHaveAttribute('data-kbd');
+    fireEvent.keyDown(cell(0, 0), { key: 'x' });
+    expect(store.getState().tool).toBe('cross');
+    expect(cell(0, 0)).not.toHaveAttribute('data-mark');
+    fireEvent.keyDown(cell(0, 0), { key: 'ArrowRight' });
+    expect(grid).toHaveAttribute('data-kbd', 'true');
+    fireEvent.keyDown(cell(0, 1), { key: 'x' });
+    expect(cell(0, 1)).toHaveAttribute('data-mark', 'cross');
+    fireEvent.keyDown(cell(0, 1), { key: 'Escape' });
+    expect(grid).not.toHaveAttribute('data-kbd');
+  });
+
   it('P, E, S, V switch tools and C cycles the highlight colour', async () => {
     const store = await setup();
     const press = (key: string) => fireEvent.keyDown(window, { key });

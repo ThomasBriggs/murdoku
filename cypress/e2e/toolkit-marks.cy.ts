@@ -52,6 +52,32 @@ describe('solving toolkit: marks, notes, highlights', () => {
     cell(1, 2).rightclick().should('have.attr', 'data-mark', 'cross');
   });
 
+  it('keyboard marks ignore a clicked cell until the cursor is shown by an arrow key', () => {
+    load();
+    cell(2, 2).click();
+    cy.get('[data-testid="board-grid"]').should('not.have.attr', 'data-kbd');
+    cell(2, 2).type('x');
+    cell(2, 2).should('not.have.attr', 'data-mark');
+    tool('cross').should('have.attr', 'aria-pressed', 'true');
+    cell(2, 2).type('{rightarrow}x');
+    cy.get('[data-testid="board-grid"]').should('have.attr', 'data-kbd', 'true');
+    cell(2, 3).should('have.attr', 'data-mark', 'cross');
+    cell(2, 2).should('not.have.attr', 'data-mark');
+  });
+
+  it('Escape after a drag-select clears the selection and hides the cursor ring', () => {
+    load();
+    drag([
+      [0, 0],
+      [0, 1],
+      [0, 2],
+    ]);
+    cy.get('[data-sel]').should('have.length.at.least', 1);
+    cy.get('body').type('{esc}');
+    cy.get('[data-sel]').should('not.exist');
+    cy.get('[data-testid="board-grid"]').should('not.have.attr', 'data-kbd');
+  });
+
   it('Place: a quick tap notes a candidate, press-and-hold places, Eliminate slashes', () => {
     load();
     freeCells().then((free) => {

@@ -151,6 +151,12 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
   const [whatIfEnd, setWhatIfEnd] = useState<WhatIfEnd | null>(null);
   const [printOpen, setPrintOpen] = useState(false);
   const [printMarks, setPrintMarks] = useState(false);
+  // Whether the keyboard cell cursor is visible (arrow keys show it; pointer use and Esc hide it).
+  const [cursorShown, setCursorShown] = useState(false);
+  const cursorShownRef = useRef(false);
+  useEffect(() => {
+    cursorShownRef.current = cursorShown;
+  }, [cursorShown]);
   const cursorRef = useRef(cursor);
   useEffect(() => {
     cursorRef.current = cursor;
@@ -386,10 +392,12 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
         if (s.tool === 'draw') s.setTool('place');
         s.selectPerson(null);
         s.clearSelection();
+        cursorShownRef.current = false;
+        setCursorShown(false);
       } else if (!mod && !e.altKey) {
         // Toolkit shortcuts (SPEC §6.6). Marks act on the selection, or on the
         // cursor cell when the board has focus.
-        const act = s.selection.length > 0 || inGrid;
+        const act = s.selection.length > 0 || (inGrid && cursorShownRef.current);
         const cellEl = t?.closest?.('[data-r]') as HTMLElement | null | undefined;
         const at = cellEl
           ? { r: Number(cellEl.dataset.r), c: Number(cellEl.dataset.c) }
@@ -721,6 +729,11 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
             onErase: (i) => actions.eraseStrokes(i),
           }}
           onCursor={(r, c) => setCursor({ r, c })}
+          cursorShown={cursorShown}
+          onCursorShown={(shown) => {
+            cursorShownRef.current = shown;
+            setCursorShown(shown);
+          }}
           pick={pick}
           onPick={choosePick}
           onPickClose={closePick}
