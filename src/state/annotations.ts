@@ -143,6 +143,22 @@ export function toggleMark(a: Annotations, cells: readonly CellKey[], mark: Mark
   });
 }
 
+/**
+ * Cross out cells and wipe their candidate initials (noted and eliminated).
+ * Always sets the cross (never toggles it off). Returns `a` itself when
+ * nothing would change.
+ */
+export function crossClearingNotes(a: Annotations, cells: readonly CellKey[]): Annotations {
+  const cs = uniq(cells).filter((c) => a.cellMarks[c] !== 'cross' || a.candidates[c] !== undefined);
+  if (cs.length === 0) return a;
+  return produce(a, (d) => {
+    for (const c of cs) {
+      d.cellMarks[c] = 'cross';
+      delete d.candidates[c];
+    }
+  });
+}
+
 // ---------------------------------------------------------------- candidates
 
 /**

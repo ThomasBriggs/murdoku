@@ -98,6 +98,27 @@ describe('solving toolkit: marks, notes, highlights', () => {
     });
   });
 
+  it('Cross tool: hold clears the notes and crosses; a quick tap toggles the cross', () => {
+    load();
+    freeCells().then((free) => {
+      const a = free[0]!;
+      cy.get('[data-testid="person-card-1"]').click();
+      cell(...a).click();
+      cy.get('[data-testid="person-card-2"]').click();
+      cell(...a).click();
+      cy.get(`[data-testid="cand-${a[0]}-${a[1]}-1"]`).should('exist');
+      cy.get(`[data-testid="cand-${a[0]}-${a[1]}-2"]`).should('exist');
+      tool('cross').click();
+      longPress(...a);
+      cell(...a).should('have.attr', 'data-mark', 'cross');
+      cell(...a).should('not.have.attr', 'data-candidates');
+      cy.get(`[data-testid^="cand-${a[0]}-${a[1]}-"]`).should('not.exist');
+      cell(...a)
+        .click()
+        .should('not.have.attr', 'data-mark');
+    });
+  });
+
   it('Place with nobody picked: hold places a single noted person or opens a radial menu', () => {
     load();
     freeCells().then((free) => {

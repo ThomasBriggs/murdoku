@@ -151,6 +151,38 @@ describe('cell tools by click', () => {
     }
   });
 
+  it('cross tool: hold clears notes and crosses; a quick tap toggles the cross', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      const store = await setupWithTimers();
+      const [r, c] = freeCell();
+      const key = cellKey(r, c);
+      act(() => {
+        store.getState().applyCandidate([key], 0);
+        store.getState().applyCandidate([key], 1, true);
+        store.getState().selectPerson(null);
+      });
+      fireEvent.click(tool('cross'));
+      fireEvent.pointerDown(cell(r, c), { button: 0, pointerId: 1 });
+      expect(cell(r, c)).toHaveAttribute('data-holding', 'true');
+      act(() => vi.advanceTimersByTime(HOLD_MS + 10));
+      fireEvent.contextMenu(cell(r, c)); // touch long press: must not toggle
+      fireEvent.pointerUp(window, { pointerId: 1 });
+      fireEvent.click(cell(r, c)); // the click ending the hold is swallowed
+      expect(store.getState().annotations.cellMarks[key]).toBe('cross');
+      expect(store.getState().annotations.candidates[key]).toBeUndefined();
+      expect(cell(r, c)).not.toHaveAttribute('data-candidates');
+      // A quick tap still toggles the cross off.
+      fireEvent.pointerDown(cell(r, c), { button: 0, pointerId: 1 });
+      act(() => vi.advanceTimersByTime(HOLD_MS / 3));
+      fireEvent.pointerUp(window, { pointerId: 1 });
+      fireEvent.click(cell(r, c));
+      expect(store.getState().annotations.cellMarks[key]).toBeUndefined();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('a long touch press does not also cross the cell', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     try {

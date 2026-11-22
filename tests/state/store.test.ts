@@ -187,6 +187,24 @@ describe('game store', () => {
     expect(toSavedGame(g())?.whatIfStack).toEqual([]);
   });
 
+  it('crossClearNotes wipes notes and crosses in one undoable step', () => {
+    const g = () => store.getState();
+    const k = solved[0]!;
+    g().applyCandidate([k], 1);
+    g().applyCandidate([k], 2, true);
+    g().applyMark([k], 'dot');
+    expect(g().crossClearNotes([k])).toBe(true);
+    expect(g().annotations.cellMarks[k]).toBe('cross');
+    expect(g().annotations.candidates[k]).toBeUndefined();
+    expect(g().crossClearNotes([k])).toBe(false); // nothing left to change
+    expect(g().undo()).toBe(true);
+    expect(g().annotations.cellMarks[k]).toBe('dot');
+    expect(g().annotations.candidates[k]).toEqual({
+      yes: expect.any(Number),
+      no: expect.any(Number),
+    });
+  });
+
   it('timer ticks only while running; settings update', () => {
     const g = () => store.getState();
     g().tick(1000);

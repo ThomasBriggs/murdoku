@@ -194,9 +194,10 @@ export function Board(p: BoardProps) {
     cancelHold();
     // (Taps that reach a cell under a locked draw layer act as Place.)
     const placing = p.tool === 'place' || p.tool === 'draw';
-    if (!placing || p.solved || e.shiftKey) return;
+    // The cross tool arms anywhere: holding clears the cell's notes and crosses it.
+    if (!(placing || p.tool === 'cross') || p.solved || e.shiftKey) return;
     // Nobody picked: holding arms only on an empty cell with noted, unplaced people.
-    if (p.selectedPerson === null && !holdCandidates(candidateArgs(key)).length) return;
+    if (placing && p.selectedPerson === null && !holdCandidates(candidateArgs(key)).length) return;
     const el = (e.target as HTMLElement).closest<HTMLElement>('[data-r]');
     if (!el) return;
     el.dataset.holding = 'true';

@@ -277,6 +277,12 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
         }
         return;
       }
+      if (t === 'cross' && mods.hold) {
+        // Holding with the cross tool wipes the cell's notes and crosses it.
+        if (s.selection.length > 0) s.clearSelection();
+        s.crossClearNotes([key]);
+        return;
+      }
       if (t !== 'place') {
         // Mark, eliminate and highlight tools act on the clicked cell only.
         if (s.selection.length > 0 && !mods.keyboard) s.clearSelection();

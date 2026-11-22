@@ -24,6 +24,7 @@ import {
   toggleClueStruck,
   toggleClueTick,
   toggleMark,
+  crossClearingNotes,
 } from '../../src/state/annotations';
 import {
   colCells,
@@ -54,6 +55,27 @@ describe('cell marks', () => {
     expect(Object.keys(a.cellMarks)).toHaveLength(3);
     a = toggleMark(a, [A, B, C], 'cross');
     expect(a.cellMarks).toEqual({});
+  });
+});
+
+describe('crossClearingNotes', () => {
+  it('crosses and wipes yes/no notes, never toggles off, same ref when unchanged', () => {
+    let a = toggleCandidate(emptyAnnotations(), [A], 0, 'yes');
+    a = toggleCandidate(a, [A], 1, 'no');
+    a = toggleCandidate(a, [B], 2, 'yes');
+    a = toggleMark(a, [B], 'dot');
+    const r = crossClearingNotes(a, [A, B]);
+    expect(r.cellMarks[A]).toBe('cross');
+    expect(r.cellMarks[B]).toBe('cross');
+    expect(r.candidates[A]).toBeUndefined();
+    expect(r.candidates[B]).toBeUndefined();
+    expect(a.candidates[A]).toBeDefined(); // pure
+    expect(crossClearingNotes(r, [A, B])).toBe(r); // already crossed, no notes
+    expect(crossClearingNotes(r, [])).toBe(r);
+    const onlyNotes = toggleCandidate(toggleMark(emptyAnnotations(), [A], 'cross'), [A], 0, 'yes');
+    const cleared = crossClearingNotes(onlyNotes, [A]);
+    expect(cleared.cellMarks[A]).toBe('cross'); // stays crossed
+    expect(cleared.candidates[A]).toBeUndefined();
   });
 });
 

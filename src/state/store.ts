@@ -41,6 +41,7 @@ import {
   toggleClueStruck,
   toggleClueTick,
   toggleMark,
+  crossClearingNotes,
   type Annotations,
   type ColorId,
   type LayerId,
@@ -217,6 +218,11 @@ export interface GameActions {
   clearSelection(): void;
   /** Toggle a cross / dot / unsure mark on cells. */
   applyMark(cells: readonly CellKey[], mark: MarkKind): boolean;
+  /**
+   * Cross the cells and remove all their candidate initials (noted and eliminated), as one undo
+   * step. Always sets the cross, never toggles it off.
+   */
+  crossClearNotes(cells: readonly CellKey[]): boolean;
   /** Toggle a person's candidate (or, with `eliminate`, eliminated) initial on cells. */
   applyCandidate(cells: readonly CellKey[], person: PersonId, eliminate?: boolean): boolean;
   applyHighlight(cells: readonly CellKey[], color: ColorId | null): boolean;
@@ -654,6 +660,7 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
           });
         },
 
+        crossClearNotes: (cells) => annotate((a) => crossClearingNotes(a, cells)),
         applyMark: (cells, mark) => annotate((a) => toggleMark(a, cells, mark)),
 
         applyCandidate(cells, person, eliminate = false) {

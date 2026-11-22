@@ -262,7 +262,7 @@ A **tool palette** (the dock on desktop, the bottom bar and More sheet on mobile
 
 | Mark | Meaning / look | How to apply |
 |---|---|---|
-| **✗ Empty** | "Nobody is here." Bold cross. | `X` key, right-click, or the ✗ tool |
+| **✗ Empty** | "Nobody is here." Bold cross. | `X` key, right-click, or the ✗ tool. Holding a cell with the ✗ tool clears its candidate initials and crosses it. |
 | **• Possible** | "Someone could be here." A small dot. | `.` key or the dot tool |
 | **? Unsure** | A reminder to come back. Small question mark. | `?` key |
 | **Candidate initials** | Up to 9 tiny initials in a 3×3 mini-grid inside the cell (like Sudoku pencil marks). Each person's initial always sits in the same slot, so patterns are easy to scan. | Place mode: a quick tap on a cell with a person selected (`Space` from the keyboard). There is no separate Notes tool any more. |
