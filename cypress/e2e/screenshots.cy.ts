@@ -144,6 +144,31 @@ suite('tentative close-up', () => {
   });
 });
 
+suite('radial pick', () => {
+  it('radial menu open on the board', () => {
+    cy.viewport(1280, 900);
+    cy.visit('/?seed=cy-marks&d=easy');
+    cy.get('[data-testid="board"]').should('be.visible');
+    cy.get('[data-testid="board-grid"] [data-blocked="false"]').then(($cells) => {
+      const el = $cells.toArray()[Math.floor($cells.length / 2)]!;
+      const [r, c] = [Number(el.dataset.r), Number(el.dataset.c)];
+      for (const id of [1, 2, 3, 4]) {
+        selectPerson(id);
+        cell(r, c).click();
+      }
+      cy.get('body').type('{esc}');
+      cy.get(`[data-testid="cell-${r}-${c}"]`).trigger('pointerdown', {
+        button: 0,
+        pointerId: 1,
+        isPrimary: true,
+        force: true,
+      });
+      cy.get('[data-testid="radial-pick"]').should('be.visible');
+      cy.get('[data-testid="board"]').screenshot('radial-pick', { capture: 'viewport' });
+    });
+  });
+});
+
 suite('focus layout screenshots', () => {
   const t = (id: string) => `[data-testid="${id}"]`;
 

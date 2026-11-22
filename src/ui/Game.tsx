@@ -1,5 +1,6 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { setHas } from '../engine/cellset';
+import { holdCandidates } from './candidatePick';
 import { isOccupiable } from '../engine/furniture';
 import { allowedCells } from '../engine/clues/evaluate';
 import { GRID_SIZE } from '../engine/constants';
@@ -126,6 +127,9 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
   const [cursor, setCursor] = useState({ r: 0, c: 0 });
   const [highlight, setHighlight] = useState<Highlight | null>(null);
   const [keyOpen, setKeyOpen] = useState(false);
+  const [pick, setPick] = useState<{ key: number; people: PersonId[]; puzzle: unknown } | null>(
+    null,
+  );
   const [shakeCell, setShakeCell] = useState<number | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const mobile = useMediaQuery('(max-width: 600px)');
@@ -306,10 +310,43 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
         else s.selectPerson(null);
         return;
       }
+      if (commit && s.puzzle) {
+        // Nobody picked: hold (or Enter) places a person noted on this empty cell.
+        const who = holdCandidates({
+          puzzle: s.puzzle,
+          key,
+          yes: s.annotations.candidates[key]?.yes,
+          candidatesVisible: s.annotations.layerVisibility.candidates,
+          placements: s.placements,
+        });
+        if (who.length === 1) {
+          if (s.place(who[0]!, key) === 'refused') shake(key);
+          return;
+        }
+        if (who.length > 1) {
+          setPick({ key, people: who, puzzle: s.puzzle });
+          return;
+        }
+      }
       if (occupant) s.selectPerson(occupant.id);
     },
     [store, shake],
   );
+
+  const closePick = useCallback(() => setPick(null), []);
+  const choosePick = useCallback(
+    (id: PersonId) => {
+      if (!pick) return;
+      if (store.getState().place(id, pick.key) === 'refused') shake(pick.key);
+    },
+    [store, pick, shake],
+  );
+  // The menu only makes sense while Place mode is idle on a live board (reset during render).
+  if (
+    pick &&
+    (pick.puzzle !== puzzle || solved || selected !== null || (tool !== 'place' && tool !== 'draw'))
+  )
+    setPick(null);
 
   const onContextMenu = useCallback(
     (r: number, c: number) => {
@@ -678,6 +715,9 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
             onErase: (i) => actions.eraseStrokes(i),
           }}
           onCursor={(r, c) => setCursor({ r, c })}
+          pick={pick}
+          onPick={choosePick}
+          onPickClose={closePick}
           onActivate={onActivate}
           onContextMenu={onContextMenu}
           onSelectPerson={(id) => actions.selectPerson(id)}

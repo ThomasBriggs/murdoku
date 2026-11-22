@@ -128,6 +128,29 @@ describe('accessibility (axe)', () => {
     checkA11y();
   });
 
+  it('radial pick menu open', () => {
+    cy.viewport(1280, 900);
+    load();
+    cy.get('[data-testid="board-grid"] [data-blocked="false"]')
+      .first()
+      .then(($c) => {
+        const [r, c] = [Number($c[0]!.dataset.r), Number($c[0]!.dataset.c)];
+        selectPerson(1);
+        cell(r, c).click();
+        selectPerson(2);
+        cell(r, c).click();
+        cy.get('body').type('{esc}');
+        cell(r, c).trigger('pointerdown', {
+          button: 0,
+          pointerId: 1,
+          isPrimary: true,
+          force: true,
+        });
+        cy.get(sel('radial-pick')).should('be.visible');
+        checkA11y();
+      });
+  });
+
   it('draw controls, what-if banner and check panel', () => {
     cy.viewport(1280, 900);
     load();

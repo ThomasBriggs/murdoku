@@ -13,6 +13,8 @@ import type { Annotations } from '../state/annotations';
 import { colCells, rowCells } from '../state/selection';
 import type { Tool } from '../state/store';
 import styles from './Board.module.css';
+import { holdCandidates } from './candidatePick';
+import { RadialPick } from './RadialPick';
 import { Cell, type ActivateMods, type CellAnn } from './Cell';
 import { CellMarks, type CandidateView } from './CellMarks';
 import { DrawingLayer, type DrawingProps } from './DrawingLayer';
@@ -47,6 +49,10 @@ export interface BoardProps {
   whatIfLevel?: number;
   draw: Omit<DrawingProps, 'strokes' | 'visible'>;
   onCursor(r: number, c: number): void;
+  /** Open radial "who to place here?" menu (hold on a cell with several noted people). */
+  pick?: { key: number; people: PersonId[] } | null;
+  onPick?(person: PersonId): void;
+  onPickClose?(): void;
   onActivate(r: number, c: number, mods?: ActivateMods): void;
   onContextMenu(r: number, c: number): void;
   onSelectPerson(id: PersonId | null): void;
@@ -177,11 +183,20 @@ export function Board(p: BoardProps) {
     hold.current = null;
   };
   useEffect(() => cancelHold, []);
+  const candidateArgs = (key: number) => ({
+    puzzle,
+    key,
+    yes: annotations.candidates[key]?.yes,
+    candidatesVisible: vis.candidates,
+    placements: p.placements,
+  });
   const startHold = (e: PointerEvent, key: number) => {
     cancelHold();
     // (Taps that reach a cell under a locked draw layer act as Place.)
     const placing = p.tool === 'place' || p.tool === 'draw';
-    if (!placing || p.selectedPerson === null || p.solved || e.shiftKey) return;
+    if (!placing || p.solved || e.shiftKey) return;
+    // Nobody picked: holding arms only on an empty cell with noted, unplaced people.
+    if (p.selectedPerson === null && !holdCandidates(candidateArgs(key)).length) return;
     const el = (e.target as HTMLElement).closest<HTMLElement>('[data-r]');
     if (!el) return;
     el.dataset.holding = 'true';
@@ -296,6 +311,19 @@ export function Board(p: BoardProps) {
     );
   };
 
+  const { pick, onPickClose } = p;
+  const closePick = useCallback(
+    (refocus: boolean) => {
+      onPickClose?.();
+      if (refocus && pick)
+        gridRef.current
+          ?.querySelector<HTMLElement>(
+            `[data-testid="cell-${Math.floor(pick.key / GRID_SIZE)}-${pick.key % GRID_SIZE}"]`,
+          )
+          ?.focus();
+    },
+    [onPickClose, pick],
+  );
   const additive = (e: { shiftKey: boolean }) => e.shiftKey;
   const removePerson = (person: Person) => p.onRemove(person.id);
 
@@ -418,6 +446,15 @@ export function Board(p: BoardProps) {
         ))}
       </div>
       <WallLayer roomOf={puzzle.roomOf} />
+      {p.pick && (
+        <RadialPick
+          key={p.pick.key}
+          cellKey={p.pick.key}
+          people={p.pick.people.flatMap((id) => people.get(id) ?? [])}
+          onPick={(id) => p.onPick?.(id)}
+          onClose={closePick}
+        />
+      )}
       <DrawingLayer strokes={annotations.strokes} visible={vis.drawing} {...p.draw} />
     </div>
   );

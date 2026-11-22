@@ -98,6 +98,36 @@ describe('solving toolkit: marks, notes, highlights', () => {
     });
   });
 
+  it('Place with nobody picked: hold places a single noted person or opens a radial menu', () => {
+    load();
+    freeCells().then((free) => {
+      const [a, b] = [free[0]!, free[free.length - 1]!];
+      cy.get('[data-testid="person-card-1"]').click();
+      cell(...a).click();
+      cy.get('body').type('{esc}');
+      cell(...a).should('have.attr', 'data-candidates', '1');
+      longPress(...a);
+      cell(...a).should('have.attr', 'data-occupant', '1');
+      // two noted on another cell: a menu offers both
+      cy.get('[data-testid="person-card-2"]').click();
+      cell(...b).click();
+      cy.get('[data-testid="person-card-3"]').click();
+      cell(...b).click();
+      cy.get('body').type('{esc}');
+      longPress(...b);
+      cy.get('[data-testid="radial-pick"]').should('be.visible');
+      cy.get('[data-testid="radial-pick-2"]').should('be.visible');
+      cy.get('[data-testid="radial-pick-3"]').should('be.visible');
+      cy.get('[data-testid="radial-pick-cancel"]').click();
+      cy.get('[data-testid="radial-pick"]').should('not.exist');
+      cell(...b).should('have.attr', 'data-occupant', '');
+      longPress(...b);
+      cy.get('[data-testid="radial-pick-3"]').click();
+      cy.get('[data-testid="radial-pick"]').should('not.exist');
+      cell(...b).should('have.attr', 'data-occupant', '3');
+    });
+  });
+
   it('places tentatively in pencil mode and promotes with one click', () => {
     load();
     freeCells().then((free) => {

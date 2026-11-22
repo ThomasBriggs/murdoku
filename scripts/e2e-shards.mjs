@@ -11,7 +11,7 @@ export const WEIGHTS = {
   'persistence.cy.ts': 21,
   'clues-drawer.cy.ts': 15,
   'game-flow.cy.ts': 11,
-  'toolkit-marks.cy.ts': 11,
+  'toolkit-marks.cy.ts': 13,
   'dock.cy.ts': 10,
   'toolkit-advanced.cy.ts': 8,
   'board.cy.ts': 6,
