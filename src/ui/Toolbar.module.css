@@ -55,14 +55,18 @@
   border: 1px solid var(--border);
   border-radius: 6px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.35rem 0.75rem;
+  grid-template-columns: repeat(2, max-content);
+  gap: 0.35rem 1.25rem;
 }
 .quick .hint {
   grid-column: 1 / -1;
+  max-width: 17rem;
   margin: 0;
   font-size: 0.8rem;
   color: var(--text-muted);
+}
+.quick label {
+  white-space: nowrap;
 }
 .quick kbd {
   margin-left: auto;

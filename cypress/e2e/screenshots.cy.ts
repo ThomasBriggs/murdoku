@@ -217,7 +217,7 @@ suite('advanced toolkit screenshots', () => {
     cy.visit('/?seed=cy-adv&d=easy');
     cy.get('[data-testid="board"]').should('be.visible');
     setTheme(1280, 'light');
-    cy.get('body').type('g');
+    moreClick('logic-toggle');
     logicMarks();
     cy.get('[data-testid="logic-grid"]').scrollIntoView();
     cy.screenshot('logic-grid-desktop-light', { capture: 'fullPage' });
@@ -228,10 +228,11 @@ suite('advanced toolkit screenshots', () => {
     cy.visit('/?seed=cy-adv&d=easy');
     cy.get('[data-testid="board"]').should('be.visible');
     setTheme(1280, 'dark');
-    cy.get('body').type('w');
-    selectPerson(1);
-    cy.get('[data-testid="board-grid"] [data-blocked="false"]').first().click();
-    cy.get('body').type('d');
+    moreClick('whatif-start');
+    cy.get('[data-testid="board-grid"] [data-blocked="false"]')
+      .first()
+      .then(($c) => placePerson(1, Number($c[0]!.dataset.r), Number($c[0]!.dataset.c)));
+    pickTool('draw');
     const stroke = (pts: [number, number][]) =>
       cy.get('[data-testid="drawing-layer"]').then(($l) => {
         const rect = $l[0]!.getBoundingClientRect();
@@ -294,16 +295,8 @@ suite('game flow screenshots', () => {
     setTheme(1280, 'dark');
     solveFromSeed();
     cy.get(t('accuse-button')).click();
-    const tryNext = (ids: string[], i = 0) => {
-      cy.get(t(`accuse-suspect-${ids[i]}`)).check();
-      cy.get(t('accuse-confirm')).click();
-      cy.get(`${t('win-dialog')}, ${t('accuse-result')}`).then(($el) => {
-        if ($el.attr('data-testid') !== 'win-dialog') tryNext(ids, i + 1);
-      });
-    };
-    cy.get('[data-testid^="accuse-suspect-"]').then(($r) =>
-      tryNext($r.toArray().map((el) => el.dataset.testid!.replace('accuse-suspect-', ''))),
-    );
+    cy.screenshot('accuse-desktop-dark', { capture: 'viewport' });
+    cy.get(t('accuse-confirm')).click();
     cy.get(t('win-dialog')).should('be.visible');
     cy.screenshot('win-desktop-dark', { capture: 'viewport' });
   });
