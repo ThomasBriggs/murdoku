@@ -5,9 +5,20 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  check:
+  typecheck:
+    name: Typecheck
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CYPRESS_INSTALL_BINARY: 0
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7.1.0
@@ -17,24 +28,97 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run typecheck:e2e
-      - run: npm run lint
-      - run: npm test
-      - run: npm run build
 
-  e2e:
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CYPRESS_INSTALL_BINARY: 0
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7.1.0
         with:
           node-version-file: .node-version
           cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CYPRESS_INSTALL_BINARY: 0
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CYPRESS_INSTALL_BINARY: 0
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      # Types are checked in the typecheck job, so only bundle here.
+      - run: npx vite build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
+          if-no-files-found: error
+
+  e2e:
+    name: E2E (shard ${{ matrix.shard }}/3)
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3 shards: the a11y spec alone is ~52 s, so it gets a shard to itself and
+        # the rest (~100 s) splits into two ~50 s shards. A 4th shard cannot finish
+        # sooner than a11y and only adds another runner/install overhead.
+        # If you change this, change the `3` in the shard step and the job name too.
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - id: shard
+        run: echo "specs=$(node scripts/e2e-shards.mjs ${{ matrix.shard }} 3)" >> "$GITHUB_OUTPUT"
       # v7+ runs on node24. v6 was built for node20; when the runner forces it onto
       # node24, its got@11-based wait-on aborts on the first ECONNREFUSED with
       # "Socket closed before the connection was established" instead of retrying.
       - uses: cypress-io/github-action@v7.4.10
         with:
-          build: npm run build
           start: npm run preview
           wait-on: 'http://localhost:4173'
           browser: firefox
+          spec: ${{ steps.shard.outputs.specs }}
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots-shard-${{ matrix.shard }}
+          path: cypress/screenshots
+          if-no-files-found: ignore
+          retention-days: 7
