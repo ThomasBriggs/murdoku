@@ -1,4 +1,4 @@
-import { moreClick } from '../support/helpers';
+import { longPress, moreClick } from '../support/helpers';
 
 const URL = '/?seed=cy-board&d=easy';
 
@@ -49,12 +49,17 @@ describe('board', () => {
     cellsWhere('false').then((free) => {
       const [a, b] = [free[0]!, free.find(([r, c]) => r !== free[0]![0] && c !== free[0]![1])!];
       cy.get('[data-testid="person-card-0"]').click().should('have.attr', 'data-selected', 'true');
-      cell(...a).click();
+      // a quick tap only notes a candidate; press and hold places
+      cell(...a)
+        .click()
+        .should('have.attr', 'data-candidates', '0');
+      cell(...a).should('have.attr', 'data-occupant', '');
+      longPress(...a);
       cy.get('[data-testid="board"] [data-testid="token-0"]').should('exist');
       cell(...a).should('have.attr', 'data-occupant', '0');
-      // move: click the token's cell to select, then a new free cell
+      // move: tap the token's cell to select, then hold a new free cell
       cell(...a).click();
-      cell(...b).click();
+      longPress(...b);
       cell(...b).should('have.attr', 'data-occupant', '0');
       cell(...a).should('have.attr', 'data-occupant', '');
       cy.get('[data-testid="undo"]').click();
@@ -69,7 +74,7 @@ describe('board', () => {
     loadBoard();
     cellsWhere('true').then((blocked) => {
       cy.get('[data-testid="person-card-0"]').click();
-      cell(...blocked[0]!).click();
+      longPress(...blocked[0]!);
       cell(...blocked[0]!).should('have.attr', 'data-occupant', '');
       cy.get('[data-testid="board"] [data-testid="token-0"]').should('not.exist');
     });
@@ -82,10 +87,10 @@ describe('board', () => {
       const second = free.find(([rr, cc]) => rr === r && cc !== c1);
       expect(second, 'a second free cell in the same row').to.not.equal(undefined);
       cy.get('[data-testid="person-card-0"]').click();
-      cell(r, c1).click();
+      longPress(r, c1);
       cy.get('[data-autocross="true"]').should('have.length.greaterThan', 0);
       cy.get('[data-testid="person-card-1"]').click();
-      cell(...second!).click();
+      longPress(...second!);
       cy.get('[data-testid="conflict-badge-0"]').should('be.visible');
       cy.get('[data-testid="conflict-badge-1"]').should('be.visible');
     });
@@ -95,7 +100,7 @@ describe('board', () => {
     loadBoard();
     cellsWhere('false').then((free) => {
       cy.get('[data-testid="person-card-0"]').click();
-      cell(...free[0]!).click();
+      longPress(...free[0]!);
       moreClick('reset');
       cy.get('[role="dialog"]').should('be.visible');
       cy.get('[data-testid="cancel-reset"]').click();

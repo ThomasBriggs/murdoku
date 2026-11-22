@@ -1,4 +1,4 @@
-import { gesture, openSettings, playToWin, sel, tid } from '../support/helpers';
+import { gesture, longPress, openSettings, playToWin, sel, tid } from '../support/helpers';
 
 const A = '/?seed=cy-persist-a&d=easy';
 const B = '/?seed=cy-persist-b&d=medium';
@@ -31,7 +31,9 @@ function saved(ok: (s: Saved) => boolean = () => true, timeout = 4000): Cypress.
 
 function placeOne() {
   tid('person-card-1').click();
-  cy.get('[data-testid="board-grid"] [data-blocked="false"]').first().click();
+  cy.get('[data-testid="board-grid"] [data-blocked="false"]')
+    .first()
+    .then(($c) => longPress(Number($c[0]!.dataset.r), Number($c[0]!.dataset.c)));
 }
 
 describe('persistence', () => {
@@ -39,14 +41,16 @@ describe('persistence', () => {
     load();
     // placement
     tid('person-card-1').click();
-    cy.get('[data-testid="board-grid"] [data-blocked="false"]').eq(0).click();
+    cy.get('[data-testid="board-grid"] [data-blocked="false"]')
+      .eq(0)
+      .then(($c) => longPress(Number($c[0]!.dataset.r), Number($c[0]!.dataset.c)));
     cy.get('[data-testid="board-grid"] [data-occupant="1"]').should('have.length', 1);
     // cross mark
     tid('tool-cross').click();
     cy.get('[data-testid="board-grid"] [data-blocked="false"]').eq(5).click();
     // candidate
+    tid('tool-place').click();
     tid('person-card-2').click();
-    tid('tool-notes').click();
     cy.get('[data-testid="board-grid"] [data-blocked="false"]').eq(8).click();
     // pen stroke
     tid('tool-draw').click();

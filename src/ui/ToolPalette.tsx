@@ -8,7 +8,6 @@ import {
   EliminateIcon,
   EraseIcon,
   HighlightIcon,
-  NotesIcon,
   PencilIcon,
   PlaceIcon,
   QuestionIcon,
@@ -34,7 +33,7 @@ export const TOOLS: readonly ToolDef[] = [
     Icon: PlaceIcon,
     shortcut: 'V',
     key: 'v',
-    help: 'Pick a person, then click a cell to place them',
+    help: 'Pick a person, then tap a cell to note them as a candidate there, or press and hold to place them (Enter places, Space notes)',
   },
   {
     id: 'pencil',
@@ -69,20 +68,12 @@ export const TOOLS: readonly ToolDef[] = [
     help: 'Mark a cell to come back to',
   },
   {
-    id: 'notes',
-    label: 'Notes',
-    Icon: NotesIcon,
-    shortcut: 'N',
-    key: 'n',
-    help: 'Candidate initials: pick a person (or press 1-9) and click cells. Hold Shift to eliminate',
-  },
-  {
     id: 'eliminate',
     label: 'Eliminate',
     Icon: EliminateIcon,
     shortcut: 'E',
     key: 'e',
-    help: 'Slash a person’s initial: they are not in this cell (same as Shift in Notes)',
+    help: 'Slash a person’s initial: they are not in this cell (pick a person, or press 1-9)',
   },
   {
     id: 'erase',
@@ -119,17 +110,10 @@ export const TOOLS: readonly ToolDef[] = [
 ];
 
 /** Tools on the compact mobile bar; the rest live in its "More" sheet. */
-export const PRIMARY_TOOLS: readonly Tool[] = [
-  'place',
-  'pencil',
-  'cross',
-  'notes',
-  'highlight',
-  'erase',
-];
+export const PRIMARY_TOOLS: readonly Tool[] = ['place', 'pencil', 'cross', 'highlight', 'erase'];
 
 /** Tools that start a new visual group in the strip. */
-const GROUP_START = new Set<Tool>(['cross', 'notes', 'highlight']);
+const GROUP_START = new Set<Tool>(['cross', 'eliminate', 'highlight']);
 
 export interface ToolPaletteProps {
   /** Only these tools (default: all). */

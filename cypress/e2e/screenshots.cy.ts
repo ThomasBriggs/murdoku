@@ -5,6 +5,7 @@ import {
   closeClues,
   moreClick,
   openClues,
+  placePerson,
   selectPerson,
   setTheme as sharedSetTheme,
   solveFromSeed,
@@ -45,8 +46,7 @@ suite('board screenshots', () => {
             if (n >= 3) break;
             if (used.has(r)) continue;
             used.add(r);
-            selectPerson(n);
-            cell(r, c).click();
+            placePerson(n, r, c);
             n++;
           }
         });
@@ -110,7 +110,7 @@ suite('toolkit screenshots', () => {
         for (const [r, c] of cells) cell(r, c).click();
       }
       // candidates and an eliminated initial
-      cy.get('[data-testid="tool-notes"]').click();
+      cy.get('[data-testid="tool-place"]').click(); // quick taps note candidates
       for (const id of [1, 2, 3]) {
         selectPerson(id);
         for (const [r, c] of [
@@ -120,9 +120,10 @@ suite('toolkit screenshots', () => {
         ])
           cell(r!, c!).click();
       }
-      cell(2, 6).click({ shiftKey: true });
+      inMore(w, () => cy.get('[data-testid="tool-eliminate"]').click());
+      cell(2, 6).click();
       selectPerson(2);
-      cell(7, 0).click({ shiftKey: true });
+      cell(7, 0).click();
       // a tentative guess
       cy.get('[data-testid="tool-pencil"]').click();
       selectPerson(4);
@@ -144,8 +145,7 @@ suite('tentative close-up', () => {
       const free = $cells
         .toArray()
         .map((el) => [Number(el.dataset.r), Number(el.dataset.c)] as [number, number]);
-      selectPerson(0);
-      cell(free[0]![0], free[0]![1]).click();
+      placePerson(0, free[0]![0], free[0]![1]);
       cy.get('[data-testid="tool-pencil"]').click();
       selectPerson(4);
       cell(free[1]![0], free[1]![1]).click();
@@ -170,8 +170,7 @@ suite('focus layout screenshots', () => {
         const r = Number(el.dataset.r);
         if (k >= n || used.has(r)) continue;
         used.add(r);
-        selectPerson(k);
-        cell(r, Number(el.dataset.c)).click();
+        placePerson(k, r, Number(el.dataset.c));
         k++;
       }
     });

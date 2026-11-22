@@ -1,10 +1,11 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { StoreApi } from 'zustand/vanilla';
 import App from '../../src/App';
 import { cellKey } from '../../src/engine/types';
 import { createGameStore, type GameStore } from '../../src/state/store';
 import { clueSelection, splitByHighlights } from '../../src/ui/PeoplePanel';
+import { HOLD_MS } from '../../src/ui/hold';
 import { TOOLS } from '../../src/ui/ToolPalette';
 import { createEngineClient } from '../../src/worker/client';
 import { createInProcessWorker } from '../../src/worker/inprocess';
@@ -25,7 +26,22 @@ async function setup(): Promise<StoreApi<GameStore>> {
   return store;
 }
 
+/** Same as setup, but waits with real timers before fake ones take over. */
+async function setupWithTimers(): Promise<StoreApi<GameStore>> {
+  vi.useRealTimers();
+  const store = await setup();
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  return store;
+}
+
 const cell = (r: number, c: number) => screen.getByTestId(`cell-${r}-${c}`);
+/** A cell nobody stands on yet and that is not blocked by furniture. */
+function freeCell(ok: (r: number, c: number) => boolean = () => true): [number, number] {
+  const el = [...document.querySelectorAll<HTMLElement>('[data-blocked="false"]')].find(
+    (x) => x.dataset.occupant === '' && ok(Number(x.dataset.r), Number(x.dataset.c)),
+  )!;
+  return [Number(el.dataset.r), Number(el.dataset.c)];
+}
 const card = (id: number) => screen.getByTestId(`person-card-${id}`);
 const tool = (id: string) => screen.getByTestId(`tool-${id}`);
 
@@ -78,21 +94,76 @@ describe('cell tools by click', () => {
     expect(cell(2, 2)).toHaveAttribute('data-mark', 'cross');
   });
 
-  it('notes mode: click toggles the selected person’s candidate, Shift eliminates', async () => {
+  it('place mode: a quick tap toggles the selected person’s candidate; Eliminate slashes it', async () => {
     const store = await setup();
     const p = store.getState().puzzle!.people.find((x) => !x.isVictim)!;
-    fireEvent.click(tool('notes'));
-    fireEvent.click(cell(0, 0)); // nobody selected: nothing happens
-    expect(cell(0, 0)).not.toHaveAttribute('data-candidates');
+    const [r, c] = freeCell();
+    fireEvent.click(cell(r, c)); // nobody selected: nothing happens
+    expect(cell(r, c)).not.toHaveAttribute('data-candidates');
     fireEvent.click(card(p.id));
-    fireEvent.click(cell(0, 0));
-    expect(cell(0, 0)).toHaveAttribute('data-candidates', String(p.id));
-    expect(screen.getByTestId(`cand-0-0-${p.id}`)).toHaveAttribute('data-state', 'yes');
+    fireEvent.click(cell(r, c));
+    expect(cell(r, c)).toHaveAttribute('data-candidates', String(p.id));
+    expect(screen.getByTestId(`cand-${r}-${c}-${p.id}`)).toHaveAttribute('data-state', 'yes');
+    expect(store.getState().placements[p.id]).toBeNull(); // a tap never places
     expect(store.getState().selectedPerson).toBe(p.id); // stays selected for more cells
-    fireEvent.click(cell(0, 0), { shiftKey: true });
-    expect(cell(0, 0)).toHaveAttribute('data-eliminated', String(p.id));
-    expect(cell(0, 0)).not.toHaveAttribute('data-candidates');
-    expect(screen.getByTestId(`cand-0-0-${p.id}`)).toHaveAttribute('data-state', 'no');
+    fireEvent.click(cell(r, c));
+    expect(cell(r, c)).not.toHaveAttribute('data-candidates');
+    fireEvent.click(tool('eliminate'));
+    fireEvent.click(cell(r, c));
+    expect(cell(r, c)).toHaveAttribute('data-eliminated', String(p.id));
+    expect(screen.getByTestId(`cand-${r}-${c}-${p.id}`)).toHaveAttribute('data-state', 'no');
+  });
+
+  it('place mode: press and hold places; Enter places and Space notes', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      const store = await setupWithTimers();
+      const [r, c] = freeCell();
+      fireEvent.click(card(0));
+      fireEvent.pointerDown(cell(r, c), { button: 0, pointerId: 1 });
+      expect(cell(r, c)).toHaveAttribute('data-holding', 'true');
+      act(() => vi.advanceTimersByTime(HOLD_MS + 10));
+      expect(store.getState().placements[0]).toBe(cellKey(r, c));
+      fireEvent.pointerUp(window, { pointerId: 1 });
+      fireEvent.click(cell(r, c)); // the click ending the hold is swallowed
+      expect(cell(r, c)).not.toHaveAttribute('data-candidates');
+      expect(cell(r, c)).not.toHaveAttribute('data-holding');
+      // A short press is just a tap: it notes, it does not place.
+      fireEvent.click(card(1));
+      const [r2, c2] = freeCell((rr, cc) => rr !== r && cc !== c);
+      fireEvent.pointerDown(cell(r2, c2), { button: 0, pointerId: 1 });
+      act(() => vi.advanceTimersByTime(HOLD_MS / 3));
+      fireEvent.pointerUp(window, { pointerId: 1 });
+      act(() => vi.runOnlyPendingTimers());
+      fireEvent.click(cell(r2, c2));
+      expect(store.getState().placements[1]).toBeNull();
+      expect(cell(r2, c2)).toHaveAttribute('data-candidates', '1');
+      // Keyboard: Space notes (toggles it off again), Enter places.
+      act(() => cell(r2, c2).focus());
+      fireEvent.keyDown(cell(r2, c2), { key: ' ' });
+      expect(cell(r2, c2)).not.toHaveAttribute('data-candidates');
+      fireEvent.keyDown(cell(r2, c2), { key: 'Enter' });
+      expect(store.getState().placements[1]).toBe(cellKey(r2, c2));
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('a long touch press does not also cross the cell', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      const store = await setupWithTimers();
+      const [r, c] = freeCell();
+      fireEvent.click(card(0));
+      fireEvent.pointerDown(cell(r, c), { button: 0, pointerId: 1 });
+      act(() => vi.advanceTimersByTime(HOLD_MS + 10));
+      fireEvent.contextMenu(cell(r, c));
+      fireEvent.pointerUp(window, { pointerId: 1 });
+      expect(store.getState().placements[0]).toBe(cellKey(r, c));
+      expect(store.getState().annotations.cellMarks).toEqual({});
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('highlight tool fills with the chosen colour (data-hl-color)', async () => {
@@ -144,7 +215,7 @@ describe('cell tools by click', () => {
 
     fireEvent.click(tool('place'));
     fireEvent.click(card(1));
-    fireEvent.click(cell(r, c));
+    fireEvent.keyDown(cell(r, c), { key: 'Enter' });
     expect(cell(r, c)).toHaveAttribute('data-occupant', '1');
     fireEvent.click(screen.getByTestId('unplace-1'));
     expect(store.getState().placements[1]).toBeNull();
@@ -169,12 +240,10 @@ describe('keyboard shortcuts', () => {
     expect(cell(0, 1)).not.toHaveAttribute('data-mark');
   });
 
-  it('N, P, E, S, V switch tools and C cycles the highlight colour', async () => {
+  it('P, E, S, V switch tools and C cycles the highlight colour', async () => {
     const store = await setup();
     const press = (key: string) => fireEvent.keyDown(window, { key });
-    press('n');
-    expect(store.getState().tool).toBe('notes');
-    press('n');
+    press('n'); // the old Notes key does nothing now
     expect(store.getState().tool).toBe('place');
     press('p');
     expect(store.getState().tool).toBe('pencil');
@@ -208,18 +277,16 @@ describe('keyboard shortcuts', () => {
     expect(store.getState().tool).toBe('place');
   });
 
-  it('number keys in notes mode toggle that person’s candidate at the cursor; Shift eliminates', async () => {
+  it('number keys in Eliminate mode slash that person’s initial at the cursor', async () => {
     const store = await setup();
     const grid = screen.getByRole('grid');
     const order = store
       .getState()
       .puzzle!.people.slice()
       .sort((a, b) => Number(b.isVictim) - Number(a.isVictim) || a.id - b.id);
-    fireEvent.keyDown(window, { key: 'n' });
+    fireEvent.keyDown(window, { key: 'e' });
     act(() => cell(2, 2).focus());
     fireEvent.keyDown(grid, { key: '3', code: 'Digit3' });
-    expect(cell(2, 2)).toHaveAttribute('data-candidates', String(order[2]!.id));
-    fireEvent.keyDown(grid, { key: '#', code: 'Digit3', shiftKey: true });
     expect(cell(2, 2)).toHaveAttribute('data-eliminated', String(order[2]!.id));
     expect(store.getState().selectedPerson).toBeNull(); // digits did not select a person
   });
@@ -234,8 +301,9 @@ describe('keyboard shortcuts', () => {
       [5, 5],
     ] as const)
       expect(cell(r, c)).toHaveAttribute('data-mark', 'cross');
-    fireEvent.keyDown(window, { key: 'n' });
-    fireEvent.keyDown(screen.getByRole('grid'), { key: '1', code: 'Digit1' });
+    fireEvent.keyDown(window, { key: 'v' });
+    fireEvent.keyDown(screen.getByRole('grid'), { key: '1', code: 'Digit1' }); // pick a person
+    fireEvent.keyDown(screen.getByRole('grid'), { key: ' ' }); // Space notes them on all
     expect(cell(5, 5)).toHaveAttribute('data-candidates');
     expect(cell(0, 1)).toHaveAttribute('data-candidates');
     fireEvent.keyDown(window, { key: 'Escape' });

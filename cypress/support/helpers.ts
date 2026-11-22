@@ -1,6 +1,7 @@
 // Shared Cypress helpers (plain module; import it from specs).
 import { generatePuzzle } from '../../src/engine/generator';
 import type { Cell, Difficulty } from '../../src/engine/types';
+import { HOLD_MS } from '../../src/ui/hold';
 
 export const tid = (id: string) => cy.get(`[data-testid="${id}"]`);
 export const sel = (id: string) => `[data-testid="${id}"]`;
@@ -118,10 +119,21 @@ export function selectPerson(id: number | string) {
   });
 }
 
-/** Place a person by selecting their card and clicking a cell. */
+/**
+ * Press and hold a cell (the Place tool commits a placement this way; a quick tap only notes a
+ * candidate). Pointer events bubble to the window, where the board ends the press.
+ */
+export function longPress(r: number, c: number) {
+  const opts = { button: 0, pointerId: 1, isPrimary: true, force: true };
+  cy.get(sel(`cell-${r}-${c}`)).trigger('pointerdown', opts);
+  cy.wait(HOLD_MS + 80);
+  cy.get(sel(`cell-${r}-${c}`)).trigger('pointerup', opts);
+}
+
+/** Place a person by selecting their card and pressing and holding a cell. */
 export function placePerson(id: number | string, r: number, c: number) {
   selectPerson(id);
-  cy.get(sel(`cell-${r}-${c}`)).click();
+  longPress(r, c);
 }
 
 /** Open the Settings popover in the header (idempotent). */

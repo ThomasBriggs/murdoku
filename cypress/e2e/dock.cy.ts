@@ -18,7 +18,6 @@ describe('dock (desktop)', () => {
         'cross',
         'dot',
         'unsure',
-        'notes',
         'eliminate',
         'erase',
         'highlight',
@@ -37,10 +36,10 @@ describe('dock (desktop)', () => {
     cy.get(sel('tool-cross')).click().should('have.attr', 'aria-pressed', 'true');
     cy.get(sel('tool-place')).should('have.attr', 'aria-pressed', 'false');
     cy.get(sel('board')).should('have.attr', 'data-tool', 'cross');
-    cy.get('body').type('n');
-    cy.get(sel('tool-notes')).should('have.attr', 'aria-pressed', 'true');
+    cy.get('body').type('p');
+    cy.get(sel('tool-pencil')).should('have.attr', 'aria-pressed', 'true');
     cy.get(sel('tool-cross')).should('have.attr', 'aria-pressed', 'false');
-    cy.get('body').type('n'); // toggles back to place
+    cy.get('body').type('p'); // toggles back to place
     cy.get(sel('tool-place')).should('have.attr', 'aria-pressed', 'true');
     cy.get('[data-testid^="tool-"][aria-pressed="true"]').should('have.length', 1);
   });

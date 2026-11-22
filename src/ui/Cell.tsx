@@ -53,6 +53,10 @@ export interface CellProps {
 export interface ActivateMods {
   shift?: boolean;
   keyboard?: boolean;
+  /** Press-and-hold (long press) on the cell: commits a placement in Place mode. */
+  hold?: boolean;
+  /** Keyboard request for a candidate note rather than a placement (Space in Place mode). */
+  note?: boolean;
 }
 
 export interface CellAnn {

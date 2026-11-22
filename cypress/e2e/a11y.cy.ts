@@ -34,8 +34,7 @@ function populate() {
       if (n >= 3) break;
       if (used.has(r)) continue;
       used.add(r);
-      selectPerson(n);
-      cell(r, c).click();
+      placePerson(n, r, c);
       n++;
     }
   });
@@ -43,10 +42,9 @@ function populate() {
   cell(8, 8).click();
   cy.get(sel('tool-highlight')).click();
   cell(7, 0).click();
-  cy.get(sel('tool-notes')).click();
-  selectPerson(5);
-  cell(6, 6).click();
   cy.get(sel('tool-place')).click();
+  selectPerson(5);
+  cell(6, 6).click(); // a quick tap in Place mode notes a candidate
 }
 
 describe('accessibility (axe)', () => {
@@ -158,8 +156,9 @@ describe('accessibility (axe)', () => {
       cy.viewport(1280, 900);
       load();
       setTheme(theme);
-      selectPerson(0);
-      cy.get('[data-testid="board-grid"] [data-blocked="false"]').first().click();
+      cy.get('[data-testid="board-grid"] [data-blocked="false"]')
+        .first()
+        .then(($c) => placePerson(0, Number($c[0]!.dataset.r), Number($c[0]!.dataset.c)));
       moreClick('reset');
       checkA11y();
       cy.get(sel('cancel-reset')).click();

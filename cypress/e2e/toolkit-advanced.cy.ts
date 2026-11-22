@@ -1,4 +1,11 @@
-import { closeSettings, gesture, moreClick, openMore, openSettings } from '../support/helpers';
+import {
+  closeSettings,
+  gesture,
+  longPress,
+  moreClick,
+  openMore,
+  openSettings,
+} from '../support/helpers';
 
 const URL = '/?seed=cy-adv&d=easy';
 const cell = (r: number, c: number) => cy.get(`[data-testid="cell-${r}-${c}"]`);
@@ -105,7 +112,8 @@ describe('solving toolkit: logic grid, pen, scratchpad, what-if, helpers, print'
     // a click now reaches the cell: pick a person and place them
     firstFree().then(([r, c]) => {
       tid('person-card-1').click();
-      cell(r, c).click().should('have.attr', 'data-occupant', '1');
+      longPress(r, c);
+      cell(r, c).should('have.attr', 'data-occupant', '1');
     });
     tid('draw-lock').click().should('have.attr', 'aria-pressed', 'false');
     tid('drawing-layer').should('have.attr', 'data-active', 'true');
@@ -133,7 +141,8 @@ describe('solving toolkit: logic grid, pen, scratchpad, what-if, helpers, print'
       tid('whatif-level').should('have.text', 'What-if (level 1)');
       tid('board').should('have.attr', 'data-whatif', '1');
       tid('person-card-1').click();
-      cell(r, c).click().should('have.attr', 'data-occupant', '1');
+      longPress(r, c);
+      cell(r, c).should('have.attr', 'data-occupant', '1');
       tid('whatif-abandon').click();
       tid('whatif-note').type('B in the first cell');
       tid('whatif-abandon-confirm').click();
@@ -146,7 +155,8 @@ describe('solving toolkit: logic grid, pen, scratchpad, what-if, helpers, print'
       // start, place, keep
       moreClick('whatif-start');
       tid('person-card-1').click();
-      cell(r, c).click().should('have.attr', 'data-occupant', '1');
+      longPress(r, c);
+      cell(r, c).should('have.attr', 'data-occupant', '1');
       tid('whatif-keep').click();
       tid('whatif-keep-confirm').click();
       tid('whatif-banner').should('not.exist');

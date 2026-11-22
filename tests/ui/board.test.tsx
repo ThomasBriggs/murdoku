@@ -25,6 +25,8 @@ async function setup(): Promise<StoreApi<GameStore>> {
 
 const cell = (r: number, c: number) => screen.getByTestId(`cell-${r}-${c}`);
 const card = (id: number) => screen.getByTestId(`person-card-${id}`);
+/** Commit a placement: Enter on the cell (a mouse or finger presses and holds instead). */
+const place = (r: number, c: number) => fireEvent.keyDown(cell(r, c), { key: 'Enter' });
 
 function freeCells(): [number, number][] {
   const out: [number, number][] = [];
@@ -79,12 +81,12 @@ describe('Board UI', () => {
     );
   });
 
-  it('selects a person, places by click, then removes via own cell', async () => {
+  it('selects a person, places, then removes via own cell', async () => {
     store = await setup();
     const [r, c] = freeCells()[0]!;
     fireEvent.click(card(0));
     expect(card(0)).toHaveAttribute('data-selected', 'true');
-    fireEvent.click(cell(r, c));
+    place(r, c);
     expect(store.getState().placements[0]).toBe(r * 9 + c);
     expect(screen.getByTestId('token-0')).toBeInTheDocument();
     expect(cell(r, c).getAttribute('aria-label')).toMatch(/, [A-Z][a-z]+$/);
@@ -93,8 +95,10 @@ describe('Board UI', () => {
     // no selection + click on occupied cell selects the person
     fireEvent.click(cell(r, c));
     expect(card(0)).toHaveAttribute('data-selected', 'true');
-    // selected + own cell removes
+    // selected: a tap on their own cell changes nothing, placing there again removes
     fireEvent.click(cell(r, c));
+    expect(store.getState().placements[0]).toBe(r * 9 + c);
+    place(r, c);
     expect(store.getState().placements[0]).toBeNull();
     expect(screen.queryByTestId('token-0')).toBeNull();
   });
@@ -120,7 +124,7 @@ describe('Board UI', () => {
     store = await setup();
     const [r, c] = freeCells()[0]!;
     fireEvent.click(card(2));
-    fireEvent.click(cell(r, c));
+    place(r, c);
     expect(screen.getByTestId('undo')).toBeEnabled();
     fireEvent.click(screen.getByTestId('undo'));
     expect(store.getState().placements[2]).toBeNull();
@@ -159,7 +163,10 @@ describe('Board UI', () => {
     fireEvent.keyDown(grid, { key: '1' });
     const first = store.getState().puzzle!.people.find((p) => p.isVictim)!.id;
     expect(store.getState().selectedPerson).toBe(first);
-    fireEvent.keyDown(grid, { key: ' ' });
+    fireEvent.keyDown(grid, { key: ' ' }); // Space notes a candidate
+    expect(store.getState().placements[first]).toBeNull();
+    expect(cell(r, c)).toHaveAttribute('data-candidates', String(first));
+    fireEvent.keyDown(grid, { key: 'Enter' }); // Enter places
     expect(store.getState().placements[first]).toBe(r * 9 + c);
     fireEvent.keyDown(grid, { key: '2' });
     fireEvent.keyDown(grid, { key: 'Escape' });
@@ -170,7 +177,7 @@ describe('Board UI', () => {
     store = await setup();
     const [r, c] = freeCells()[0]!;
     fireEvent.click(card(0));
-    fireEvent.click(cell(r, c));
+    place(r, c);
     const crossed = () => document.querySelectorAll('[data-autocross="true"]');
     expect(crossed()).toHaveLength(16);
     expect(cell(r, c)).not.toHaveAttribute('data-autocross');
@@ -194,7 +201,7 @@ describe('Board UI', () => {
       [1, r2, c2],
     ] as const) {
       fireEvent.click(card(id));
-      fireEvent.click(cell(r, c));
+      place(r, c);
     }
     expect(screen.getByTestId('conflict-badge-0')).toBeInTheDocument();
     expect(screen.getByTestId('conflict-badge-1')).toBeInTheDocument();

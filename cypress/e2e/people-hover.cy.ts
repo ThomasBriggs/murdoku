@@ -1,4 +1,4 @@
-import { cell, tid } from '../support/helpers';
+import { cell, longPress, tid } from '../support/helpers';
 
 const URL = '/?seed=cy-people-hover&d=easy';
 /** Mouse over/out on the card's name button (the card centre can land on a clue word instead). */
@@ -26,7 +26,7 @@ describe('people panel: placed names and hover highlights', () => {
 
       // Person 1 placed for real.
       pick('1');
-      cell(...a).click();
+      longPress(...a);
       tid('person-name-1').should('have.attr', 'data-placed', 'true');
       tid('person-name-1').should('have.css', 'text-decoration-line', 'line-through');
       tid('person-name-2').should('not.have.attr', 'data-placed');
@@ -35,7 +35,7 @@ describe('people panel: placed names and hover highlights', () => {
       tool('pencil').click();
       pick('2');
       cell(...b).click();
-      tool('notes').click();
+      tool('place').click(); // a quick tap in Place mode notes a candidate
       pick('2'); // pencil-placing deselects the person
       cell(...c)
         .click()
@@ -43,7 +43,6 @@ describe('people panel: placed names and hover highlights', () => {
       cell(...d)
         .click()
         .should('have.attr', 'data-candidates', '2');
-      tool('place').click();
 
       hover('1', 'mouseover');
       cell(...a).should('have.attr', 'data-person-mark', 'placed');

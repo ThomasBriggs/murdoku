@@ -1,4 +1,4 @@
-import { moreClick, openKey } from '../support/helpers';
+import { longPress, moreClick, openKey } from '../support/helpers';
 
 const URL = '/?seed=cy-marks&d=easy';
 const cell = (r: number, c: number) => cy.get(`[data-testid="cell-${r}-${c}"]`);
@@ -29,10 +29,10 @@ function drag(cells: [number, number][]) {
 describe('solving toolkit: marks, notes, highlights', () => {
   it('has a tooltip with the shortcut on every tool', () => {
     load();
-    cy.get('button[data-testid^="tool-"]').should('have.length', 11);
+    cy.get('button[data-testid^="tool-"]').should('have.length', 10);
+    tool('notes').should('not.exist');
     tool('cross').should('have.attr', 'title').and('contain', 'X');
     tool('pencil').should('have.attr', 'title').and('contain', 'P');
-    tool('notes').should('have.attr', 'title').and('contain', 'N');
   });
 
   it('marks cells with cross, dot and unsure, from the palette and the keyboard', () => {
@@ -52,34 +52,50 @@ describe('solving toolkit: marks, notes, highlights', () => {
     cell(1, 2).rightclick().should('have.attr', 'data-mark', 'cross');
   });
 
-  it('adds candidate initials in notes mode by click and number keys, and eliminates', () => {
+  it('Place: a quick tap notes a candidate, press-and-hold places, Eliminate slashes', () => {
     load();
-    tool('notes').click();
-    cy.get('[data-testid="person-card-1"]').click();
-    cell(2, 2).click().should('have.attr', 'data-candidates', '1');
-    cy.get('[data-testid="cand-2-2-1"]').should('have.attr', 'data-state', 'yes');
-    cell(2, 3).click().should('have.attr', 'data-candidates', '1');
-    // Shift flips to eliminated (slashed) instead
-    cell(2, 3).click({ shiftKey: true });
-    cell(2, 3).should('have.attr', 'data-eliminated', '1').and('not.have.attr', 'data-candidates');
-    cy.get('[data-testid="cand-2-3-1"]').should('have.attr', 'data-state', 'no');
-    // number keys: the third card in the panel
-    cy.get('[data-testid^="person-card-"]')
-      .eq(2)
-      .invoke('attr', 'data-testid')
-      .then((tid) => {
-        const id = tid!.replace('person-card-', '');
-        cell(4, 4).focus().type('3');
-        cell(4, 4).should('have.attr', 'data-candidates', id);
-        // the same person keeps the same slot in every cell
-        cell(5, 5).focus().type('3');
-        cy.get(`[data-testid="cand-4-4-${id}"]`).should('exist');
-        cy.get(`[data-testid="cand-5-5-${id}"]`).should('exist');
-      });
-    // eliminate tool
-    tool('eliminate').click();
-    cell(6, 6).click(); // person 1 is still selected
-    cell(6, 6).should('have.attr', 'data-eliminated', '1');
+    freeCells().then((free) => {
+      const [a, b, p] = [free[0]!, free[1]!, free.find(([r]) => r > 3)!];
+      cy.get('[data-testid="person-card-1"]').click();
+      cell(...a)
+        .click()
+        .should('have.attr', 'data-candidates', '1');
+      cy.get(`[data-testid="cand-${a[0]}-${a[1]}-1"]`).should('have.attr', 'data-state', 'yes');
+      cell(...a).should('have.attr', 'data-occupant', '');
+      cell(...b)
+        .click()
+        .should('have.attr', 'data-candidates', '1');
+      // the person stays picked; a second tap takes the note away
+      cell(...b)
+        .click()
+        .should('not.have.attr', 'data-candidates');
+      // keyboard: digits pick a person, Space notes, Enter places
+      cy.get('[data-testid^="person-card-"]')
+        .eq(2)
+        .invoke('attr', 'data-testid')
+        .then((tid) => {
+          const id = tid!.replace('person-card-', '');
+          cell(...b)
+            .focus()
+            .type('3')
+            .type(' ');
+          cell(...b).should('have.attr', 'data-candidates', id);
+          cy.get(`[data-testid="cand-${b[0]}-${b[1]}-${id}"]`).should('exist');
+        });
+      // press and hold commits the placement (click the name: the card centre may be a clue word;
+      // Esc first, since a click on the already selected card would deselect it)
+      cy.get('body').type('{esc}');
+      cy.get('[data-testid="person-card-1"]').find('button').first().click();
+      cy.get('[data-testid="person-card-1"]').should('have.attr', 'data-selected', 'true');
+      longPress(...p);
+      cell(...p).should('have.attr', 'data-occupant', '1');
+      cell(...p).should('not.have.attr', 'data-candidates');
+      // eliminate tool (placing deselected the person)
+      cy.get('[data-testid="person-card-1"]').find('button').first().click();
+      tool('eliminate').click();
+      cell(...b).click();
+      cell(...b).should('have.attr', 'data-eliminated', '1');
+    });
   });
 
   it('places tentatively in pencil mode and promotes with one click', () => {
@@ -234,10 +250,9 @@ describe('solving toolkit: marks, notes, highlights', () => {
     freeCells().then((free) => {
       const [r, c] = free[0]!;
       cy.get('[data-testid="person-card-0"]').click();
-      cell(r, c).click();
+      longPress(r, c);
       cell(r, c).should('have.attr', 'data-occupant', '0');
 
-      tool('notes').click();
       cy.get('[data-testid="person-card-2"]').click();
       cell(8, 8).click().should('have.attr', 'data-candidates', '2');
       tool('cross').click();
@@ -279,11 +294,9 @@ describe('solving toolkit: marks, notes, highlights', () => {
     freeCells().then((free) => {
       const [r, c] = free[0]!;
       const [r2, c2] = free[free.length - 1]!;
-      tool('notes').click();
       cy.get('[data-testid="person-card-0"]').click();
       cell(r2, c2).click().should('have.attr', 'data-candidates', '0');
-      tool('place').click();
-      cell(r, c).click(); // person 0 is still selected from notes mode
+      longPress(r, c); // person 0 is still selected after the note
       cell(r, c).should('have.attr', 'data-occupant', '0');
       cell(r2, c2).should('not.have.attr', 'data-candidates');
       cy.get('[data-testid="undo"]').click();
@@ -306,7 +319,7 @@ describe('solving toolkit: marks, notes, highlights', () => {
     cy.viewport(375, 740);
     load();
     // the bar is one slim row with the common tools only
-    cy.get('[data-testid="tool-palette"] button').should('have.length', 6);
+    cy.get('[data-testid="tool-palette"] button').should('have.length', 5);
     cy.get('[data-testid="tool-dot"]').should('not.exist');
     cy.get('[data-testid="more-button"]').parent().invoke('height').should('be.lessThan', 70);
     cy.get('[data-testid="color-row"]').should('not.exist');

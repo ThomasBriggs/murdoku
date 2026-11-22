@@ -147,14 +147,14 @@ describe('toolkit store', () => {
     s().setTool('cross');
     s().applyTool([a, b]);
     expect(s().annotations.cellMarks).toEqual({ [a]: 'cross', [b]: 'cross' });
-    s().setTool('notes');
+    s().setTool('eliminate');
     expect(s().applyTool([a])).toBe(false); // nobody selected
     s().selectPerson(p);
     s().applyTool([a]);
     const slot = slotOf(s().puzzle!.people, p);
-    expect(s().annotations.candidates[a]).toEqual({ yes: 1 << slot, no: 0 });
-    s().applyTool([a], true); // Shift in notes mode eliminates
     expect(s().annotations.candidates[a]).toEqual({ yes: 0, no: 1 << slot });
+    s().setTool('place');
+    expect(s().applyTool([a])).toBe(false); // place notes through the UI, not applyTool
     s().setTool('highlight');
     s().setColor(s().cycleColor());
     s().applyTool([b]);

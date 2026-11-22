@@ -1,4 +1,12 @@
-import { useEffect, useMemo, useRef, type KeyboardEvent, type PointerEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  type KeyboardEvent,
+  type PointerEvent,
+} from 'react';
+import { HOLD_MS } from './hold';
 import { GRID_SIZE } from '../engine/constants';
 import { cellKey, type Person, type PersonId, type PuzzleView } from '../engine/types';
 import type { Annotations } from '../state/annotations';
@@ -42,7 +50,7 @@ export interface BoardProps {
   onActivate(r: number, c: number, mods?: ActivateMods): void;
   onContextMenu(r: number, c: number): void;
   onSelectPerson(id: PersonId | null): void;
-  /** Number key in notes mode: toggle that person's candidate (or eliminate). */
+  /** Number key in Eliminate mode: slash that person's candidate. */
   onCandidateKey(person: PersonId, eliminate: boolean, cell: { r: number; c: number }): void;
   /** Drag produced a multi-selection of these cells. */
   onDragSelect(cells: number[], additive: boolean): void;
@@ -128,15 +136,15 @@ export function Board(p: BoardProps) {
       focusCell(nr, nc);
     } else if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      p.onActivate(r, c, { keyboard: true });
+      // Enter places; Space notes a candidate (the keyboard's "quick tap").
+      p.onActivate(r, c, { keyboard: true, note: e.key === ' ' });
     } else if (e.key === 'Escape') {
       p.onSelectPerson(null);
     } else {
       const digit = digitOf(e);
       const person = digit ? order[digit - 1] : undefined;
       if (!person) return;
-      if (p.tool === 'notes' || p.tool === 'eliminate')
-        p.onCandidateKey(person.id, e.shiftKey || p.tool === 'eliminate', { r, c });
+      if (p.tool === 'eliminate') p.onCandidateKey(person.id, true, { r, c });
       else p.onSelectPerson(person.id);
     }
   };
@@ -152,10 +160,60 @@ export function Board(p: BoardProps) {
       (e.target as HTMLElement | null)?.closest<HTMLElement>('[data-r]');
     return el ? cellKey(Number(el.dataset.r), Number(el.dataset.c)) : null;
   };
+  // ---- press-and-hold to place (Place mode with a person picked); a quick tap notes instead
+  const hold = useRef<{ timer: number; el: HTMLElement; key: number } | null>(null);
+  /** When the last hold fired: the touch contextmenu that follows it must not cross the cell. */
+  const holdFiredAt = useRef(0);
+  /**
+   * Set when a hold fires: the click that ends that same press must not also note a candidate.
+   * Cleared by the next press, so it never eats a later click (no timers involved).
+   */
+  const holdClick = useRef(false);
+  const cancelHold = () => {
+    const h = hold.current;
+    if (!h) return;
+    window.clearTimeout(h.timer);
+    delete h.el.dataset.holding;
+    hold.current = null;
+  };
+  useEffect(() => cancelHold, []);
+  const startHold = (e: PointerEvent, key: number) => {
+    cancelHold();
+    // (Taps that reach a cell under a locked draw layer act as Place.)
+    const placing = p.tool === 'place' || p.tool === 'draw';
+    if (!placing || p.selectedPerson === null || p.solved || e.shiftKey) return;
+    const el = (e.target as HTMLElement).closest<HTMLElement>('[data-r]');
+    if (!el) return;
+    el.dataset.holding = 'true';
+    const r = Math.floor(key / GRID_SIZE);
+    const c = key % GRID_SIZE;
+    hold.current = {
+      el,
+      key,
+      timer: window.setTimeout(() => {
+        cancelHold();
+        holdFiredAt.current = Date.now();
+        holdClick.current = true;
+        p.onActivate(r, c, { hold: true });
+      }, HOLD_MS),
+    };
+  };
+  const { onContextMenu: onCross } = p;
+  const onContextMenu = useCallback(
+    (r: number, c: number) => {
+      // A touch long press also raises contextmenu: it belongs to the hold, not the cross mark.
+      if (hold.current || Date.now() - holdFiredAt.current < 1000) return;
+      onCross(r, c);
+    },
+    [onCross],
+  );
+
   const onPointerDown = (e: PointerEvent) => {
     if (e.button !== 0 || (e.target as HTMLElement).closest('button, input')) return;
     const key = cellAt(e);
     if (key === null) return;
+    holdClick.current = false;
+    startHold(e, key);
     drag.current = {
       visited: new Set([key]),
       moved: false,
@@ -168,12 +226,18 @@ export function Board(p: BoardProps) {
     if (!d) return;
     const key = cellAt(e);
     if (key === null || d.visited.has(key)) return;
+    cancelHold(); // moved onto another cell: a drag, not a hold
     d.visited.add(key);
     d.moved = true;
     p.onDragSelect([...new Set([...d.base, ...d.visited])], d.additive);
   };
   useEffect(() => {
     const end = () => {
+      if (hold.current) {
+        window.clearTimeout(hold.current.timer);
+        delete hold.current.el.dataset.holding;
+        hold.current = null;
+      }
       if (drag.current?.moved) {
         suppressClick.current = true;
         setTimeout(() => (suppressClick.current = false), 0);
@@ -286,7 +350,11 @@ export function Board(p: BoardProps) {
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onClickCapture={(e) => {
-          if (suppressClick.current) {
+          // The ✕ buttons on tokens are never the click that ends a hold.
+          const onButton = !!(e.target as HTMLElement).closest('button');
+          const endsHold = holdClick.current && !onButton;
+          if (endsHold) holdClick.current = false;
+          if (suppressClick.current || endsHold) {
             e.stopPropagation();
             e.preventDefault();
           }
@@ -341,7 +409,7 @@ export function Board(p: BoardProps) {
                     />
                   }
                   onActivate={p.onActivate}
-                  onContextMenu={p.onContextMenu}
+                  onContextMenu={onContextMenu}
                   onRoomLabelDouble={p.onRoomSelect}
                   onFocusCell={p.onCursor}
                 />

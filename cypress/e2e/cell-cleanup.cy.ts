@@ -1,4 +1,4 @@
-import { cell } from '../support/helpers';
+import { cell, longPress } from '../support/helpers';
 
 const URL = '/?seed=cy-marks&d=easy';
 const tool = (t: string) => cy.get(`[data-testid="tool-${t}"]`);
@@ -45,7 +45,7 @@ describe('cell clean-up and centred markers', () => {
       cell(r, c).click();
       tool('highlight').click();
       cell(r, c).click();
-      tool('notes').click();
+      tool('place').click(); // a quick tap in Place mode notes a candidate
       cy.get('[data-testid="person-card-1"]').click();
       cell(r, c).click();
       cell(r2, c2).click();
@@ -81,7 +81,8 @@ describe('cell clean-up and centred markers', () => {
       const [r, c] = free[0]!;
       const [r2, c2] = free[3]!;
       cy.get('[data-testid="person-card-0"]').click();
-      cell(r, c).click().should('have.attr', 'data-occupant', '0');
+      longPress(r, c);
+      cell(r, c).should('have.attr', 'data-occupant', '0');
       cy.get('[data-testid="unplace-0"]').click({ force: true });
       cell(r, c).should('have.attr', 'data-occupant', '');
       cy.get('[data-testid="person-status-0"]').should('contain.text', 'Unplaced');
@@ -100,13 +101,13 @@ describe('cell clean-up and centred markers', () => {
     freeCells().then((free) => {
       const [[r0, c0], [r1, c1], [r2, c2], [r3, c3]] = [free[0]!, free[5]!, free[10]!, free[15]!];
       cy.get('[data-testid="person-card-0"]').click();
-      cell(r0, c0).click();
+      longPress(r0, c0);
       tool('pencil').click();
       cy.get('[data-testid="person-card-4"]').click();
       cell(r1, c1).click();
       tool('cross').click();
       cell(r2, c2).click();
-      tool('notes').click();
+      tool('place').click();
       for (const id of [0, 1, 2, 3, 4, 5, 6, 7, 8]) {
         cy.get(`[data-testid="person-card-${id}"]`).click();
         cell(r3, c3).click();

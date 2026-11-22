@@ -12,10 +12,11 @@ export interface Shortcut {
 const FIXED: readonly Shortcut[] = [
   { id: 'arrows', keys: 'Arrow keys', label: 'Move the cell cursor', group: 'Playing' },
   { id: 'digits', keys: '1–9', label: 'Select a person (victim is 1)', group: 'Playing' },
+  { id: 'place', keys: 'Enter', label: 'Place the selected person on the cell', group: 'Playing' },
   {
-    id: 'place',
-    keys: 'Enter / Space',
-    label: 'Place the selected person on the cell',
+    id: 'note',
+    keys: 'Space',
+    label: 'Note the selected person as a candidate in the cell',
     group: 'Playing',
   },
   { id: 'escape', keys: 'Esc', label: 'Deselect, or close a dialog', group: 'Playing' },

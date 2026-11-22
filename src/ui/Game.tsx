@@ -8,9 +8,10 @@ import {
   useSyncExternalStore,
 } from 'react';
 import { setHas } from '../engine/cellset';
+import { isOccupiable } from '../engine/furniture';
 import { allowedCells } from '../engine/clues/evaluate';
 import { GRID_SIZE } from '../engine/constants';
-import { cellKey } from '../engine/types';
+import { cellKey, type PuzzleView } from '../engine/types';
 import { furnitureCells, roomCells } from '../state/selection';
 import { slotOf, type ColorId } from '../state/annotations';
 import { logicPossibleCells } from '../state/logicGrid';
@@ -51,6 +52,12 @@ import { OverflowMenu, Toolbar } from './Toolbar';
 import { conflictsByPerson, type Highlight } from './types';
 
 const SHAKE_MS = 400;
+
+/** Furniture nobody can stand on (the same rule placement uses). */
+const isBlocked = (puzzle: Pick<PuzzleView, 'furniture'>, key: number) => {
+  const f = puzzle.furniture[Math.floor(key / GRID_SIZE)]?.[key % GRID_SIZE];
+  return f != null && !isOccupiable(f);
+};
 
 /** Feedback tied to the board it was computed for; it stops showing once the board changes. */
 interface Stamped<T> {
@@ -234,11 +241,22 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
     (t: Tool) => {
       const s = store.getState();
       s.setTool(t);
-      // With cells selected, picking a mark/colour/notes tool applies it to all of them.
+      if (t === 'place') return;
+      // With cells selected, picking a mark/colour tool applies it to all of them.
       if (s.selection.length > 0) s.applyTool(s.selection);
     },
     [store],
   );
+
+  /** Refused move: shake the cell (re-armed on the next frame so repeats replay it). */
+  const shake = useCallback((key: number) => {
+    window.clearTimeout(shakeTimer.current);
+    setShakeCell(null);
+    requestAnimationFrame(() => {
+      setShakeCell(key);
+      shakeTimer.current = window.setTimeout(() => setShakeCell(null), SHAKE_MS);
+    });
+  }, []);
 
   const onActivate = useCallback(
     (r: number, c: number, mods: ActivateMods = {}) => {
@@ -250,10 +268,10 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
       // The draw tool only owns the pointer through the overlay; taps that reach a cell place.
       const t = s.tool === 'draw' ? 'place' : s.tool;
       if (mods.keyboard && s.selection.length > 0 && t !== 'place' && t !== 'select') {
-        s.applyTool(s.selection, mods.shift);
+        s.applyTool(s.selection);
         return;
       }
-      if (t === 'select' || (mods.shift && t !== 'notes' && t !== 'eliminate')) {
+      if (t === 'select' || (mods.shift && t !== 'eliminate')) {
         s.selectCells([key], mods.shift ? 'toggle' : 'replace');
         return;
       }
@@ -267,9 +285,27 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
         return;
       }
       if (t !== 'place') {
-        // Mark, notes and highlight tools act on the clicked cell only.
+        // Mark, eliminate and highlight tools act on the clicked cell only.
         if (s.selection.length > 0 && !mods.keyboard) s.clearSelection();
-        s.applyTool([key], mods.shift);
+        s.applyTool([key]);
+        return;
+      }
+      const occupant = s.puzzle?.people.find((p) => s.placements[p.id] === key);
+      // Place mode: press-and-hold (or Enter) places; a quick tap (or Space) notes a candidate.
+      const commit = mods.hold || (mods.keyboard && !mods.note);
+      if (sel !== null && !commit) {
+        if (occupant) {
+          // Tapping someone already on the board picks them instead (their own cell: no change).
+          if (occupant.id !== sel) s.selectPerson(occupant.id);
+          return;
+        }
+        if (s.puzzle && isBlocked(s.puzzle, key)) {
+          shake(key);
+          return;
+        }
+        const cells = mods.keyboard && s.selection.length > 0 ? s.selection : [key];
+        if (!mods.keyboard && s.selection.length > 0) s.clearSelection();
+        s.applyCandidate(cells, sel);
         return;
       }
       if (sel !== null) {
@@ -277,24 +313,13 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
           s.remove(sel); // selection is kept so the person can be put somewhere else
           return;
         }
-        const result = s.place(sel, key);
-        if (result === 'refused') {
-          window.clearTimeout(shakeTimer.current);
-          setShakeCell(null);
-          // Re-arm on the next frame so repeated refusals replay the animation.
-          requestAnimationFrame(() => {
-            setShakeCell(key);
-            shakeTimer.current = window.setTimeout(() => setShakeCell(null), SHAKE_MS);
-          });
-        } else {
-          s.selectPerson(null);
-        }
+        if (s.place(sel, key) === 'refused') shake(key);
+        else s.selectPerson(null);
         return;
       }
-      const occupant = s.puzzle?.people.find((p) => s.placements[p.id] === key);
       if (occupant) s.selectPerson(occupant.id);
     },
-    [store],
+    [store, shake],
   );
 
   const onContextMenu = useCallback(
@@ -345,7 +370,6 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
         else if (e.key === '.') toolKey('dot');
         else if (e.key === '?') toolKey('unsure');
         else if (k === 'r') toolKey('erase');
-        else if (k === 'n') s.setTool(s.tool === 'notes' ? 'place' : 'notes');
         else if (k === 'p') s.setTool(s.tool === 'pencil' ? 'place' : 'pencil');
         else if (k === 'e') s.setTool(s.tool === 'eliminate' ? 'place' : 'eliminate');
         else if (k === 'd') s.setTool(s.tool === 'draw' ? 'place' : 'draw');

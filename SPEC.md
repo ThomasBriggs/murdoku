@@ -239,7 +239,7 @@ The "Focus" layout keeps the board as the centre of attention and tucks everythi
 
 | Action | Behaviour |
 |---|---|
-| **Place** | With a person selected, click a cell to place them. Clicking a person's own cell removes them. Placing on a blocking cell is refused with a shake animation. |
+| **Place** | With a person selected, a **quick tap/click** on a cell notes them there as a candidate initial (tap again to remove it); the person stays selected so several cells can be noted in a row. **Press and hold** (about half a second, mouse or touch; a ring fills while holding) places them. Holding on a person's own cell removes them. Tapping an occupied cell picks that occupant. Placing on (or noting) a blocking cell is refused with a shake animation. Keyboard: `Enter` places, `Space` notes. |
 | **Mark / Note / Highlight / Draw** | All the paper-style annotation tools. See §6.5. |
 | **Auto-cross** (setting, on by default) | After placing someone, faintly cross out the rest of their row and column. These automatic crosses look different from crosses the player draws, and they disappear if the person is removed. |
 | **Conflict highlight** (setting) | Shows rule breaks in red: two people in one row/column, or a placement contradicting that person's clue. Rule checks only, so it never reveals the solution. |
@@ -263,8 +263,8 @@ A **tool palette** (the dock on desktop, the bottom bar and More sheet on mobile
 | **✗ Empty** | "Nobody is here." Bold cross. | `X` key, right-click, or the ✗ tool |
 | **• Possible** | "Someone could be here." A small dot. | `.` key or the dot tool |
 | **? Unsure** | A reminder to come back. Small question mark. | `?` key |
-| **Candidate initials** | Up to 9 tiny initials in a 3×3 mini-grid inside the cell (like Sudoku pencil marks). Each person's initial always sits in the same slot, so patterns are easy to scan. | Notes mode (`N`), then tap a cell with a person selected, or type their number |
-| **Eliminated initial** | An initial with a slash through it: "*this* person is not here," while others still might be. | Notes mode plus `Shift`, or long-press the initial |
+| **Candidate initials** | Up to 9 tiny initials in a 3×3 mini-grid inside the cell (like Sudoku pencil marks). Each person's initial always sits in the same slot, so patterns are easy to scan. | Place mode: a quick tap on a cell with a person selected (`Space` from the keyboard). There is no separate Notes tool any more. |
+| **Eliminated initial** | An initial with a slash through it: "*this* person is not here," while others still might be. | Eliminate tool (`E`): tap with a person selected, or type their number |
 | **Tentative placement** | A dashed outline token: "I think B goes here," without committing. It doesn't count towards row/column rules or Accuse. Can be promoted to a real placement with one click (✓), or dropped with its ✕. | Pencil-place mode (`P`) |
 | **Erase** | Wipes one cell (or the selection) clean: marks, candidate initials, highlight and pencil guesses, as one undoable step. Real placements stay. | Erase tool (`R`), or `Delete` / `Backspace` |
 
@@ -329,8 +329,8 @@ All are in Settings and all are **off by default**, except where marked. They ac
 
 ### 6.6 Keyboard and accessibility
 
-- Arrow keys move a cell cursor. `1`–`9` select a person. `Enter`/`Space` places.
-- Marks: `X` (cross), `.` (possible), `?` (unsure), `N` (notes mode), `P` (pencil/tentative placement), `D` (draw tool), `C` (cycle highlight colour), `W` (start/end what-if), `G` (logic grid).
+- Arrow keys move a cell cursor. `1`–`9` select a person. `Enter` places, `Space` notes a candidate.
+- Marks: `X` (cross), `.` (possible), `?` (unsure), `E` (eliminate), `P` (pencil/tentative placement), `D` (draw tool), `C` (cycle highlight colour), `W` (start/end what-if), `G` (logic grid).
 - Every tool has a palette button with a tooltip showing its shortcut.
 - Every cell has an `aria-label`, e.g. "Row 3, column D, Kitchen, chair, empty".
 - Colour is never the only signal: tokens show initials and conflicts also use an icon.

@@ -111,7 +111,6 @@ export type Tool =
   | 'cross'
   | 'dot'
   | 'unsure'
-  | 'notes'
   | 'eliminate'
   | 'highlight'
   | 'erase'
@@ -204,10 +203,10 @@ export interface GameActions {
    */
   clearCellAnnotations(cells: readonly CellKey[]): boolean;
   /**
-   * Apply the ACTIVE tool to cells (cross/dot/unsure/notes/eliminate/highlight/erase;
-   * pencil uses the first cell). `eliminate` forces elimination in notes mode.
+   * Apply the ACTIVE tool to cells (cross/dot/unsure/eliminate/highlight/erase;
+   * pencil uses the first cell). Place and the candidate notes it makes are handled by the UI.
    */
-  applyTool(cells: readonly CellKey[], eliminate?: boolean): boolean;
+  applyTool(cells: readonly CellKey[]): boolean;
   placeTentative(person: PersonId, cell: CellKey): TentativeResult;
   removeTentative(person: PersonId): boolean;
   /** Turn a tentative placement into a real one. */
@@ -656,7 +655,7 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
           return true;
         },
 
-        applyTool(cells, eliminate = false) {
+        applyTool(cells) {
           const s = get();
           switch (s.tool) {
             case 'cross':
@@ -667,11 +666,10 @@ export function createGameStore(deps: GameStoreDeps): StoreApi<GameStore> {
               return s.applyHighlight(cells, s.color);
             case 'erase':
               return s.clearCellAnnotations(cells);
-            case 'notes':
             case 'eliminate':
               return s.selectedPerson === null
                 ? false
-                : s.applyCandidate(cells, s.selectedPerson, eliminate || s.tool === 'eliminate');
+                : s.applyCandidate(cells, s.selectedPerson, true);
             case 'pencil': {
               const cell = cells[0];
               return s.selectedPerson === null || cell === undefined
