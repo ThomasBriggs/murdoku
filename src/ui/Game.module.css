@@ -266,8 +266,13 @@
     height: calc(100dvh - var(--hdr-h));
     overflow: hidden;
     padding-top: 0.4rem;
-    padding-bottom: 7rem;
+    /* clears the bar only; the Accuse strip (2.5rem + 0.35rem) adds its height below */
+    padding-bottom: 4.15rem;
     min-height: 0;
+  }
+  /* Everyone is placed: the Accuse strip is showing above the bar, so the clues give it room. */
+  .layoutAccuse {
+    padding-bottom: 7rem;
   }
   .boardArea {
     flex: none;

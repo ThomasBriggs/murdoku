@@ -613,7 +613,10 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
   );
 
   return (
-    <div className={styles.layout} data-testid="game">
+    <div
+      className={mobile && complete ? `${styles.layout} ${styles.layoutAccuse}` : styles.layout}
+      data-testid="game"
+    >
       <div className={styles.boardArea} data-whatif={whatIfLevel || undefined}>
         {whatIfLevel > 0 && (
           <WhatIfBanner

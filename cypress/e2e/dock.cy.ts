@@ -256,6 +256,13 @@ describe('phone bottom bar', () => {
         expect(Math.abs(c.top - u.top), 'same row').to.be.lessThan(4);
       });
     });
+    // until Accuse appears the clues fill the space down to the dock
+    cy.get(sel('clues-drawer')).then(($d) => {
+      cy.get(sel('mobile-dock')).then(($m) => {
+        const gap = $m[0]!.getBoundingClientRect().top - $d[0]!.getBoundingClientRect().bottom;
+        expect(gap, 'clues end at the dock, no overlap').to.be.within(-1, 8);
+      });
+    });
     cy.get(sel('board')).then(($b) => {
       const before = $b[0]!.getBoundingClientRect();
       solveFromSeed();
@@ -264,9 +271,13 @@ describe('phone bottom bar', () => {
         const after = $a[0]!.getBoundingClientRect();
         expect(Math.round(after.width), 'board size unchanged').to.eq(Math.round(before.width));
         cy.get(sel('accuse-button')).then(($x) => {
-          expect($x[0]!.getBoundingClientRect().top, 'strip clear of the board').to.be.at.least(
-            after.bottom,
-          );
+          const top = $x[0]!.getBoundingClientRect().top;
+          expect(top, 'strip clear of the board').to.be.at.least(after.bottom);
+          cy.get(sel('clues-drawer')).then(($d) => {
+            expect($d[0]!.getBoundingClientRect().bottom, 'clues clear of the strip').to.be.at.most(
+              top,
+            );
+          });
         });
       });
     });

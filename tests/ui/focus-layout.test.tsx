@@ -280,9 +280,12 @@ describe('dock and overflow menu', () => {
     expect(check).toHaveAccessibleName('Check');
     expect(screen.queryByTestId('accuse-button')).toBeNull();
     expect(screen.queryByRole('group', { name: 'Investigate' })).toBeNull();
+    // no room is kept for the strip until it shows
+    expect(screen.getByTestId('game').className).not.toMatch(/layoutAccuse/);
     place(store, ids().slice(0, -1));
     expect(screen.queryByTestId('accuse-button')).toBeNull();
     place(store, ids().slice(-1));
+    expect(screen.getByTestId('game').className).toMatch(/layoutAccuse/);
     const group = within(screen.getByRole('group', { name: 'Investigate' }));
     expect(group.getByTestId('accuse-button')).toBeEnabled();
     expect(group.queryByTestId('check-button')).toBeNull();
