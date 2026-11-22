@@ -1,11 +1,4 @@
-import {
-  accuseUntilWon,
-  cell,
-  placePerson,
-  solutionOfLoaded,
-  solveFromSeed,
-  sel as tid,
-} from '../support/helpers';
+import { cell, placePerson, solutionOfLoaded, solveFromSeed, sel as tid } from '../support/helpers';
 
 const SEED = 'cy-flow';
 const URL = `/?seed=${SEED}&d=easy`;
@@ -61,12 +54,19 @@ describe('game flow', () => {
     load();
     solveFromSeed();
     cy.get(tid('accuse-button')).should('be.enabled').click();
-    cy.get('[data-testid^="accuse-suspect-"]').should('have.length', 8);
-    cy.get('[data-testid^="accuse-suspect-"]').then(($r) => {
-      const ids = $r.toArray().map((el) => el.dataset.testid!.replace('accuse-suspect-', ''));
-      accuseUntilWon(ids);
-    });
-    cy.get(tid('win-dialog')).should('be.visible');
+    // No list of suspects: the one person alone with the victim, and an "are you sure?"
+    cy.get('[role="radio"]').should('not.exist');
+    cy.get(tid('accuse-dialog')).should('contain.text', 'Are you sure');
+    cy.get(tid('accuse-cancel')).click();
+    cy.get(tid('accuse-dialog')).should('not.exist');
+    cy.get(tid('accuse-button')).click();
+    cy.get(tid('accuse-suspect'))
+      .invoke('attr', 'data-person')
+      .then((id) => {
+        cy.get(tid('accuse-confirm')).should('contain.text', 'Accuse').click();
+        cy.get(tid('win-dialog')).should('be.visible');
+        cy.get(tid(`person-card-${id}`)).should('exist');
+      });
     cy.get(tid('win-hints')).should('not.exist');
     cy.get(tid('win-difficulty')).should('have.text', 'easy');
     cy.get(tid('win-time'))

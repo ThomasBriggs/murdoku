@@ -592,6 +592,24 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
   );
 
   const selectedPerson = puzzle.people.find((x) => x.id === selected) ?? null;
+  // Accuse: the victim was alone with the murderer, so the only candidate is whoever the player
+  // has put in the victim's room. Worked out from the player's own board, never the solution.
+  const victim = puzzle.people.find((x) => x.isVictim) ?? null;
+  const victimRoom = (() => {
+    const at = victim ? placements[victim.id] : null;
+    return at == null ? null : puzzle.roomOf[Math.floor(at / GRID_SIZE)]![at % GRID_SIZE]!;
+  })();
+  const victimRoommates =
+    victimRoom === null
+      ? []
+      : puzzle.people.filter((x) => {
+          const at = placements[x.id];
+          return (
+            !x.isVictim &&
+            at != null &&
+            puzzle.roomOf[Math.floor(at / GRID_SIZE)]![at % GRID_SIZE] === victimRoom
+          );
+        });
   const unplaced = puzzle.people.filter((x) => placements[x.id] == null).length;
   const cluesButton = (
     <button
@@ -1051,9 +1069,10 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
         annotations={annotations}
         includeMarks={printMarks}
       />
-      {accuseOpen && (
+      {accuseOpen && victim && (
         <AccuseDialog
-          suspects={puzzle.people.filter((x) => !x.isVictim)}
+          victim={victim}
+          roommates={victimRoommates}
           onAccuse={accuse}
           onClose={() => setAccuseOpen(false)}
         />

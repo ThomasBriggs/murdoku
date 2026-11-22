@@ -8,11 +8,11 @@ import {
   openSettings,
   pickTool,
   placePerson,
-  playToWin,
   sel,
   selectPerson,
   setTheme,
   solutionOfLoaded,
+  solveFromSeed,
 } from '../support/helpers';
 
 const URL = '/?seed=cy-a11y&d=easy';
@@ -178,7 +178,12 @@ describe('accessibility (axe)', () => {
       cy.viewport(1280, 900);
       load();
       setTheme(theme);
-      playToWin();
+      solveFromSeed();
+      cy.get(sel('accuse-button')).click();
+      cy.get(sel('accuse-dialog')).should('be.visible');
+      checkA11y();
+      cy.get(sel('accuse-confirm')).click();
+      cy.get(sel('win-dialog')).should('be.visible');
       checkA11y();
     });
   }

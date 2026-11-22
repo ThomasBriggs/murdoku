@@ -194,7 +194,20 @@ describe('check', () => {
 });
 
 describe('accuse and win', () => {
-  it('is enabled only when all nine are placed, and lists the 8 suspects', async () => {
+  const victim = truth.puzzle.people.find((p) => p.isVictim)!;
+  const roomAt = (k: number) => truth.puzzle.roomOf[Math.floor(k / 9)]![k % 9]!;
+  /** A free, unblocked cell that nobody's solution uses, inside (or outside) the victim's room. */
+  const freeCell = (inVictimRoom: boolean) => {
+    const room = roomAt(solved[victim.id]!);
+    for (let k = 0; k < 81; k++) {
+      const el = screen.getByTestId(`cell-${Math.floor(k / 9)}-${k % 9}`);
+      if (el.dataset.blocked === 'true' || solved.includes(k)) continue;
+      if ((roomAt(k) === room) === inVictimRoom) return k;
+    }
+    throw new Error('no such cell');
+  };
+
+  it('is enabled only when all nine are placed, and names the one person in the victim’s room', async () => {
     const store = await setup();
     const btn = screen.getByTestId('accuse-button');
     expect(btn).toBeDisabled();
@@ -204,44 +217,62 @@ describe('accuse and win', () => {
     placeAll(store);
     expect(btn).toBeEnabled();
     click('accuse-button');
-    const victim = truth.puzzle.people.find((p) => p.isVictim)!;
-    for (const p of truth.puzzle.people)
-      expect(screen.queryByTestId(`accuse-suspect-${p.id}`) !== null).toBe(!p.isVictim);
-    expect(screen.queryByTestId(`accuse-suspect-${victim.id}`)).toBeNull();
-    expect(screen.getByTestId('accuse-confirm')).toBeDisabled();
+    // No list to choose from: the only possible suspect, and an "are you sure?"
+    expect(screen.queryByRole('radio')).toBeNull();
+    expect(screen.getByTestId('accuse-suspect')).toHaveAttribute('data-person', String(murderer));
+    const name = truth.puzzle.people[murderer]!.name;
+    expect(screen.getByTestId('accuse-dialog')).toHaveTextContent(`Are you sure ${name}`);
+    expect(screen.getByTestId('accuse-confirm')).toHaveTextContent(`Accuse ${name}`);
+    expect(screen.getByTestId('accuse-confirm')).toBeEnabled();
+    click('accuse-cancel');
+    expect(screen.queryByTestId('accuse-dialog')).toBeNull();
+    expect(store.getState().status).toBe('playing');
   });
 
-  async function accuse(id: PersonId) {
-    fireEvent.click(screen.getByTestId(`accuse-suspect-${id}`));
+  it('nobody, or more than one person, with the victim: says so and offers nobody', async () => {
+    const store = await setup();
+    placeAll(store);
+    act(() => void store.getState().place(murderer, freeCell(false)));
+    click('accuse-button');
+    expect(screen.getByTestId('accuse-not-alone')).toHaveTextContent(
+      `nobody else is in ${victim.name}'s room`,
+    );
+    expect(screen.queryByTestId('accuse-confirm')).toBeNull();
+    click('accuse-cancel');
+    // back in the room, plus someone else
+    const other = truth.puzzle.people.find((p) => !p.isVictim && p.id !== murderer)!;
+    act(() => {
+      store.getState().place(murderer, solved[murderer]!);
+      store.getState().place(other.id, freeCell(true));
+    });
+    click('accuse-button');
+    expect(screen.getByTestId('accuse-not-alone')).toHaveTextContent(
+      `${truth.puzzle.people[murderer]!.name}`,
+    );
+    expect(screen.getByTestId('accuse-not-alone')).toHaveTextContent(other.name);
+    expect(screen.queryByTestId('accuse-confirm')).toBeNull();
+    expect(store.getState().status).toBe('playing');
+  });
+
+  async function accuse() {
     click('accuse-confirm');
   }
-  const other = truth.puzzle.people.find((p) => !p.isVictim && p.id !== murderer)!.id;
 
   it('wrong placement: generic message, game continues', async () => {
     const store = await setup();
-    placeAll(store, [0, 1]);
-    act(() => {
-      store.getState().place(0, solved[1]!);
-      store.getState().place(1, solved[0]!);
-    });
+    placeAll(store);
+    // Someone who is not in the victim's room goes somewhere wrong; the room itself is unchanged.
+    const mover = truth.puzzle.people.find(
+      (p) =>
+        !p.isVictim && p.id !== murderer && roomAt(solved[p.id]!) !== roomAt(solved[victim.id]!),
+    )!;
+    act(() => void store.getState().place(mover.id, freeCell(false)));
     click('accuse-button');
-    await accuse(murderer);
+    await accuse();
     expect(await screen.findByTestId('accuse-result')).toHaveTextContent(
       "Your placement isn't right yet",
     );
     expect(store.getState().status).toBe('playing');
-  });
-
-  it('right placement, wrong suspect: tells you to think about the victim’s room', async () => {
-    const store = await setup();
-    placeAll(store);
-    click('accuse-button');
-    await accuse(other);
-    expect(await screen.findByTestId('accuse-result')).toHaveTextContent(
-      "Everyone is in the right place, but that's not the murderer",
-    );
-    expect(store.getState().status).toBe('playing');
-    expect(screen.queryByTestId('win-dialog')).toBeNull();
   });
 
   it('wins: dialog with stats, share copies the seed link, board becomes read-only', async () => {
@@ -253,7 +284,7 @@ describe('accuse and win', () => {
     click('check-button');
     await waitFor(() => expect(store.getState().checksUsed).toBe(1));
     click('accuse-button');
-    await accuse(murderer);
+    await accuse();
     const win = await screen.findByTestId('win-dialog');
     expect(store.getState().status).toBe('won');
     expect(store.getState().running).toBe(false);
@@ -295,7 +326,7 @@ describe('accuse and win', () => {
     const store = await setup();
     placeAll(store);
     click('accuse-button');
-    await accuse(murderer);
+    await accuse();
     await screen.findByTestId('win-dialog');
     click('win-share');
     await waitFor(() => expect(exec).toHaveBeenCalledWith('copy'));
@@ -308,7 +339,7 @@ describe('accuse and win', () => {
     placeAll(store);
     act(() => store.setState((s) => ({ puzzle: { ...s.puzzle!, solutionHash: 'bad' } })));
     click('accuse-button');
-    await accuse(murderer);
+    await accuse();
     await screen.findByTestId('win-dialog');
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('solution hash'));
   });
@@ -317,7 +348,7 @@ describe('accuse and win', () => {
     const store = await setup();
     placeAll(store);
     click('accuse-button');
-    await accuse(murderer);
+    await accuse();
     await screen.findByTestId('win-dialog');
     click('win-new-game');
     expect(screen.queryByTestId('win-dialog')).toBeNull();

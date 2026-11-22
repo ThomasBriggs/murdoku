@@ -29,28 +29,21 @@ export function solveFromSeed() {
   cy.get(sel('accuse-button')).should('be.enabled');
 }
 
-/** Accuse suspects one by one until the win dialog shows; wrong ones must say "not the murderer". */
-export function accuseUntilWon(ids: string[], i = 0) {
-  expect(i, 'suspects left to try').to.be.lessThan(ids.length);
-  cy.get(sel(`accuse-suspect-${ids[i]}`)).check();
-  cy.get(sel('accuse-confirm')).click();
-  cy.get(`${sel('win-dialog')}, ${sel('accuse-result')}`).then(($el) => {
-    if ($el.attr('data-testid') === 'win-dialog') return;
-    expect($el.attr('data-verdict')).to.eq('suspect');
-    expect($el.text()).to.contain("that's not the murderer");
-    accuseUntilWon(ids, i + 1);
-  });
-}
-
-/** Playthrough of the loaded puzzle: solve from the seed, accuse, end on the win dialog. */
+/**
+ * Playthrough of the loaded puzzle: solve from the seed, open Accuse (which names the one person
+ * alone with the victim), confirm, and end on the win dialog.
+ */
 export function playToWin() {
   solveFromSeed();
   cy.get(sel('accuse-button')).should('be.enabled').click();
-  cy.get('[data-testid^="accuse-suspect-"]').should('have.length', 8);
-  cy.get('[data-testid^="accuse-suspect-"]').then(($r) => {
-    const ids = $r.toArray().map((el) => el.dataset.testid!.replace('accuse-suspect-', ''));
-    accuseUntilWon(ids);
-  });
+  cy.get(sel('puzzle-seed')).then(($seed) =>
+    cy.get(sel('puzzle-difficulty')).then(($d) => {
+      const d = $d.text().trim().toLowerCase() as Difficulty;
+      const murderer = generatePuzzle($seed.text().trim(), d).solution.murdererId;
+      cy.get(sel('accuse-suspect')).should('have.attr', 'data-person', String(murderer));
+    }),
+  );
+  cy.get(sel('accuse-confirm')).click();
   cy.get(sel('win-dialog')).should('be.visible');
 }
 

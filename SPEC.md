@@ -248,7 +248,7 @@ The "Focus" layout keeps the board as the centre of attention and tucks everythi
 | **Hint** | *Removed for now.* Hint explanations were misleading, so the Hint button, the `H` key and the worker's `hint` message are gone until the hint text is reworked. The logical solver (§5.5) still grades puzzles, and `nextDeduction` stays in the engine for that rework. |
 | **Check** | Reports how many placements are correct or wrong, optionally highlighting wrong ones. Counted. |
 | **Reset** | Clears the board after a confirmation prompt. |
-| **Accuse** | Becomes available when all 9 are placed. Pick a suspect. The worker checks the placement and the murderer. A correct accusation opens the Win dialog (time, checks, a share link to the seed). A wrong one says what is wrong (placement vs. accusation) without giving away the answer. |
+| **Accuse** | Becomes available when all 9 are placed. There is no list to pick from: the victim was alone with the murderer, so the dialog names the one person the player has placed in the victim's room and asks "Are you sure?" (computed from the player's own placements, never the solution). If the victim's room holds nobody else, or more than one other person, the dialog says so and offers no accusation. On confirm the worker checks the placement and the murderer. A correct accusation opens the Win dialog (time, checks, a share link to the seed). A wrong one says the placement is not right yet, without giving away the answer. |
 | **New game** | Dialog with difficulty (Easy/Medium/Hard) and an optional seed field. Shows "Generating…" while the worker runs. |
 
 ### 6.5 Solving aids: the "paper" toolkit
