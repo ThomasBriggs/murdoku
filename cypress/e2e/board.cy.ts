@@ -33,6 +33,17 @@ describe('board', () => {
       .should('match', /^Row 3, column D,/);
   });
 
+  it('draws room walls as straight runs over the grid', () => {
+    loadBoard();
+    cy.get('[data-testid="wall-layer"]').should('be.visible');
+    cy.get('[data-testid="wall-layer"] [data-testid="wall"]').should('have.length.greaterThan', 0);
+    // Every run is axis-aligned (no angled pieces).
+    cy.get('[data-testid="wall-layer"] [data-testid="wall"]').each(($l) => {
+      const [x1, y1, x2, y2] = ['x1', 'y1', 'x2', 'y2'].map((a) => Number($l.attr(a)));
+      expect(x1 === x2 || y1 === y2, 'axis-aligned').to.equal(true);
+    });
+  });
+
   it('places, moves, undoes and redoes a person', () => {
     loadBoard();
     cellsWhere('false').then((free) => {

@@ -10,7 +10,8 @@ import { CellMarks, type CandidateView } from './CellMarks';
 import { DrawingLayer, type DrawingProps } from './DrawingLayer';
 import type { RoomColor } from './roomColors';
 import { COLUMN_LETTERS, panelOrder, type Highlight, type PersonMark } from './types';
-import { computeWalls, firstCellOfRooms } from './walls';
+import { firstCellOfRooms } from './walls';
+import { WallLayer } from './WallLayer';
 
 export interface BoardProps {
   puzzle: PuzzleView;
@@ -81,7 +82,6 @@ export function Board(p: BoardProps) {
   const gridRef = useRef<HTMLDivElement>(null);
   const drag = useRef<DragState | null>(null);
   const suppressClick = useRef(false);
-  const walls = useMemo(() => computeWalls(puzzle.roomOf), [puzzle.roomOf]);
   const labelCells = useMemo(() => firstCellOfRooms(puzzle.roomOf), [puzzle.roomOf]);
   const people = useMemo(() => new Map(puzzle.people.map((x) => [x.id, x])), [puzzle.people]);
   const order = useMemo(() => panelOrder(puzzle.people), [puzzle.people]);
@@ -310,7 +310,6 @@ export function Board(p: BoardProps) {
                   room={puzzle.rooms[roomId]!}
                   color={p.roomColors.get(roomId)!}
                   furniture={puzzle.furniture[r]![c] ?? null}
-                  walls={walls[r]![c]!}
                   roomLabel={first?.[0] === r && first[1] === c}
                   roomNote={vis.margins ? annotations.roomNotes[roomId] : undefined}
                   person={person}
@@ -351,6 +350,7 @@ export function Board(p: BoardProps) {
           </div>
         ))}
       </div>
+      <WallLayer roomOf={puzzle.roomOf} />
       <DrawingLayer strokes={annotations.strokes} visible={vis.drawing} {...p.draw} />
     </div>
   );

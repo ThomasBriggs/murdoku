@@ -7,7 +7,6 @@ import { FurnitureIcon } from './icons/FurnitureIcon';
 import type { RoomColor } from './roomColors';
 import { Token } from './Token';
 import { COLUMN_LETTERS, type PersonMark } from './types';
-import type { Walls } from './walls';
 
 export interface CellProps {
   r: number;
@@ -15,7 +14,6 @@ export interface CellProps {
   room: Room;
   color: RoomColor;
   furniture: FurnitureType | null;
-  walls: Walls;
   /** Show the room name label (first cell of the room). */
   roomLabel: boolean;
   person: Person | null;
@@ -123,7 +121,7 @@ export const Cell = memo(function Cell(p: CellProps) {
   useEffect(() => {
     renderProbe?.(p.r, p.c);
   });
-  const { r, c, room, furniture, walls, person } = p;
+  const { r, c, room, furniture, person } = p;
   const blocked = furniture !== null && !isOccupiable(furniture);
   const hasConflict = p.conflicts.length > 0;
   const descId = `cell-desc-${r}-${c}`;
@@ -132,10 +130,6 @@ export const Cell = memo(function Cell(p: CellProps) {
     : undefined;
   const cls = [
     styles.cell,
-    walls.top && styles.wallT,
-    walls.left && styles.wallL,
-    walls.right && c === 8 && styles.wallR,
-    walls.bottom && r === 8 && styles.wallB,
     blocked && styles.blocked,
     p.highlighted && styles.highlight,
     p.personMark === 'placed' && styles.pmPlaced,
