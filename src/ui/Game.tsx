@@ -23,6 +23,7 @@ import { CheckSummary } from './Feedback';
 import feedback from './Feedback.module.css';
 import { placementMatchesHash } from './verifyWin';
 import { Board } from './Board';
+import { HOLD_MS } from './hold';
 import type { ActivateMods } from './Cell';
 import { ConfirmDialog } from './ConfirmDialog';
 import { DrawControls } from './DrawControls';
@@ -370,8 +371,21 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
 
   useEffect(() => () => window.clearTimeout(shakeTimer.current), []);
 
+  // A pending `V` press on one cell: a quick release notes, holding for HOLD_MS places.
+  const vHold = useRef<{ timer: number; r: number; c: number; el: HTMLElement | null } | null>(
+    null,
+  );
+  const cancelVHold = useCallback(() => {
+    const h = vHold.current;
+    if (!h) return;
+    window.clearTimeout(h.timer);
+    if (h.el) delete h.el.dataset.holding;
+    vHold.current = null;
+  }, []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') cancelVHold();
       if (confirmReset || clearChoice || whatIfEnd || printOpen || accuseOpen || winOpen) return;
       if (document.querySelector('[aria-modal="true"]')) return; // header dialogs
 
@@ -422,8 +436,27 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
           // W starts a what-if, or (inside one) asks how to end it; Shift+W nests another.
           if (s.whatIfStack.length === 0 || e.shiftKey) s.startWhatIf();
           else setWhatIfEnd('choose');
-        } else if (k === 'v') s.setTool('place');
-        else if (k === 's') s.setTool(s.tool === 'select' ? 'place' : 'select');
+        } else if (k === 'v') {
+          s.setTool('place');
+          if (!act || e.repeat || vHold.current) return;
+          if (s.selection.length > 1 && s.selectedPerson !== null) {
+            // One person can't be placed in several cells: note them in all of them.
+            const cells = s.selection.filter((key) => !isBlocked(s.puzzle!, key));
+            if (cells.length > 0) s.applyCandidate(cells, s.selectedPerson);
+            return;
+          }
+          const [key] = targets(at); // the 1-cell selection, `at`, or the cursor
+          const r = Math.floor(key! / GRID_SIZE);
+          const c = key! % GRID_SIZE;
+          const el = document.querySelector<HTMLElement>(`[data-testid="cell-${r}-${c}"]`);
+          if (el) el.dataset.holding = 'true';
+          const timer = window.setTimeout(() => {
+            vHold.current = null;
+            if (el) delete el.dataset.holding;
+            onActivate(r, c, { hold: true });
+          }, HOLD_MS);
+          vHold.current = { timer, r, c, el };
+        } else if (k === 's') s.setTool(s.tool === 'select' ? 'place' : 'select');
         else if (k === 'c') {
           if (s.tool === 'highlight') s.cycleColor();
           else s.setTool('highlight');
@@ -434,9 +467,37 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
         }
       }
     };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== 'v') return;
+      const h = vHold.current;
+      if (!h) return;
+      cancelVHold();
+      if (store.getState().selectedPerson === null) return;
+      if (confirmReset || clearChoice || whatIfEnd || printOpen || accuseOpen || winOpen) return;
+      if (document.querySelector('[aria-modal="true"]')) return;
+      onActivate(h.r, h.c, { keyboard: true, note: true });
+    };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [store, confirmReset, clearChoice, whatIfEnd, printOpen, accuseOpen, winOpen, targets]);
+    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', cancelVHold);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', cancelVHold);
+      cancelVHold();
+    };
+  }, [
+    store,
+    confirmReset,
+    clearChoice,
+    whatIfEnd,
+    printOpen,
+    accuseOpen,
+    winOpen,
+    targets,
+    onActivate,
+    cancelVHold,
+  ]);
 
   if (!puzzle) return null;
   const actions = store.getState();

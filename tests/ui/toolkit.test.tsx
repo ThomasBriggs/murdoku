@@ -394,6 +394,54 @@ describe('keyboard shortcuts', () => {
   });
 });
 
+describe('V key on the selection', () => {
+  it('notes the picked person on every selected cell, placing nobody', async () => {
+    const store = await setupWithTimers();
+    const free = [...document.querySelectorAll<HTMLElement>('[data-blocked="false"]')]
+      .slice(0, 3)
+      .map((el) => [Number(el.dataset.r), Number(el.dataset.c)] as const);
+    act(() => {
+      store.getState().selectCells(free.map(([r, c]) => cellKey(r, c)));
+      store.getState().selectPerson(1);
+    });
+    fireEvent.keyDown(window, { key: 'v' });
+    fireEvent.keyUp(window, { key: 'v' });
+    act(() => void vi.advanceTimersByTime(HOLD_MS + 50));
+    for (const [r, c] of free) expect(cell(r, c)).toHaveAttribute('data-candidates', '1');
+    expect(store.getState().placements[1]).toBeNull();
+    vi.useRealTimers();
+  });
+
+  it('a quick V on the cursor cell notes; holding V places', async () => {
+    const store = await setupWithTimers();
+    const [r, c] = freeCell((_, cc) => cc > 0);
+    act(() => store.getState().selectPerson(1));
+    fireEvent.keyDown(cell(r, c - 1), { key: 'ArrowRight' }); // shows the cursor on (r, c)
+    fireEvent.keyDown(cell(r, c), { key: 'v' });
+    fireEvent.keyUp(cell(r, c), { key: 'v' });
+    expect(cell(r, c)).toHaveAttribute('data-candidates', '1');
+    expect(store.getState().placements[1]).toBeNull();
+    fireEvent.keyDown(cell(r, c), { key: 'v' });
+    act(() => void vi.advanceTimersByTime(HOLD_MS + 50));
+    fireEvent.keyUp(cell(r, c), { key: 'v' });
+    expect(store.getState().placements[1]).toBe(cellKey(r, c));
+    vi.useRealTimers();
+  });
+
+  it('with no target V only switches to Place', async () => {
+    const store = await setupWithTimers();
+    store.getState().selectPerson(1);
+    store.getState().setTool('cross');
+    fireEvent.keyDown(window, { key: 'v' });
+    fireEvent.keyUp(window, { key: 'v' });
+    act(() => void vi.advanceTimersByTime(HOLD_MS + 50));
+    expect(store.getState().tool).toBe('place');
+    expect(store.getState().annotations.candidates).toEqual({});
+    expect(store.getState().placements[1]).toBeNull();
+    vi.useRealTimers();
+  });
+});
+
 describe('multi-select', () => {
   it('drag selects the visited cells; the Cross button applies to all of them', async () => {
     const store = await setup();

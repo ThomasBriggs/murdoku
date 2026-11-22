@@ -209,6 +209,34 @@ describe('solving toolkit: marks, notes, highlights', () => {
     cy.get('[data-testid="color-purple"]').should('have.attr', 'aria-checked', 'true');
   });
 
+  it('V notes the picked person on a selection; on one cell a quick V notes and a held V places', () => {
+    load();
+    freeCells().then((free) => {
+      const path = free.slice(0, 3);
+      drag(path);
+      cy.get('[data-sel="true"]').should('have.length', 3);
+      cell(...path[0]!)
+        .focus()
+        .type('2v');
+      for (const [r, c] of path) cell(r, c).should('have.attr', 'data-candidates', '0');
+      cy.get('[data-occupant]:not([data-occupant=""])').should('not.exist');
+      // one target cell: the cursor after an arrow key
+      cy.get('body').type('{esc}');
+      const [r, c] = free.find(([fr, fc]) => fr > 3 && fc > 0)!;
+      cy.get('[data-testid="person-card-1"]').click();
+      cell(r, c - 1)
+        .focus()
+        .type('{rightarrow}');
+      cell(r, c).type('v');
+      cell(r, c).should('have.attr', 'data-candidates', '1');
+      cell(r, c).should('have.attr', 'data-occupant', '');
+      cell(r, c).trigger('keydown', { key: 'v' });
+      cy.wait(600);
+      cell(r, c).trigger('keyup', { key: 'v' });
+      cell(r, c).should('have.attr', 'data-occupant', '1');
+    });
+  });
+
   it('drag-selects cells and applies a cross to all of them', () => {
     load();
     const path: [number, number][] = [

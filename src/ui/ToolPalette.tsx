@@ -33,7 +33,7 @@ export const TOOLS: readonly ToolDef[] = [
     Icon: PlaceIcon,
     shortcut: 'V',
     key: 'v',
-    help: 'Pick a person, then tap a cell to note them as a candidate there, or press and hold to place them (Enter places, Space notes)',
+    help: 'Pick a person, then tap a cell to note them as a candidate there, or press and hold to place them (Enter places, Space notes). V notes on the selection; hold V places',
   },
   {
     id: 'pencil',
