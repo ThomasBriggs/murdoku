@@ -17,6 +17,7 @@ export const WEIGHTS = {
   'board.cy.ts': 6,
   'cell-cleanup.cy.ts': 5,
   'scratchpad.cy.ts': 4,
+  'pwa.cy.ts': 6,
   'dialogs.cy.ts': 2,
   'header-menu.cy.ts': 2,
   'layout.cy.ts': 2,

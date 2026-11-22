@@ -9,6 +9,7 @@
 - Sharding is balanced by a spec timing table in `scripts/e2e-shards.mjs`; refresh it when specs are added or change a lot. CI (`.github/workflows/ci.yml`) uses the same script with 3 shards.
 - Use `timeout` on long commands (e.g. `timeout 900 npm run e2e`) and leave no background processes running.
 - Screenshots for visual review (run last, after a build): `npx start-server-and-test preview http://localhost:4173 'cypress run --browser firefox --expose SCREENSHOTS=1 --spec cypress/e2e/screenshots.cy.ts'`; images land in `cypress/screenshots/` (git-ignored).
+- PWA: `vite-plugin-pwa` emits `sw.js` and the manifest in `npm run build` only. The service worker is NOT registered in dev or under Cypress (`window.Cypress`, see `src/pwa/register.ts`), so specs never see a cached build; specs fetch `/sw.js` and `/manifest.webmanifest` directly and use `window.__murdokuShowUpdate()` (Cypress only) to show the update banner. Icons are regenerated with `scripts/gen-icons.sh` (needs `rsvg-convert`).
 
 ## Model delegation workflow (mandatory)
 

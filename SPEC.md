@@ -43,6 +43,7 @@ Version 1 scope:
 | Heavy work | **Web Worker** (Vite `?worker` import) | Generation runs off the main thread, and the solution lives inside the worker (§7) |
 | Tests | **Vitest** for the engine, **Cypress** for end-to-end tests (one suite per feature milestone) | |
 | Lint / format | ESLint + Prettier | |
+| PWA | **vite-plugin-pwa** (Workbox `generateSW`, `registerType: 'prompt'`) | Installable and playable offline; the player decides when to take an update (§6.8) |
 | Deploy | `vite build` → static `dist/` (deployed via Cloudflare Pages) | |
 
 The engine (`src/engine`) is **pure TypeScript with no DOM or React imports**, so it can be unit-tested and run inside the worker.
@@ -339,6 +340,13 @@ All are in Settings and all are **off by default**, except where marked. They ac
 ### 6.7 Themes
 
 Light and dark themes via CSS variables, following the system setting by default, with a manual toggle in Settings.
+
+### 6.8 Install and offline
+
+- The app is a PWA: a web manifest (standalone display, 192/512 and maskable icons rasterised from `favicon.svg`, `apple-touch-icon.png` for iOS) and a service worker that precaches the whole app shell, including the worker chunk. Puzzles, including `?seed=&d=` share links, generate and play offline. The service worker caches only the app; it never touches puzzle data or saved games.
+- **Updates**: when a new version is installed and waiting, a non-modal `role="status"` banner ("A new version of Murdoku is available.") offers **Reload** or **Later** (hidden for the rest of the session). The pending game save is flushed before reloading. Updates never apply silently.
+- **Install**: an **Install app** item appears in the header (inline icon on desktop, menu item on phones) only after the browser fires `beforeinstallprompt`, and goes away after use, after `appinstalled` or when already running standalone. On iOS there is no such event: use Share, then Add to Home Screen.
+- The service worker is not registered in dev (`devOptions.enabled: false`) or under Cypress. The app asks the browser for persistent storage once, so the saved game is not evicted.
 
 ---
 
