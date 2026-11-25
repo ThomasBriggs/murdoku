@@ -318,6 +318,25 @@ describe('phone bottom bar', () => {
   });
 });
 
+describe('settings popover (desktop)', () => {
+  it('closes on a click outside it, and on Escape with focus back on the gear', () => {
+    load();
+    openSettings();
+    cy.get(sel('setting-autocross')).click(); // inside: stays open
+    cy.get(sel('settings-popover')).should('exist');
+    cy.get(sel('board')).click('topLeft');
+    cy.get(sel('settings-popover')).should('not.exist');
+    openSettings();
+    cy.get(sel('app-title')).click();
+    cy.get(sel('settings-popover')).should('not.exist');
+    openSettings();
+    cy.get(sel('setting-conflicts')).focus();
+    cy.get('body').type('{esc}');
+    cy.get(sel('settings-popover')).should('not.exist');
+    cy.get(sel('settings-button')).should('have.focus');
+  });
+});
+
 describe('header theme toggle (desktop)', () => {
   it('cycles System, Light, Dark on <html>, and Settings has no theme radios', () => {
     load();

@@ -293,10 +293,21 @@ export function SettingsMenu({
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const wrap = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: PointerEvent) => {
+      if (!wrap.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('pointerdown', away);
+    return () => document.removeEventListener('pointerdown', away);
+  }, [open]);
   return (
-    <div className={styles.settingsWrap}>
+    <div className={styles.settingsWrap} ref={wrap}>
       <button
         type="button"
+        ref={trigger}
         className={className}
         aria-label="Settings"
         data-testid="settings-button"
@@ -313,7 +324,10 @@ export function SettingsMenu({
           settings={settings}
           onSettings={onSettings}
           className={`${compact ? styles.popoverLeft : ''} ${iconOnly ? styles.popoverRight : ''}`}
-          onEscape={() => setOpen(false)}
+          onEscape={() => {
+            setOpen(false);
+            trigger.current?.focus();
+          }}
         />
       )}
     </div>

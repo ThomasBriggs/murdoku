@@ -88,6 +88,23 @@ describe('theme toggle', () => {
     expect(screen.getByTestId('header-menu')).toBeInTheDocument();
   });
 
+  it('the Settings popover closes on a press outside, not on one inside, and on Escape', () => {
+    setup(1280);
+    const gear = screen.getByTestId('settings-button');
+    fireEvent.click(gear);
+    fireEvent.pointerDown(screen.getByTestId('settings-popover'));
+    expect(screen.getByTestId('settings-popover')).toBeInTheDocument();
+    fireEvent.pointerDown(gear);
+    expect(screen.getByTestId('settings-popover')).toBeInTheDocument();
+    fireEvent.pointerDown(document.body);
+    expect(screen.queryByTestId('settings-popover')).toBeNull();
+    expect(gear).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(gear);
+    fireEvent.keyDown(screen.getByTestId('setting-autocross'), { key: 'Escape' });
+    expect(screen.queryByTestId('settings-popover')).toBeNull();
+    expect(gear).toHaveFocus();
+  });
+
   it('the Settings popover has no theme radios', () => {
     setup(1280);
     fireEvent.click(screen.getByTestId('settings-button'));
