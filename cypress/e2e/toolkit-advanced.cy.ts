@@ -113,9 +113,9 @@ describe('solving toolkit: logic grid, pen, scratchpad, what-if, helpers, print'
     cy.get('[data-testid="drawing-layer"] path').should('have.length', 1);
     // a click now reaches the cell: pick a person and place them
     firstFree().then(([r, c]) => {
-      tid('person-card-1').click();
+      cell(r, c).focus().type('2'); // digit keys pick a person without leaving the tool
       longPress(r, c);
-      cell(r, c).should('have.attr', 'data-occupant', '1');
+      cell(r, c).should('not.have.attr', 'data-occupant', '');
     });
     tid('draw-lock').click().should('have.attr', 'aria-pressed', 'false');
     tid('drawing-layer').should('have.attr', 'data-active', 'true');

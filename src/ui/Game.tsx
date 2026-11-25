@@ -1111,7 +1111,11 @@ export function Game({ onNewGame }: { onNewGame(): void }) {
             tentative={tentative}
             annotations={annotations}
             selectedPerson={selected}
-            onSelect={(id) => actions.selectPerson(id)}
+            onSelect={(id) => {
+              actions.selectPerson(id);
+              // Picking a person from the clues means "place them": leave any other tool.
+              if (id !== null && store.getState().tool !== 'place') actions.setTool('place');
+            }}
             onHighlight={setHighlight}
           />
           <details

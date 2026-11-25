@@ -198,8 +198,8 @@ describe('clues: Unplaced and Placed sections', () => {
   it('a pencil guess stays under Unplaced', () => {
     load();
     freeCells(1).then(([a]) => {
-      pickTool('pencil');
       selectPerson(2);
+      pickTool('pencil');
       cy.get(`[data-testid="cell-${a![0]}-${a![1]}"]`).click();
       cy.get(sel('person-status-2')).should('contain.text', 'Guess');
     });

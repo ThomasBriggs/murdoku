@@ -32,8 +32,8 @@ describe('people panel: placed names and hover highlights', () => {
       tid('person-name-2').should('not.have.attr', 'data-placed');
 
       // Person 2 pencilled in at b and noted as a candidate at c and d.
-      tool('pencil').click();
       pick('2');
+      tool('pencil').click();
       cell(...b).click();
       tool('place').click(); // a quick tap in Place mode notes a candidate
       pick('2'); // pencil-placing deselects the person

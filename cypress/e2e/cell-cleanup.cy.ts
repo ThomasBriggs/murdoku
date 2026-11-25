@@ -49,8 +49,8 @@ describe('cell clean-up and centred markers', () => {
       cy.get('[data-testid="person-card-1"]').click();
       cell(r, c).click();
       cell(r2, c2).click();
-      tool('pencil').click();
       cy.get('[data-testid="person-card-2"]').click();
+      tool('pencil').click();
       cell(r, c).click();
       cell(r, c).should('have.attr', 'data-mark', 'unsure');
       cell(r, c).should('have.attr', 'data-candidates', '1');
@@ -89,8 +89,8 @@ describe('cell clean-up and centred markers', () => {
       cy.get('[data-testid="undo"]').click();
       cell(r, c).should('have.attr', 'data-occupant', '0');
 
-      tool('pencil').click();
       cy.get('[data-testid="person-card-4"]').click();
+      tool('pencil').click();
       cell(r2, c2).click().should('have.attr', 'data-tentative', '4');
       cy.get('[data-testid="untentative-4"]').click({ force: true });
       cell(r2, c2).should('not.have.attr', 'data-tentative');
@@ -102,8 +102,8 @@ describe('cell clean-up and centred markers', () => {
       const [[r0, c0], [r1, c1], [r2, c2], [r3, c3]] = [free[0]!, free[5]!, free[10]!, free[15]!];
       cy.get('[data-testid="person-card-0"]').click();
       longPress(r0, c0);
-      tool('pencil').click();
       cy.get('[data-testid="person-card-4"]').click();
+      tool('pencil').click();
       cell(r1, c1).click();
       tool('cross').click();
       cell(r2, c2).click();

@@ -176,8 +176,8 @@ describe('accessibility (axe)', () => {
         // a pencil guess on another room-label cell, plus a candidate on the same cell
         selectPerson(5);
         cell(tr, tc).click();
-        pickTool('pencil');
         selectPerson(6);
+        pickTool('pencil');
         cell(tr, tc).click();
         cy.get(sel('tentative-6')).should('exist');
         cy.get(sel(`cands-${lr}-${lc}`)).should('exist');

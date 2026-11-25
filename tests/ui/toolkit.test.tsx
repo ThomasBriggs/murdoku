@@ -212,8 +212,8 @@ describe('cell tools by click', () => {
     const store = await setup();
     const free = [...document.querySelectorAll<HTMLElement>('[data-blocked="false"]')][0]!;
     const [r, c] = [Number(free.dataset.r), Number(free.dataset.c)];
-    fireEvent.click(tool('pencil'));
     fireEvent.click(card(0));
+    fireEvent.click(tool('pencil'));
     fireEvent.click(cell(r, c));
     expect(screen.getByTestId('tentative-0')).toBeInTheDocument();
     expect(cell(r, c)).toHaveAttribute('data-tentative', '0');
@@ -235,11 +235,11 @@ describe('cell tools by click', () => {
       fireEvent.click(card(id));
       fireEvent.click(cell(r, c));
     }
-    fireEvent.click(tool('eliminate'));
     fireEvent.click(card(2));
+    fireEvent.click(tool('eliminate'));
     fireEvent.click(cell(r, c));
-    fireEvent.click(tool('pencil'));
     fireEvent.click(card(3));
+    fireEvent.click(tool('pencil'));
     fireEvent.click(cell(r, c));
     fireEvent.click(tool('unsure'));
     fireEvent.click(cell(r, c));
@@ -272,15 +272,15 @@ describe('cell tools by click', () => {
     expect(cell(r, c)).not.toHaveAttribute('data-mark');
     expect(cell(r, c)).not.toHaveAttribute('data-hl-color');
 
-    fireEvent.click(tool('pencil'));
     fireEvent.click(card(0));
+    fireEvent.click(tool('pencil'));
     fireEvent.click(cell(r, c));
     fireEvent.click(screen.getByTestId('untentative-0'));
     expect(store.getState().tentativePlacements[0]).toBeNull();
     expect(screen.queryByTestId('tentative-0')).toBeNull();
 
-    fireEvent.click(tool('place'));
     fireEvent.click(card(1));
+    fireEvent.click(tool('place'));
     fireEvent.keyDown(cell(r, c), { key: 'Enter' });
     expect(cell(r, c)).toHaveAttribute('data-occupant', '1');
     fireEvent.click(screen.getByTestId('unplace-1'));
@@ -454,6 +454,20 @@ describe('V key on the selection', () => {
     expect(store.getState().annotations.candidates).toEqual({});
     expect(store.getState().placements[1]).toBeNull();
     vi.useRealTimers();
+  });
+});
+
+describe('picking a person in the clues', () => {
+  it('switches any other tool to Place, and deselecting leaves the tool alone', async () => {
+    const store = await setup();
+    store.getState().setTool('cross');
+    fireEvent.click(within(card(1)).getAllByRole('button')[0]!);
+    expect(store.getState().selectedPerson).toBe(1);
+    expect(store.getState().tool).toBe('place');
+    store.getState().setTool('cross');
+    fireEvent.click(within(card(1)).getAllByRole('button')[0]!);
+    expect(store.getState().selectedPerson).toBeNull();
+    expect(store.getState().tool).toBe('cross');
   });
 });
 

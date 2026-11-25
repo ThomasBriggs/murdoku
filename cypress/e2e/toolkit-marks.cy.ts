@@ -124,6 +124,14 @@ describe('solving toolkit: marks, notes, highlights', () => {
     });
   });
 
+  it('picking a person in the clues switches to the Place tool', () => {
+    load();
+    tool('cross').click().should('have.attr', 'aria-pressed', 'true');
+    cy.get('[data-testid="person-card-1"]').find('button').first().click();
+    tool('place').should('have.attr', 'aria-pressed', 'true');
+    tool('cross').should('have.attr', 'aria-pressed', 'false');
+  });
+
   it('Cross tool: hold clears the notes and crosses; a quick tap toggles the cross', () => {
     load();
     freeCells().then((free) => {
@@ -179,8 +187,8 @@ describe('solving toolkit: marks, notes, highlights', () => {
     load();
     freeCells().then((free) => {
       const [r, c] = free[0]!;
-      tool('pencil').click();
       cy.get('[data-testid="person-card-0"]').click();
+      tool('pencil').click();
       cell(r, c).click();
       cy.get('[data-testid="tentative-0"]').should('exist');
       cell(r, c).should('have.attr', 'data-tentative', '0').and('have.attr', 'data-occupant', '');
