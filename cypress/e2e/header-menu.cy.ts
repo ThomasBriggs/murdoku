@@ -60,18 +60,28 @@ describe('mobile header menu (375x740)', () => {
     cy.get(sel('stats-dialog')).should('be.visible');
   });
 
-  it('Settings opens a panel inside the menu and a theme choice applies', () => {
+  it('Settings opens a panel inside the menu, without theme radios', () => {
     cy.get(sel('header-menu-button')).click();
     cy.get(sel('settings-button')).click().should('have.attr', 'aria-expanded', 'true');
     cy.get(sel('header-menu')).find(sel('settings-popover')).should('be.visible');
-    cy.get(sel('theme-dark')).check();
-    cy.get('html').should('have.attr', 'data-theme', 'dark');
-    cy.get(sel('header-menu')).should('be.visible');
-    cy.get(sel('theme-light')).check();
-    cy.get('html').should('have.attr', 'data-theme', 'light');
+    cy.get(sel('settings-popover')).find('input[type="radio"]').should('not.exist');
+    cy.get(sel('settings-popover')).find('[data-testid^="theme-"]').should('not.exist');
     cy.document().then((doc) => {
       expect(doc.documentElement.scrollWidth).to.be.at.most(375);
     });
+  });
+
+  it('the Theme row cycles System, Light, Dark and keeps the menu open', () => {
+    cy.get(sel('header-menu-button')).click();
+    cy.get(sel('theme-toggle')).should('have.attr', 'data-theme', 'system');
+    cy.get('html').should('not.have.attr', 'data-theme');
+    cy.get(sel('theme-toggle')).should('contain.text', 'Theme: System').click();
+    cy.get('html').should('have.attr', 'data-theme', 'light');
+    cy.get(sel('theme-toggle')).should('contain.text', 'Theme: Light').click();
+    cy.get('html').should('have.attr', 'data-theme', 'dark');
+    cy.get(sel('theme-toggle')).should('contain.text', 'Theme: Dark').click();
+    cy.get('html').should('not.have.attr', 'data-theme');
+    cy.get(sel('header-menu')).should('be.visible');
   });
 
   it('New game stays outside the menu and opens the new-game dialog', () => {

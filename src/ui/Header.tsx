@@ -3,7 +3,7 @@ import { useGame, useStoreApi } from './context';
 import { copyText, shareUrl } from './url';
 import styles from '../App.module.css';
 import { formatTime } from './time';
-import { SettingsMenu, SettingsPanel } from './Toolbar';
+import { SettingsMenu, SettingsPanel, ThemeToggle } from './Toolbar';
 import { useMediaQuery } from './useMediaQuery';
 import { promptInstall, useCanInstall } from '../pwa/install';
 import {
@@ -183,6 +183,11 @@ export function Header({
             >
               <span aria-hidden="true">?</span>
             </button>
+            <ThemeToggle
+              className={styles.hBtn}
+              theme={settings.theme}
+              onTheme={(theme) => store.getState().updateSettings({ theme })}
+            />
             <SettingsMenu
               iconOnly
               className={styles.hBtn}
@@ -252,6 +257,12 @@ export function Header({
             </span>
             <span>Rules</span>
           </button>
+          <ThemeToggle
+            menuItem
+            className={styles.menuItem}
+            theme={settings.theme}
+            onTheme={(theme) => store.getState().updateSettings({ theme })}
+          />
           <button
             type="button"
             className={styles.menuItem}

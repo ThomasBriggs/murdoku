@@ -4,6 +4,7 @@ import {
   openSettings,
   playToWin,
   sel,
+  setTheme,
   tid,
   visitWithQuickBar,
 } from '../support/helpers';
@@ -121,14 +122,14 @@ describe('persistence', () => {
 
   it('keeps settings across a reload', () => {
     load();
+    setTheme('dark');
     openSettings();
-    tid('theme-dark').check();
     tid('setting-autocross').uncheck();
     cy.reload();
     cy.get(sel('board')).should('be.visible');
     cy.get('html').should('have.attr', 'data-theme', 'dark');
+    tid('theme-toggle').should('be.visible').and('have.attr', 'data-theme', 'dark');
     openSettings();
-    tid('theme-dark').should('be.checked');
     tid('setting-autocross').should('not.be.checked');
   });
 

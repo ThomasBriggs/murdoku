@@ -262,10 +262,11 @@ describe('Board UI', () => {
     store = await setup();
     const victim = store.getState().puzzle!.people.find((p) => p.isVictim)!;
     expect(screen.getByTestId(`card-victim-badge-${victim.id}`)).toBeInTheDocument();
-    clickMore('settings-button');
-    fireEvent.click(screen.getByTestId('theme-dark'));
+    fireEvent.click(screen.getByTestId('theme-toggle'));
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+    fireEvent.click(screen.getByTestId('theme-toggle'));
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
-    fireEvent.click(screen.getByTestId('theme-system'));
+    fireEvent.click(screen.getByTestId('theme-toggle'));
     expect(document.documentElement.hasAttribute('data-theme')).toBe(false);
   });
 });

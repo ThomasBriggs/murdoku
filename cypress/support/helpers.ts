@@ -232,9 +232,20 @@ export function checkA11y(context?: string) {
   );
 }
 
-/** Pick a theme through the header's Settings popover, then close it again. */
-export function setTheme(theme: 'light' | 'dark') {
-  openSettings();
-  cy.get(sel(`theme-${theme}`)).check();
-  closeSettings();
+const THEME_ORDER = ['system', 'light', 'dark'] as const;
+type ThemeName = (typeof THEME_ORDER)[number];
+
+/**
+ * Pick a theme with the header's theme toggle (inside the hamburger menu on phones): it cycles
+ * System, Light, Dark, so click it as often as the current setting needs (never more than twice).
+ */
+export function setTheme(theme: ThemeName) {
+  openHeaderMenu();
+  cy.get(sel('theme-toggle')).then(($t) => {
+    const from = THEME_ORDER.indexOf($t.attr('data-theme') as ThemeName);
+    const clicks = (THEME_ORDER.indexOf(theme) - from + THEME_ORDER.length) % THEME_ORDER.length;
+    for (let i = 0; i < clicks; i++) cy.get(sel('theme-toggle')).click();
+  });
+  cy.get(sel('theme-toggle')).should('have.attr', 'data-theme', theme);
+  closeHeaderMenu();
 }

@@ -317,3 +317,20 @@ describe('phone bottom bar', () => {
     cy.get(sel('more-button')).should('have.focus');
   });
 });
+
+describe('header theme toggle (desktop)', () => {
+  it('cycles System, Light, Dark on <html>, and Settings has no theme radios', () => {
+    load();
+    cy.get('html').should('not.have.attr', 'data-theme');
+    cy.get(sel('theme-toggle')).should('have.attr', 'data-theme', 'system').click();
+    cy.get('html').should('have.attr', 'data-theme', 'light');
+    cy.get(sel('theme-toggle')).should('have.attr', 'aria-label', 'Theme: Light (click for Dark)');
+    cy.get(sel('theme-toggle')).click();
+    cy.get('html').should('have.attr', 'data-theme', 'dark');
+    cy.get(sel('theme-toggle')).click();
+    cy.get('html').should('not.have.attr', 'data-theme');
+    openSettings();
+    cy.get(sel('settings-popover')).find('input[type="radio"]').should('not.exist');
+    closeSettings();
+  });
+});

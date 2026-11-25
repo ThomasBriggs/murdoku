@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { QUICK_ITEMS, type QuickItem, type Settings, type Theme } from '../state/store';
-import { GearIcon, RedoIcon, TrayIcon, UndoIcon } from './icons/glyphs';
+import { AutoThemeIcon, GearIcon, MoonIcon, RedoIcon, SunIcon, TrayIcon, UndoIcon } from './icons/glyphs';
 import { TOOLS } from './ToolPalette';
 import styles from './Toolbar.module.css';
 
@@ -18,6 +18,48 @@ export interface ToolbarProps {
 }
 
 const THEMES: Theme[] = ['system', 'light', 'dark'];
+const THEME_NAME: Record<Theme, string> = { system: 'System', light: 'Light', dark: 'Dark' };
+
+/** The next theme in the System, Light, Dark cycle. */
+export function nextTheme(t: Theme): Theme {
+  return THEMES[(THEMES.indexOf(t) + 1) % THEMES.length]!;
+}
+
+/** Icon, label and title for the theme toggle at the current setting. */
+export function themeToggleInfo(t: Theme) {
+  const Icon = t === 'light' ? SunIcon : t === 'dark' ? MoonIcon : AutoThemeIcon;
+  const label = `Theme: ${THEME_NAME[t]} (click for ${THEME_NAME[nextTheme(t)]})`;
+  return { Icon, label, name: THEME_NAME[t] };
+}
+
+/** Header button cycling the theme System, Light, Dark. `menuItem` renders it as a labelled phone-menu row. */
+export function ThemeToggle({
+  theme,
+  onTheme,
+  className,
+  menuItem,
+}: {
+  theme: Theme;
+  onTheme(t: Theme): void;
+  className?: string;
+  menuItem?: boolean;
+}) {
+  const { Icon, label, name } = themeToggleInfo(theme);
+  return (
+    <button
+      type="button"
+      className={className}
+      data-testid="theme-toggle"
+      data-theme={theme}
+      aria-label={label}
+      title={label}
+      onClick={() => onTheme(nextTheme(theme))}
+    >
+      <Icon />
+      {menuItem && <span>Theme: {name}</span>}
+    </button>
+  );
+}
 
 /** What a quick-bar item is called, and its key. */
 export function quickItemInfo(item: QuickItem): { label: string; key: string } {
@@ -131,7 +173,7 @@ export function OverflowMenu({ children, up }: { children: ReactNode; up?: boole
   );
 }
 
-/** The settings controls (helpers, quick bar, theme), shared by the header popover and the phone menu. */
+/** The settings controls (helpers and quick bar), shared by the header popover and the phone menu. */
 export function SettingsPanel({
   settings,
   onSettings,
@@ -231,26 +273,11 @@ export function SettingsPanel({
           );
         })}
       </fieldset>
-      <fieldset className={styles.theme}>
-        <legend>Theme</legend>
-        {THEMES.map((t) => (
-          <label key={t}>
-            <input
-              type="radio"
-              name="theme"
-              data-testid={`theme-${t}`}
-              checked={p.settings.theme === t}
-              onChange={() => p.onSettings({ theme: t })}
-            />
-            {t[0]!.toUpperCase() + t.slice(1)}
-          </label>
-        ))}
-      </fieldset>
     </div>
   );
 }
 
-/** Settings button with its popover (theme and helper toggles). */
+/** Settings button with its popover (helper toggles and quick bar). */
 export function SettingsMenu({
   settings,
   onSettings,
