@@ -111,11 +111,12 @@ suite('toolkit screenshots', () => {
       }
       pickTool('eliminate');
       cell(2, 6).click();
-      selectPerson(2);
+      selectPerson(2); // picking a person switches to Place, so choose the tool again
+      pickTool('eliminate');
       cell(7, 0).click();
       // a tentative guess
-      pickTool('pencil');
       selectPerson(4);
+      pickTool('pencil');
       cell(1, 7).click();
       pickTool('place');
       cy.screenshot(`toolkit-${name}-${theme}`, { capture: 'fullPage' });
@@ -132,10 +133,11 @@ suite('tentative close-up', () => {
         .toArray()
         .map((el) => [Number(el.dataset.r), Number(el.dataset.c)] as [number, number]);
       placePerson(0, free[0]![0], free[0]![1]);
-      pickTool('pencil');
       selectPerson(4);
+      pickTool('pencil');
       cell(free[1]![0], free[1]![1]).click();
       selectPerson(5);
+      pickTool('pencil');
       cell(free[2]![0], free[2]![1]).click();
     });
     pickTool('place');
